@@ -1,0 +1,22 @@
+{
+  "name": "datalayerjs",
+  "version": "0.0.1",
+  "description": "An open-source datalayer, tagmanager and frontend middleware, sitting between the client and any third parties",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://ricopfaus@bitbucket.org/ricopfaus/datalayerjs.git"
+  },
+  "keywords": [
+    "Tagmanager",
+    "Datalayer",
+    "Affiliate",
+    "Attribution"
+  ],
+  "author": "Rico Pfaus",
+  "license": "MIT",
+  "homepage": "https://bitbucket.org/ricopfaus/datalayerjs#readme"
+}
