@@ -1,11 +1,19 @@
-import window from './lib/globals/window';
-import Logger from './lib/logger';
-import cookie from './lib/cookie';
+import window from './lib/window';
 import utils from './lib/utils';
+import cookie from './lib/cookie';
 
 const PLUGIN_QUEUED = 1;
 const PLUGIN_LOADING = 2;
 const PLUGIN_READY = 3;
+
+// console.logging helper
+const DEBUG = process.env.DEB === true;
+const debug = () => (
+  // DEBUG ? console.log.call(arguments) : ''
+  console.log.call(arguments)
+);
+
+debug('console.logging enabled');
 
 /**
  * The global Datalayer class, gets instantiated as singleton.
@@ -17,31 +25,47 @@ const PLUGIN_READY = 3;
  *
  * new Datalayer();
  */
-class Datalayer {
-
+export class Datalayer {
   constructor() {
     // module globals
-    this.metaPrefix = 'odl:';           // prefix for metatags attributes
-    this.broadcastQueue = [];           // queue with things that happen before initialize is called
-    this.pluginQueue = [];              // queue with plugins that are requested before initialize is called
-    this.plugins = {};                  // map with loaded plugin plugins
-    this.modules = {};                  // map with module handles
-    this.globalData = {};               // data storage
-    this.globalConfig = {};             // configuration object (passed via odl:config)
-    this.initialized = false;           // initialized flag (true, if core initialization is done)
-    this.ready = false;                 // ready flag (true, if all plugins are loaded)
-    this.testModeActive = this.isTestModeActive();
-    logger.log('testmode', this.testModeActive);
-    // promises
-    this.initializePromise = new Promise();
+    this.metaPrefix = 'odl:'; // prefix for metatags attributes
+    this.broadcastQueue = []; // queue with things that happen before initialize is called
+    this.pluginQueue = []; // queue with plugins that are requested before initialize is called
+    this.plugins = {}; // map with loaded plugin plugins
+    this.modules = {}; // map with module handles
+    this.globalData = {}; // data storage
+    this.globalConfig = {}; // configuration object (passed via odl:config)
+    this.initialized = false; // initialized flag (true, if core initialization is done)
+    this.ready = false; // ready flag (true, if all plugins are loaded)
+    this.testModeActive = Datalayer.isTestModeActive();
+    console.log('testmode', this.testModeActive);
+    // create promises
+    this.readyPromiseResolver = null;
+    this.readyPromiseRejector = null;
+    this.readyPromise = new Promise((resolve, reject) => {
+      this.readyPromiseResolver = resolve;
+      this.readyPromiseRejector = reject;
+    });
+  }
+
+  /**
+   * Returns Promise that is resolved as soon as the Datalayer is ready (i.e. initialized,
+   * plugins loaded, basics set up).
+   * @returns {Promise}
+   */
+  whenReady() {
+    return this.readyPromise;
   }
 
   /**
    * Handle and (un-/)persist test mode for plugin delivery.
    */
-  isTestModeActive() {
+  static isTestModeActive() {
+    console.log(window.location.search);
     if (cookie.get('__odltest__')) {
+      console.log('Cookie found');
       if (window.location.search.match(/__odltest__=0/gi)) {
+        console.log('Removing cokie');
         cookie.remove('__odltest__', { path: '/' });
         return false;
       }
@@ -59,9 +83,9 @@ class Datalayer {
    * @param {String}  eventName  the event name/type to be fired (e.g. 'load', addtocart', 'click', 'view') OR an object with all three parameters
    * @param {Object}  eventData  the event data to pass along with the event, may be any type of data (not necessarily an object literal)
    */
-  sendEventToPlugin(plugin, eventName, eventData) {
+  static sendEventToPlugin(plugin, eventName, eventData) {
     if (plugin && typeof plugin.handleEvent === 'function') {
-      logger.log(`broadcasting '${eventName}' to plugin '${plugin.id}' with data:`, eventData);
+      console.log(`broadcasting '${eventName}' to plugin '${plugin.id}' with data:`, eventData);
       plugin.handleEvent(eventName, eventData, (new Date()).getTime());
     }
   }
@@ -72,7 +96,7 @@ class Datalayer {
    */
   collectIdentityDataFromCookies() {
     if (!cookie.get('bid')) {
-      logger.warn('unable to read identity cookies');
+      console.warn('unable to read identity cookies');
     }
     this.globalData.identity = {
       bid: cookie.get('bid'),
@@ -128,25 +152,25 @@ class Datalayer {
           };
         }
         if (plugin.status === PLUGIN_READY) {
-          logger.log(`plugin '${pluginId}' already available`);
+          console.log(`plugin '${pluginId}' already available`);
           resolve(this.plugins[pluginId].service);
         } else if (plugin.status === PLUGIN_QUEUED) {
-          logger.log(`requiring plugin '${pluginId}'`);
+          console.log(`requiring plugin '${pluginId}'`);
           plugin.status = PLUGIN_LOADING;
           window.require([pluginId], (Service) => {
-            logger.log(`plugin '${pluginId}' newly loaded`);
+            console.log(`plugin '${pluginId}' newly loaded`);
             // construct service, pass data/config, store reference
             this.plugins[pluginId].service = new Service(this, this.globalData, this.globalConfig[pluginId] || {});
             // broadcast any events that happened until now
             const keys = Object.keys(this.broadcastQueue);
             for (let i = 0; i < keys.length; i += 1) {
               const event = this.broadcastQueue[keys[i]];
-              logger.log(`re-broadcasting event '${event[0]}' to plugin '${pluginId}'`);
+              console.log(`re-broadcasting event '${event[0]}' to plugin '${pluginId}'`);
               this.sendEventToPlugin(this.plugins[pluginId], event[0], event[1]);
             }
             resolve(this.plugins[pluginId].service);
           }, () => {
-            reject(new Error(logger.log(`plugin '${pluginId}' failed to load`)));
+            reject(new Error(console.log(`plugin '${pluginId}' failed to load`)));
           });
         } else {
           // SERVICE_LOADING, nothing further to do for now
@@ -206,7 +230,7 @@ class Datalayer {
     const keys = Object.keys(ids);
     for (let i = 0; i < keys.length; i += 1) {
       const id = ids[keys[i]];
-      logger.log(`loading '${id}'`);
+      console.log(`loading '${id}'`);
       this.getPlugin(id, onPluginLoaded);
     }
   }
@@ -226,7 +250,7 @@ class Datalayer {
     for (let i = 0; i < keys.length; i += 1) {
       this.sendEventToPlugin(this.plugins[keys[i]], name, data);
     }
-    logger.log('queuing broadcast', name, data);
+    console.log('queuing broadcast', name, data);
     this.broadcastQueue.push([name, data]);
   }
 
@@ -248,7 +272,7 @@ class Datalayer {
   scanForEventMarkup(node) {
     return utils.collectMetadata(`${this.metaPrefix}event`, (err, element, obj) => {
       if (err) {
-        logger.error(err);
+        console.error(err);
         return;
       }
       if (!element.hasAttribute('data-odl-handled-event')) {
@@ -279,7 +303,7 @@ class Datalayer {
   initialize(data, ruleset, config, localPlugins = [], mappings = {}) {
     let pluginsToLoad = [];
     if (this.initialized) {
-      logger.warn('already initialized');
+      console.warn('already initialized');
       return false;
     }
     this.mappings = mappings;
@@ -303,11 +327,11 @@ class Datalayer {
     }
     // read identity data
     this.collectIdentityDataFromCookies();
-    logger.log('collected data', this.globalData);
+    console.log('collected data', this.globalData);
     // core initialization is ready
     this.initialized = true;
     // broadcast 'initialize' event
-    logger.log('broadcasting initialize event', this.broadcast('initialize', this.globalData));
+    console.log('broadcasting initialize event', this.broadcast('initialize', this.globalData));
     // check which plugins to load based on supplied ruleset
     if (ruleset) {
       // @TODO: for (const [name, rule] of ruleset) {
@@ -318,10 +342,11 @@ class Datalayer {
         }
       }
     }
+    console.log('pluginsToLoad', pluginsToLoad);
     // override plugins with config.plugins, if defined
-    logger.log('init global plugins', pluginsToLoad);
+    console.log('init global plugins', pluginsToLoad);
     if (config && typeof config.plugins !== 'undefined') {
-      logger.log('overriding global plugins with config.plugins', config.plugins);
+      console.log('overriding global plugins with config.plugins', config.plugins);
       pluginsToLoad = config.plugins;
     }
     // load plugins
@@ -335,18 +360,22 @@ class Datalayer {
       }
       // set global ODL-is-ready flag (used in tests)
       this.ready = true;
+      // resolve the "ready" promise
+      this.readyPromiseResolver(this);
     });
     if (this.pluginQueue.length === 0) {
       this.ready = true;
     }
     // load locally defined plugins
-    logger.log('init local plugins', localPlugins);
+    console.log('init local plugins', localPlugins);
     this.loadPlugins(localPlugins || []);
     // collect event data from document and send events to plugins
-    logger.log(`scanning for ${this.metaPrefix}event markup`);
+    console.log(`scanning for ${this.metaPrefix}event markup`);
     this.scanForEventMarkup();
     // install method queue
     utils.createMethodQueueHandler(window, '_odlq', this);
+    // @TEST (should be done after loading plugins instead)
+    this.readyPromiseResolver();
     return true;
   }
 
@@ -361,14 +390,13 @@ class Datalayer {
   isInitialized() {
     return this.initialized === true;
   }
-
 }
 
 // create new ODL singleton instance
-const odl = new ODL();
+const datalayer = new Datalayer();
 
 // XXX: store ODL reference in window (currently needed for functionally testing ODL plugins)
-window._odl = odl;
+window._datalayer = datalayer;
 
 
-export default odl;
+export default datalayer;
