@@ -65,7 +65,11 @@ export class Datalayer {
   }
 
   /**
-   * Returns the global data that was collected and aggregated from the entire page.
+   * Returns the global data that came from one of the following sources:
+   * a) it was passed to `.initialize` via configuration
+   * b) it was collected and aggregated from the entire page by `.initialize`
+   * c) it was manually passed as data to the last "pageload" event
+   * @returns {Object} object with global data
    */
   getData() {
     if (this.initialized) {
@@ -194,31 +198,18 @@ export class Datalayer {
     }
     debug('plugins:', this.plugins);
 
+    // install method queue
+    utils.createMethodQueueHandler(window, '_odlq', this);
+
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
     this.initialized = true;
     debug('broadcasting initialize event', this.broadcast('initialize', this.globalData));
     this.readyPromiseResolver();
 
-    // TEST
-    return;
-
-    // override plugins with config.plugins, if defined
-    debug('init global plugins', plugins);
-    if (config && typeof config.plugins !== 'undefined') {
-      debug('overriding global plugins with config.plugins', config.plugins);
-      pluginsToLoad = config.plugins;
-    }
-
-    // load locally defined plugins
-    debug('init local plugins', localPlugins);
-    this.loadPlugins(localPlugins || []);
     // collect event data from document and send events to plugins
     debug(`scanning for ${this.metaPrefix}event markup`);
     this.scanForEventMarkup();
-    // install method queue
-    utils.createMethodQueueHandler(window, '_odlq', this);
-    // @TEST (should be done after loading plugins instead)
-    this.readyPromiseResolver();
+
     return true;
   }
 
