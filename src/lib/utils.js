@@ -22,8 +22,10 @@ function extend(obj1, obj2) {
  * any error occured (@TODO: use Promise return instead).
  *
  * @param {Object}  name  name value of the metatag to be collected
- * @param {Function}  callback  function to be called for each metadata item (gets passed (optional) error message, element and parsed data object as arguments)
- * @param {String|HTMLElement}  context  (optional) any CSS selector or HTMLElement, if defined it limits the lookup context to the given element
+ * @param {Function}  callback  function to be called for each metadata item
+ * (gets passed (optional) error message, element and parsed data object as arguments)
+ * @param {String|HTMLElement}  context  (optional) any CSS selector or HTMLElement,
+ * if defined it limits the lookup context to the given element
  * @param {Object}  data  initial data, gets extended with the collected data
  */
 function collectMetadata(name, callback, context = null, data = {}) {
@@ -66,7 +68,9 @@ function collectMetadata(name, callback, context = null, data = {}) {
 function createMethodQueueHandler(context, queueName, api = {}) {
   function _mqExec(_api, _arr) {
     if (typeof _api[_arr[0]] === 'function') {
+      /* eslint-disable prefer-spread */
       _api[_arr[0]].apply(_api, _arr.splice(1));
+      /* eslint-enable prefer-spread */
     } else {
       throw new Error(`method "${_arr[0]}" not found in ${_api}`);
     }
