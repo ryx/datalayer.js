@@ -5,7 +5,13 @@ function extend(obj1, obj2) {
   const keys = Object.keys(obj2);
   for (let i = 0; i < keys.length; i += 1) {
     const val = obj2[keys[i]];
-    obj1[keys[i]] = ['string', 'number', 'boolean'].indexOf(typeof val) === -1 && typeof val.length === 'undefined' ? extend(obj1[keys[i]] || {}, val) : val;
+    let src;
+    if (['string', 'number', 'boolean'].indexOf(typeof val) === -1 && typeof val.length === 'undefined') {
+      src = extend(obj1[keys[i]] || {}, val);
+    } else {
+      src = val;
+    }
+    obj1[keys[i]] = src;
   }
   return obj1;
 }
