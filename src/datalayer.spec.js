@@ -63,35 +63,32 @@ import('./datalayer').then((module) => {
   });
 
   test('datalayer.testMode:', (t) => {
-    t.plan(4);
+    t.plan(3);
 
-    t.test('should activate if URL contains __odltest__=1', (st) => {
+    t.test('enable / disable via URL', (st) => {
       dom.reconfigure({ url: 'http://example.com?__odltest__=1' });
       const dal = new module.Datalayer();
-      console.log(dal);
-      console.log('.innerHTML', dom.window.document.querySelector('body'));
-      console.log('.cookie', dom.window.document.cookie);
+      // console.log(dal);
+      // console.log('.innerHTML', dom.window.document.querySelector('body'));
+      // console.log('.cookie', dom.window.document.cookie);
       dal.initialize({ data: globalDataMock });
-      st.ok(dal.inTestMode(), 'inTestMode() should return true');
-      st.end();
-    });
+      st.ok(dal.inTestMode(), 'should activate testmode if URL contains __odltest__=1');
 
-    /* t.test('should set cookie if URL contains __odltest__=1', (st) => {
-      dom.reconfigure({ url: 'http://example.com?__odltest__=1' });
-      const dal = new module.Datalayer();
-      dal.initialize({ data: globalDataMock });
-      // td.verify(cookie.set('__odltest__'), { ignoreExtraArgs: true });
-      st.ok(dal.inTestMode(), 'inTestMode() should return true');
-      st.end();
-    }); */
+      dom.reconfigure({ url: 'http://example.com' });
+      const dal2 = new module.Datalayer();
+      dal2.initialize({ data: globalDataMock });
+      st.ok(dal2.inTestMode(), 'should still BE in testmode, even after fake reload');
 
-    t.test('should disable testmode if URL contains __odltest__=0', (st) => {
       dom.reconfigure({ url: 'http://example.com?__odltest__=0' });
-      // td.when(cookie.get('__odltest__')).thenReturn('1');
-      const dal = new module.Datalayer();
-      dal.initialize({ data: globalDataMock });
-      // td.verify(cookie.remove('__odltest__', td.matchers.anything()));
-      st.notOk(dal.inTestMode(), 'inTestMode() should return false');
+      const dal3 = new module.Datalayer();
+      dal3.initialize({ data: globalDataMock });
+      st.notOk(dal3.inTestMode(), 'should disable testmode if URL contains __odltest__=0');
+
+      dom.reconfigure({ url: 'http://example.com' });
+      const dal4 = new module.Datalayer();
+      dal4.initialize({ data: globalDataMock });
+      st.notOk(dal4.inTestMode(), 'should still NOT BE in testmode, even after fake reload');
+
       st.end();
     });
 
@@ -125,6 +122,8 @@ import('./datalayer').then((module) => {
         st.end();
       });
     });
+
+    t.end();
   });
 
   test('datalayer.whenReady:', (t) => {
