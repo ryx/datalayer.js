@@ -12,7 +12,24 @@ const cookie = td.replace('./lib/cookie', {
 });
 // const utils = td.replace('./lib/utils');
 
-// process.env.DEBUG = true;
+// mock plugin to test various plugin-related things
+class MockPlugin {
+  constructor(datalayer, data, config) {
+    this.__type__ = 'Mock';
+    this.datalayer = datalayer;
+    this.data = data;
+    this.config = config;
+    this.events = {};
+  }
+
+  static getID() {
+    return 'test/mockPlugin';
+  }
+
+  handleEvent(eventName, eventData) {
+    this.events[eventName] = eventData;
+  }
+}
 
 // load library to be tested (XXX: enable debugging flag?)
 import('./datalayer').then((module) => {
@@ -26,15 +43,15 @@ import('./datalayer').then((module) => {
   test('[datalayer.testMode] should activate if URL contains __odltest__=1', (t) => {
     dom.reconfigure({ url: 'http://example.com?__odltest__=1' });
     const dal = new module.Datalayer();
-    dal.initialize(globalDataMock);
-    t.ok(dal.inTestMode(), 'odl.inTestMode should return true');
+    dal.initialize({ data: globalDataMock });
+    t.ok(dal.inTestMode(), 'inTestMode() should return true');
     t.end();
   });
 
   test('[datalayer.testMode] should set cookie if URL contains __odltest__=1', (t) => {
     dom.reconfigure({ url: 'http://example.com?__odltest__=1' });
     const dal = new module.Datalayer();
-    dal.initialize(globalDataMock);
+    dal.initialize({ data: globalDataMock });
     td.verify(cookie.set('__odltest__'), { ignoreExtraArgs: true });
     t.end();
   });
@@ -43,19 +60,25 @@ import('./datalayer').then((module) => {
     dom.reconfigure({ url: 'http://example.com?__odltest__=0' });
     td.when(cookie.get('__odltest__')).thenReturn('1');
     const dal = new module.Datalayer();
-    dal.initialize(globalDataMock);
+    dal.initialize({ data: globalDataMock });
     td.verify(cookie.remove('__odltest__', td.matchers.anything()));
     t.notOk(dal.inTestMode(), 'odl.inTestMode should return false');
     t.end();
   });
 
-  test('[datalayer.testMode] should load a supplied plugin, if: testmode is active, the mode evaluates to "test" and the rule evaluates to "true"', (t) => {
+  test('[datalayer.testMode] should load a specified plugin, if: testmode is active, the mode evaluates to "test" and the rule evaluates to "true"', (t) => {
     dom.reconfigure({ url: 'http://example.com?__odltest__=1' });
     const dal = new module.Datalayer();
-    dal.getPlugin = td.function(dal.getPlugin);
-    dal.initialize(globalDataMock, { 'odl/plugins/mock': { test: true, rule: () => true } });
-    td.verify(dal.getPlugin('odl/plugins/mock', td.matchers.anything()));
-    t.end();
+    dal.initialize({
+      data: globalDataMock,
+      plugins: [
+        { type: MockPlugin, rule: () => true, test: true },
+      ],
+    });
+    dal.whenReady().then(() => {
+      t.isNot(dal.getPluginById('test/mockPlugin', null));
+      t.end();
+    });
   });
 
   test('datalayer', (t) => {
@@ -64,26 +87,21 @@ import('./datalayer').then((module) => {
   });
 
   test('datalayer.initialize', (t) => {
-    t.plan(4);
+    t.plan(3);
     t.throws(
-      () => datalayer.initialize(null, {}, {}),
-      /No ODLGlobalData/gi,
-      'should complain about missing page data',
-    );
-    t.throws(
-      () => datalayer.initialize({ page: { } }, {}, {}),
-      /ODLPageData is invalid or missing/gi,
+      () => datalayer.initialize({ data: { page: { } } }),
+      /DALPageData is invalid or missing/gi,
       'should complain about invalid page data',
     );
     t.throws(
-      () => datalayer.initialize({ page: globalDataMock.page }, {}, {}),
-      /ODLSiteData is invalid or missing/gi,
+      () => datalayer.initialize({ data: { page: globalDataMock.page } }),
+      /DALSiteData is invalid or missing/gi,
       'should complain about missing site data',
     );
     // TODO: invalid site data
     t.throws(
-      () => datalayer.initialize({ page: globalDataMock.page, site: globalDataMock.site }, {}, {}),
-      /ODLUserData is invalid or missing/gi,
+      () => datalayer.initialize({ data: { page: globalDataMock.page, site: globalDataMock.site } }),
+      /DALUserData is invalid or missing/gi,
       'should complain about missing user data',
     );
     t.end();
@@ -95,12 +113,12 @@ import('./datalayer').then((module) => {
       t.ok(dal.isReady(), '[datalayer.isReady()] should be true');
       t.end();
     });
-    dal.initialize(globalDataMock, {}, {});
+    dal.initialize({ data: globalDataMock });
   });
 
   test('[datalayer.whenReady] should resolve when called AFTER initialize', (t) => {
     const dal = new module.Datalayer();
-    dal.initialize(globalDataMock, {}, {});
+    dal.initialize({ data: globalDataMock });
     dal.whenReady().then(() => {
       t.ok(dal.isReady(), '[datalayer.isReady()] should be true');
       t.end();

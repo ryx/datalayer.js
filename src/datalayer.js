@@ -2,43 +2,34 @@ import window from './lib/window';
 import utils from './lib/utils';
 import cookie from './lib/cookie';
 
-const PLUGIN_QUEUED = 1;
-const PLUGIN_LOADING = 2;
-const PLUGIN_READY = 3;
+// debugging helper
+/* eslint-disable func-names, no-console, prefer-spread, prefer-rest-params */
+const DEBUG = typeof process.env.DEBUG !== 'undefined';
+function debug() {
+  if (DEBUG) {
+    console.log.apply(console, ['[debug]:'].concat(Array.prototype.slice.call(arguments)));
+  }
+}
+/* eslint-enable func-names */
 
-// console.logging helper
-const DEBUG = process.env.DEB === true;
-const debug = () => (
-  // DEBUG ? console.log.call(arguments) : ''
-  console.log.call(arguments)
-);
-
-debug('console.logging enabled');
+debug('debugging enabled');
 
 /**
  * The global Datalayer class, gets instantiated as singleton.
- * The datalayer is responsible for aggregating and providing and loading
+ * The datalayer is responsible for aggregating, providing and loading
  * plugins. The data is then passed to available plugins which can feed
  * it to external and/or third-party plugins.
- *
- * instance like:
- *
- * new Datalayer();
  */
 export class Datalayer {
   constructor() {
-    // module globals
-    this.metaPrefix = 'odl:'; // prefix for metatags attributes
-    this.broadcastQueue = []; // queue with things that happen before initialize is called
-    this.pluginQueue = []; // queue with plugins that are requested before initialize is called
-    this.plugins = {}; // map with loaded plugin plugins
-    this.modules = {}; // map with module handles
+    this.initialized = false; // "ready" flag (true, if all plugins are loaded)
+    this.metaPrefix = 'dal:'; // prefix for meta[name] attribute
     this.globalData = {}; // data storage
     this.globalConfig = {}; // configuration object (passed via odl:config)
-    this.initialized = false; // initialized flag (true, if core initialization is done)
-    this.ready = false; // ready flag (true, if all plugins are loaded)
     this.testModeActive = Datalayer.isTestModeActive();
-    console.log('testmode', this.testModeActive);
+    this.plugins = []; // array with loaded plugins
+    this.broadcastQueue = []; // array with all events that have been fired already
+
     // create promises
     this.readyPromiseResolver = null;
     this.readyPromiseRejector = null;
@@ -55,53 +46,6 @@ export class Datalayer {
    */
   whenReady() {
     return this.readyPromise;
-  }
-
-  /**
-   * Handle and (un-/)persist test mode for plugin delivery.
-   */
-  static isTestModeActive() {
-    console.log(window.location.search);
-    if (cookie.get('__odltest__')) {
-      console.log('Cookie found');
-      if (window.location.search.match(/__odltest__=0/gi)) {
-        console.log('Removing cokie');
-        cookie.remove('__odltest__', { path: '/' });
-        return false;
-      }
-      return true;
-    } else if (window.location.search.match(/__odltest__=1/gi)) {
-      cookie.set('__odltest__', '1', { path: '/', maxAge: 3600 * 24 * 7 });
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Send event to the given plugin.
-   * @param {Object}  plugin the plugin reference (in this.plugins) to broadcast the event to
-   * @param {String}  eventName  the event name/type to be fired (e.g. 'load', addtocart', 'click', 'view') OR an object with all three parameters
-   * @param {Object}  eventData  the event data to pass along with the event, may be any type of data (not necessarily an object literal)
-   */
-  static sendEventToPlugin(plugin, eventName, eventData) {
-    if (plugin && typeof plugin.handleEvent === 'function') {
-      console.log(`broadcasting '${eventName}' to plugin '${plugin.id}' with data:`, eventData);
-      plugin.handleEvent(eventName, eventData, (new Date()).getTime());
-    }
-  }
-
-  /**
-   * Collect identity data (session, browser) from platform cookies and return
-   * true or false depending on success reading cookies.
-   */
-  collectIdentityDataFromCookies() {
-    if (!cookie.get('bid')) {
-      console.warn('unable to read identity cookies');
-    }
-    this.globalData.identity = {
-      bid: cookie.get('bid'),
-    };
-    return true;
   }
 
   /**
@@ -124,139 +68,43 @@ export class Datalayer {
    * Returns the global data that was collected and aggregated from the entire page.
    */
   getData() {
-    return this.globalData;
+    if (this.initialized) {
+      return this.globalData;
+    }
+    throw new Error('.getData called before .initialize (always wrap in whenReady())');
   }
 
   /**
-   * Wrapper for the previous AMD-based loader. Simply imitates an asynchronous process
-   * here. @TODO: plugin "loading" needs a general rewrite.
-   * @param  {String}  id     the id of the requested plugin
-   * @param  {Function}  callback   a function to execute when the plugin is loaded (gets plugin object as only parameter)
-   */
-  loadPlugin(id, callback) {
-    callback(this.mappings[id]);
-  }
-
-  /**
-   * Returns a Promise that gets resolved with the reference to a specific plugin.
+   * Returns a plugin instance by the id that was assigned via config.
    * @param  {String}  pluginId     the id of the requested plugin
    */
-  getPlugin(pluginId) {
+  getPluginById(pluginId) {
     if (this.initialized) {
-      return new Promise((resolve, reject) => {
-        let plugin = this.plugins[pluginId];
-        if (typeof plugin === 'undefined') {
-          plugin = {
-            status: PLUGIN_QUEUED,
-            plugin: null,
-          };
+      for (let i = 0; i < this.plugins.length; i += 1) {
+        if (this.plugins[i].constructor.getID() === pluginId) {
+          return this.plugins[i];
         }
-        if (plugin.status === PLUGIN_READY) {
-          console.log(`plugin '${pluginId}' already available`);
-          resolve(this.plugins[pluginId].service);
-        } else if (plugin.status === PLUGIN_QUEUED) {
-          console.log(`requiring plugin '${pluginId}'`);
-          plugin.status = PLUGIN_LOADING;
-          window.require([pluginId], (Service) => {
-            console.log(`plugin '${pluginId}' newly loaded`);
-            // construct service, pass data/config, store reference
-            this.plugins[pluginId].service = new Service(this, this.globalData, this.globalConfig[pluginId] || {});
-            // broadcast any events that happened until now
-            const keys = Object.keys(this.broadcastQueue);
-            for (let i = 0; i < keys.length; i += 1) {
-              const event = this.broadcastQueue[keys[i]];
-              console.log(`re-broadcasting event '${event[0]}' to plugin '${pluginId}'`);
-              this.sendEventToPlugin(this.plugins[pluginId], event[0], event[1]);
-            }
-            resolve(this.plugins[pluginId].service);
-          }, () => {
-            reject(new Error(console.log(`plugin '${pluginId}' failed to load`)));
-          });
-        } else {
-          // SERVICE_LOADING, nothing further to do for now
-        }
-      });
-    }
-    throw new Error('getPlugin called prior to initialization (always wrap in whenInitialized())');
-  }
-
-  /**
-   * Checks whether the plugin with the given id is either loaded or queued.
-   * @param  {String} id  plugin name (e.g. 'gk/lib/dal/adobe') to check for
-   */
-  hasPlugin(id) {
-    if (typeof this.plugins[id] !== 'undefined') {
-      return this.plugins[id].status;
-    }
-    return false;
-  }
-
-
-  /**
-   * Checks whether the plugin with the given id is either loaded or queued.
-   * @param  {String} id  plugin name (e.g. 'gk/lib/odl/econda') to check for
-   */
-  hasPlugin(id) {
-    if (typeof this.plugins[id] !== 'undefined') {
-      return true;
-    }
-    /* @TODO: for (const s of pluginQueue) { */
-    const keys = Object.keys(this.pluginQueue);
-    for (let i = 0; i < keys.length; i += 1) {
-      const s = this.pluginQueue[keys[i]];
-      if (s.id === id) {
-        return true;
       }
+      return null;
     }
-    return false;
+    throw new Error('.getPluginById called before .initialize (always wrap in whenReady())');
   }
 
   /**
-   * Load a given list with plugins. Includes the plugins using require calls and
-   * initializes them, passing in the global ODL data to the constructor.
-   * @param  {Array<String>} ids  list with plugin/plugin names (e.g. 'gk/lib/odl/econda')
-   * @param  {Function}  callback  a callback to be fired when ALL requested plugins have loaded
-   */
-  loadPlugins(ids, callback) {
-    let pending = ids.length;
-    // count down and notify callback if all plugins are loaded
-    const onPluginLoaded = () => {
-      pending -= 1;
-      if (pending === 0 && typeof callback === 'function') {
-        callback();
-      }
-    };
-    /* @TODO: for (const id of ids) { */
-    const keys = Object.keys(ids);
-    for (let i = 0; i < keys.length; i += 1) {
-      const id = ids[keys[i]];
-      console.log(`loading '${id}'`);
-      this.getPlugin(id, onPluginLoaded);
-    }
-  }
-
-  /**
-   * Broadcast a public event to all loaded plugins. You can either pass name,
-   * data and domain as individual arguments or you can pass a single object (e.g.
-   * {name: 'event', data: {foo: 'bar'}, domain: 'fint'}) as the only argument. Both will
-   * have the same result.
-   * @param  {String|Object}  name  the event name/type to be fired (e.g. 'load',
-   *          addtocart', 'click', 'view') OR an object with all three parameters
-   * @param  {Object}  data  the event data to pass along with the event, may be any type
-   *          of data (not necessarily an object literal)
+   * Broadcast a public event to all loaded plugins.
+   * @param  {String}  name  the event name/type to be fired (e.g. 'load', 'addtocart', ...)
+   * @param  {Object}  data  the event data to pass along with the event, may be of any type
    */
   broadcast(name, data) {
-    const keys = Object.keys(this.plugins);
-    for (let i = 0; i < keys.length; i += 1) {
-      this.sendEventToPlugin(this.plugins[keys[i]], name, data);
-    }
-    console.log('queuing broadcast', name, data);
+    this.plugins.forEach((plugin) => {
+      Datalayer.sendEventToPlugin(plugin, name, data);
+    });
+    debug('queuing broadcast for future purpose', name, data);
     this.broadcastQueue.push([name, data]);
   }
 
   /**
-   * Scan a given HTMLElement for odl:data-Metatags and update global data accordingly.
-   *
+   * Scan a given HTMLElement for dal:data-Metatags and update global data accordingly.
    * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for data
    */
   scanForDataMarkup(node = window.document) {
@@ -266,7 +114,6 @@ export class Datalayer {
   /**
    * Scan a given HTMLElement for odl:event-Metatags and broadcast any events that
    * were found.
-   *
    * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for events
    */
   scanForEventMarkup(node) {
@@ -283,94 +130,90 @@ export class Datalayer {
   }
 
   /**
-   * Main initialization code. Loads global and local plugins.
-   *
-   * The function takes a second parameter that allows paasing in a custom
-   * configuration, as demonstrated in the following example:
-   *
-   * 1) supply custom plugin list (used for unit testing)
-   * ODL.initialize({}, {gk/lib/odl/econda':true})
-   *
-   * 2) supply configuration for specific plugins
-   * ODL.initialize({}, {}, {'gk/lib/odl/richrelevance': {'baseUrl':'/some/foo/bar'}})
-   * @param  {Object}  data  the global data as aggregated from all odl:data tags
-   * @param  {Object}  ruleset   ruleset declaration supplying decision logic when to load which plugins
-   * @param  {Object}  config  (optional) configuration object containing per-plugin config
-   *          that gets passed to the initialize call of the corresponding plugin. See header docs for more info.
-   * @param  {Array<String>} localPlugins (optional) list with plugins to be loaded (including path)
-   * @param  {Object} mappings (optional) object literal with name->instance mappings for plugin modules
+   * Add the given plugin - creates a new instance of the plugin and adds it
+   * to the internal list of active plugins, overriding plugin config with
+   * globally defined configuration (if any).
+   * @param {Object} pluginClass  reference to the plugin class
+   * @param {Object} config configuration object with private configuration for this individual instance
    */
-  initialize(data, ruleset, config, localPlugins = [], mappings = {}) {
-    let pluginsToLoad = [];
+  addPlugin(pluginClass, config = {}) {
+    const pluginId = pluginClass.getID();
+    /* eslint-disable new-cap */
+    const plugin = new pluginClass(this, this.globalData, this.globalConfig[pluginId] || config);
+    /* eslint-enable new-cap */
+    this.plugins.push(plugin);
+    // broadcast all events that happened until now
+    for (let i = 0; i < this.broadcastQueue.length; i += 1) {
+      const event = this.broadcastHistory[i];
+      debug(`re-broadcasting event '${event[0]}' to plugin '${pluginId}'`);
+      Datalayer.sendEventToPlugin(plugin, event[0], event[1]);
+    }
+  }
+
+  /**
+   * Main initialization code. Sets up datalayer, loads plugins, handles execution.
+   * @param  {Object}  options  configuration object, see documentation for details
+   */
+  initialize(options) {
     if (this.initialized) {
+      // @XXX: remove
       console.warn('already initialized');
       return false;
     }
-    this.mappings = mappings;
-    // this.globalData = data || null;
-    this.globalConfig = config || {};
+
+    // validate options
+    const data = options.data || {};
+    const plugins = options.plugins || [];
+
+    // set config (@TODO: also collect config from markup here!)
+    this.globalConfig = options.config || {};
+
     // collect global data from document
     this.globalData = data;
     this.scanForDataMarkup(window.document);
-    // validate mandatory data
-    if (data === null || typeof data === 'undefined') {
-      throw new Error('No ODLGlobalData supplied');
-    }
+
+    // validate mandatory data (@TODO: we might use a model-based validation here somewhen)
     if (!data.page || !data.page.type || !data.page.name) {
-      throw new Error('Supplied ODLPageData is invalid or missing');
+      throw new Error('Supplied DALPageData is invalid or missing');
     }
     if (!data.site || !data.site.id) {
-      throw new Error('Supplied ODLSiteData is invalid or missing');
+      throw new Error('Supplied DALSiteData is invalid or missing');
     }
     if (!data.user) {
-      throw new Error('Supplied ODLUserData is invalid or missing');
+      throw new Error('Supplied DALUserData is invalid or missing');
     }
-    // read identity data
-    this.collectIdentityDataFromCookies();
-    console.log('collected data', this.globalData);
-    // core initialization is ready
-    this.initialized = true;
-    // broadcast 'initialize' event
-    console.log('broadcasting initialize event', this.broadcast('initialize', this.globalData));
-    // check which plugins to load based on supplied ruleset
-    if (ruleset) {
-      // @TODO: for (const [name, rule] of ruleset) {
-      const keys = Object.keys(ruleset);
-      for (let i = 0; i < keys.length; i += 1) {
-        if (this.validateRule(ruleset[keys[i]])) {
-          pluginsToLoad.push(keys[i]);
+    debug('collected data', this.globalData);
+
+    // instantiate plugins based on config and provided ruleset
+    if (plugins.length) {
+      plugins.forEach((pluginOptions) => {
+        if (this.validateRule(pluginOptions.rule)) {
+          this.addPlugin(pluginOptions.type, pluginOptions.config);
         }
-      }
+      });
     }
-    console.log('pluginsToLoad', pluginsToLoad);
+    debug('plugins:', this.plugins);
+
+    // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
+    this.initialized = true;
+    debug('broadcasting initialize event', this.broadcast('initialize', this.globalData));
+    this.readyPromiseResolver();
+
+    // TEST
+    return;
+
     // override plugins with config.plugins, if defined
-    console.log('init global plugins', pluginsToLoad);
+    debug('init global plugins', plugins);
     if (config && typeof config.plugins !== 'undefined') {
-      console.log('overriding global plugins with config.plugins', config.plugins);
+      debug('overriding global plugins with config.plugins', config.plugins);
       pluginsToLoad = config.plugins;
     }
-    // load plugins
-    this.loadPlugins(pluginsToLoad, () => {
-      // answer all pending getPlugin calls
-      /* @TODO for (const plugin of pluginQueue) { */
-      const keys = Object.keys(this.pluginQueue);
-      for (let i = 0; i < keys.length; i += 1) {
-        const plugin = this.pluginQueue[keys[i]];
-        this.getPlugin(plugin.id, plugin.callback);
-      }
-      // set global ODL-is-ready flag (used in tests)
-      this.ready = true;
-      // resolve the "ready" promise
-      this.readyPromiseResolver(this);
-    });
-    if (this.pluginQueue.length === 0) {
-      this.ready = true;
-    }
+
     // load locally defined plugins
-    console.log('init local plugins', localPlugins);
+    debug('init local plugins', localPlugins);
     this.loadPlugins(localPlugins || []);
     // collect event data from document and send events to plugins
-    console.log(`scanning for ${this.metaPrefix}event markup`);
+    debug(`scanning for ${this.metaPrefix}event markup`);
     this.scanForEventMarkup();
     // install method queue
     utils.createMethodQueueHandler(window, '_odlq', this);
@@ -384,11 +227,40 @@ export class Datalayer {
   }
 
   isReady() {
-    return this.ready === true;
+    return this.initialized === true;
   }
 
-  isInitialized() {
-    return this.initialized === true;
+  /**
+   * Handle and (un-/)persist test mode for plugin delivery.
+   */
+  static isTestModeActive() {
+    // debug(window.location.search);
+    if (cookie.get('__odltest__')) {
+      debug('Cookie found');
+      if (window.location.search.match(/__odltest__=0/gi)) {
+        debug('Removing cokie');
+        cookie.remove('__odltest__', { path: '/' });
+        return false;
+      }
+      return true;
+    } else if (window.location.search.match(/__odltest__=1/gi)) {
+      cookie.set('__odltest__', '1', { path: '/', maxAge: 3600 * 24 * 7 });
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Send event to the given plugin.
+   * @param {Object}  plugin the plugin reference (in this.plugins) to broadcast the event to
+   * @param {String}  eventName  the event name/type to be fired (e.g. 'load', addtocart', 'click', 'view') OR an object with all three parameters
+   * @param {Object}  eventData  the event data to pass along with the event, may be any type of data (not necessarily an object literal)
+   */
+  static sendEventToPlugin(plugin, eventName, eventData) {
+    if (plugin && typeof plugin.handleEvent === 'function') {
+      debug(`broadcasting '${eventName}' to plugin '${plugin.id}' with data:`, eventData);
+      plugin.handleEvent(eventName, eventData, (new Date()).getTime());
+    }
   }
 }
 
