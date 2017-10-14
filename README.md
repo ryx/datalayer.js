@@ -23,24 +23,27 @@ The basic usage can be divided into three different parts - integration, configu
 ## Integration
 Datalayer.js comes as [UMD module](https://github.com/umdjs/umd) which means you can use it either directly via a `<script>` tag, by using an AMD loader (e.g. [requirejs](http://requirejs.org/)) or as [commonJS module](http://wiki.commonjs.org/wiki/Modules/1.1) (e.g. nodejs's `require`). These brief examples illustrate the different styles:
 
+### Using the Method Queue Pattern
+The method queue pattern (MQP) offers a very simple, asynchronous, non-blocking script include that should work in almost any environment under any circumstances. It might feel a little old fashioned, but works reliably like nothing else.
+
 ```html
 <script type="text/javascript" src="/path/to/datalayer.js" async></script>
 <script>
-// Method Queue Pattern (with asynchronous, non-blocking script include)
 _dtlrq = window._dtlrq || [];
 _dtlrq.push('initialize', {});
 </script>
 ```
 
+### Using AMD-style includes
 ```javascript
-// AMD-style include
 require(['datalayerjs'], (datalayer) => {
   datalayer.initialize({});
 });
 ```
 
+### Using CommonJS style
+ES6 import (might also use traditional `require` syntax instead)
 ```javascript
-// ES6 import (might also use traditional `require` syntax instead)
 import datalayer from 'datalayerjs';
 datalayer.initialize({});
 ```
@@ -48,7 +51,8 @@ datalayer.initialize({});
 ## Configuration
 After including the datalayer.js module you have to call the `initialize` method on the global instance to perform basic setup and tell datalayer.js which plugins to load. Options are provided using a configuration object that is passed to the initialize method. You can read more about the available options in the [documentation for the initialize method](#).
 
-The `plugins` option decides which plugins you want to use. It expects an array with object literals, that define a plugin `type` and an optional `rule`. The rule is *very important* - it determines under which conditions a plugin receives events. Simply put - when the rule evaluates to `true` (or is not defined at all) the plugin will receive events, otherwise it will be ignored during [broadcast](#). Read more about that under [Rule Configuration](#).
+### Plugins and Rules
+The `plugins` option decides which plugins you want to use. It expects an array with object literals, that define a plugin `type` and an optional `rule`. The rule is *very important*. It determines under which conditions a plugin receives events. Simply put - when the rule evaluates to `true` (or is not defined at all) the plugin will receive events, otherwise it will be ignored during [broadcast](#). Read more about that under [Rule Configuration](#).
 
 ```javascript
 datalayer.initialize({
@@ -66,8 +70,11 @@ datalayer.initialize({
 });
 ```
 
+### Testmode
+TODO: explain testmode and its activation via URL
+
 ## Passing Data
-There are three different ways to pass data to datalayer.js, each has it's own specific usecase.
+There are three different ways to pass data to datalayer.js, each has it's own specific usecase. Although you can mix these three ways as you please, it might make sense to stick with one approach to keep your implementation maintainable and understandable.
 
 ### Using rendertime markup
 This way is more applicable for classical, server-rendered websites. You put `<meta>` tags like the following in your markup (i.e. your website's HTML, no matter how that is generated) to pass "rendertime" data or events to the datalayer. Of course we are not using any inline Javascript because inline scripts are just bad for your karma (and highly discouraged, too) ;-)
