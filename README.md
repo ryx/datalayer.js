@@ -18,20 +18,51 @@ It depends. If you want, go and use some 3rd party tool. You might even be happy
 
 
 # Usage
+The basic usage can be divided into three different parts - integration, configuration and runtime (with focus on passing data and events to datalayer and plugins). The following paragraphs give a short introduction to these three topics. For more detailed information, check the dedicated sections for each aspect.
 
 ## Integration
-Datalayer.js comes as [UMD module](https://github.com/umdjs/umd) which means you can use it either directly via a `<script>` tag, by using an AMD loader (e.g. [requirejs](http://requirejs.org/)) or as [commonJS module](http://wiki.commonjs.org/wiki/Modules/1.1) (e.g. nodejs's `require`).
+Datalayer.js comes as [UMD module](https://github.com/umdjs/umd) which means you can use it either directly via a `<script>` tag, by using an AMD loader (e.g. [requirejs](http://requirejs.org/)) or as [commonJS module](http://wiki.commonjs.org/wiki/Modules/1.1) (e.g. nodejs's `require`). These brief examples illustrate the different styles:
+
+```html
+<script type="text/javascript" src="/path/to/datalayer.js" async></script>
+<script>
+// Method Queue Pattern (with asynchronous, non-blocking script include)
+_dtlrq = window._dtlrq || [];
+_dtlrq.push('initialize', {});
+</script>
+```
+
+```javascript
+// AMD-style include
+require(['datalayerjs'], (datalayer) => {
+  datalayer.initialize({});
+});
+```
+
+```javascript
+// ES6 import (might also use traditional `require` syntax instead)
+import datalayer from 'datalayerjs';
+datalayer.initialize({});
+```
 
 ## Configuration
-After including the module you call the `initialize` method on the global instance to perform basic setup and tell datalayer.js which plugins to load.
+After including the datalayer.js module you have to call the `initialize` method on the global instance to perform basic setup and tell datalayer.js which plugins to load. Options are provided using a configuration object that is passed to the initialize method. You can read more about the available options in the [documentation for the initialize method](#).
+
+The `plugins` option decides which plugins you want to use. It expects an array with object literals, that define a plugin `type` and an optional `rule`. The rule is *very important* - it determines under which conditions a plugin receives events. Simply put - when the rule evaluates to `true` (or is not defined at all) the plugin will receive events, otherwise it will be ignored during [broadcast](#). Read more about that under [Rule Configuration](#).
 
 ```javascript
 datalayer.initialize({
-  metaPrefix: 'gk:',
+  // ...
   plugins: [
-
+    {
+      type: new SomeAnalyticsPlugin({ myTrackServer: '//test/foo' }),
+      rule: true,
+    },
+    {
+      type: new SomeConversionPlugin({ mySpecialAttr: 'foo-123' }),
+      rule: data => data.page.type === 'checkout-confirmation',
+    },
   ],
-
 });
 ```
 
