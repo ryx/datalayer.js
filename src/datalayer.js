@@ -148,7 +148,7 @@ export class Datalayer {
     this.plugins.push(plugin);
     // broadcast all events that happened until now
     for (let i = 0; i < this.broadcastQueue.length; i += 1) {
-      const event = this.broadcastHistory[i];
+      const event = this.broadcastQueue[i];
       debug(`re-broadcasting event '${event[0]}' to plugin '${pluginId}'`);
       Datalayer.sendEventToPlugin(plugin, event[0], event[1]);
     }
@@ -189,9 +189,10 @@ export class Datalayer {
     debug('collected data', this.globalData);
 
     // instantiate plugins based on config and provided ruleset
+    // @FIXME: always load plugins here, rule validation should be done on broadcast
     if (plugins.length) {
       plugins.forEach((pluginOptions) => {
-        if (this.validateRule(pluginOptions.rule)) {
+        if (!pluginOptions.rule || this.validateRule(pluginOptions.rule)) {
           this.addPlugin(pluginOptions.type, pluginOptions.config);
         }
       });
@@ -203,8 +204,13 @@ export class Datalayer {
 
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
     this.initialized = true;
-    debug('broadcasting initialize event', this.broadcast('initialize', this.globalData));
+    // debug('broadcasting initialize event', this.broadcast('initialize', this.globalData));
     this.readyPromiseResolver();
+
+    if (options.broadcastPageload !== false) {
+      debug('broadcasting initial pageload event');
+      this.broadcast('pagelod', this.globalData);
+    }
 
     // collect event data from document and send events to plugins
     debug(`scanning for ${this.metaPrefix}event markup`);
