@@ -14,11 +14,11 @@ One word about conventions. Datalayer.js has a strict set of conventions - based
 That's it. Almost. There are many more details and possibilities of course. You can learn more about [rendertime data](#), [rendertime events](#), [runtime events](#) and [event annotations](#). It's also really helpful to understand the concept of [Models](#). We have a set of [predefined datatypes](#) (mainly focused on e-commerce websites) and a [default model](#). As well as [custom data models](#). Then there is the [rules configuration](#) for the plugin loading. We have [configuration overrides](#). And quite a bit more to come.
 
 ## But what is wrong with external tag management?
-It depends. If you want, go and use some 3rd party tool. You might even be happy with it. However, if you are a developer or a bigger organization with multiple dev teams or just care about performance, stability and code control you really want to [understand the concepts and ideas behind datalayer.js](#) and maybe even use it.
+It depends. If you want, go and use some 3rd party tool. You might even be happy with it. However, if you are a developer or a bigger organization with multiple dev teams or just care about performance, stability and code control you really want to [understand the ideas and motivations behind datalayer.js](#) and maybe even use it.
 
 
 # Usage
-The basic usage can be divided into three different parts - integration, configuration and runtime (with focus on passing data and events to datalayer and plugins). The following paragraphs give a short introduction to these three topics. For more detailed information, check the dedicated sections for each aspect.
+The basic usage can be divided into three different parts - integration, configuration and runtime (with focus on passing data and events to datalayer and plugins). The following paragraphs give a short introduction to these three topics. For more detailed information, check the dedicated sections for each topic.
 
 ## Integration
 Datalayer.js comes as [UMD module](https://github.com/umdjs/umd) which means you can use it either directly via a `<script>` tag, by using an AMD loader (e.g. [requirejs](http://requirejs.org/)) or as [commonJS module](http://wiki.commonjs.org/wiki/Modules/1.1) (e.g. nodejs's `require`). These brief examples illustrate the different styles:
@@ -55,18 +55,43 @@ After including the datalayer.js module you have to call the `initialize` method
 The `plugins` option decides which plugins you want to use. It expects an array with object literals, that define a plugin `type` and an optional `rule`. The rule is *very important*. It determines under which conditions a plugin receives events. Simply put - when the rule evaluates to `true` (or is not defined at all) the plugin will receive events, otherwise it will be ignored during [broadcast](#). Read more about that under [Rule Configuration](#).
 
 ```javascript
+import {
+  SomeAnalyticsPlugin,
+  SomeSocialMediaPlugin,
+  SomeBidManagementPlugin,
+  SomeConversionPlugin,
+  SomeOtherConversionPlugin,
+  ProductSearchConversionPlugin,
+} from './myCustomPlugins';
+
 datalayer.initialize({
   // ...
-  plugins: [
-    {
-      type: new SomeAnalyticsPlugin({ myTrackServer: '//test/foo' }),
-      rule: true,
+  rules: [
+    () => {
+      return [ new SomeAnalyticsPlugin({ myTrackServer: '//test/foo' }) ];
     },
-    {
-      type: new SomeConversionPlugin({ mySpecialAttr: 'foo-123' }),
-      rule: data => data.page.type === 'checkout-confirmation',
+    (data) => {
+      if (['search', 'category', 'productdetail'].indexOf(data.page.type) > -1) {
+        return [
+          new SomeSocialMediaPlugin(),
+          new SomeBidManagementPlugin(),
+        ];
+      }
     },
-  ],
+    (data) => {
+      if (data.page.type === 'checkout-confirmation') {
+        return [
+          new SomeConversionPlugin({ mySpecialAttr: 'foo-123' }),
+          new SomeOtherConversionPlugin({ someAccountId: 'askfjh89uasd' }),
+        ];
+      }
+    },
+    (data) => {
+      if (data.page.type === 'checkout-confirmation' && channelCampaign.match(/psm\/(.*)someAdvertiser\//)) {
+        return [ new ProductSearchConversionPlugin({ mySpecialAttr: 'foo-123' })) ];
+      }
+    }
+  ]
 });
 ```
 
@@ -74,7 +99,7 @@ datalayer.initialize({
 TODO: explain testmode and its activation via URL
 
 ## Passing Data
-There are three different ways to pass data to datalayer.js, each has it's own specific usecase. Although you can mix these three ways as you please, it might make sense to stick with one approach to keep your implementation maintainable and understandable.
+There are different ways to pass data to datalayer.js, each has it's own specific usecase. Although you can mix these ways as you please, it might make sense to stick with one approach first, to keep your implementation maintainable and understandable.
 
 ### Using rendertime markup
 This way is more applicable for classical, server-rendered websites. You put `<meta>` tags like the following in your markup (i.e. your website's HTML, no matter how that is generated) to pass "rendertime" data or events to the datalayer. Of course we are not using any inline Javascript because inline scripts are just bad for your karma (and highly discouraged, too) ;-)
@@ -84,7 +109,7 @@ This way is more applicable for classical, server-rendered websites. You put `<m
 ```
 
 ### Using the Javascript API
-This way is primarily designed for modern single-page applications that render their data just once and then change dynamically without reloading the entire page. It might as well be used to dynamically pass data in other scenarios, though. It involves a common script API that you include and use as you would do with any other library. To be honest, this approach has much less of this "wow feeling" because it's just the common way of coding ;-)
+This way is primarily designed for modern single-page applications that render their data just once and then change dynamically without reloading the entire page. It might as well be used to dynamically pass data in other scenarios, though. It involves a common script API that you include and use as you would do with any other library.
 
 ```javascript
 datalayer.broadcast('pageload', {"page":{"type":"homepage","name":"My homepage"}});
@@ -98,20 +123,30 @@ _dalq = window._dalq || [];
 _dalq.push(['broadcast', 'my-cool-event', { foo: 'bar' }]);
 ```
 
+### Using Event Annotations
+For common event handling scenarios (e.g. click, focus, view for elements) there is an automation mechanism called [Event Annotations](#). These are based on special HTML attributes (e.g. `data-dal-event-click`) that can be applied to any element in the DOM. Elements with such annotation get automatically rigged with event handlers. This approach has also the great benefit of being semantically explicit. Further it circumvents the necessary Javscript glue code you would need when using the API.
+
+```html
+<a href="#" data-dal-event-click='{"name":"my-annotated-event","data":{"foo":"bar"}}'>Click me!</a>
+```
+
 
 # Conventions
 TODO
 
-## Rendertime data
-TODO
+## Rendertime Data
+TODO: explain rendertime data/events (take from old ODL docs)
 
-## Runtime data
-TODO
+## Runtime Data
+TODO: explain runtime data/events (take from old ODL docs)
+
+## Event Annotations
+TODO: explain event annotations, add some examples of declarative tracking
 
 
 
 # Models
-The model definition provides the schema that defines data and event patterns for an entire website. Even though there is no validator yet, it is a convention that helps other people (developers, analysts, marketers, product management, etc.) understand what data to expect (or provide) where. You can think of it as the single point of truth of the "what and where of data" provided to datalayer.js. It is also really important to note that you are *completely free* to use your own type definitions instead of the default ones (in fact you are even expected to do that).
+The model definition provides the schema that defines data and event patterns for an entire website. It is a convention that helps other people (developers, analysts, marketers, product management, etc.) understand what data to expect (or provide) where. You can think of it as the single point of truth of the "what and where of data" provided to datalayer.js. It is also really important to note that you are *completely free* to use your own type definitions instead of the default ones (in fact you are even expected to do that).
 
 Technically the model is nothing more than a big JSON object with three different (mandatory) properties, as described below.
 
@@ -245,3 +280,9 @@ export default class SomePlugin {
   }
 }
 ```
+
+## Plugin Lifecycle
+If you have a traditional, server-rendered, multi-page website then the lifecycle of your plugins is pretty obvious. They are created somewhen during script initialization and destroyed when the user unloads the current page.
+
+For single-page apps (SPAs) the lifecycle methods are extremely crucial.
+@TODO: explain lifecycle methods
