@@ -51,8 +51,10 @@ datalayer.initialize({});
 ## Configuration
 After including the datalayer.js module you have to call the `initialize` method on the global instance to perform basic setup and tell datalayer.js which plugins to load. Options are provided using a configuration object that is passed to the initialize method. You can read more about the available options in the [documentation for the initialize method](#).
 
-### Plugins and Rules
-The `plugins` option decides which plugins you want to use. It expects an array with object literals, that define a plugin `type` and an optional `rule`. The rule is *very important*. It determines under which conditions a plugin receives events. Simply put - when the rule evaluates to `true` (or is not defined at all) the plugin will receive events, otherwise it will be ignored during [broadcast](#). Read more about that under [Rule Configuration](#).
+### Rules and Plugin Loading
+The `rules` option ultimately controls which plugins to load when. It expects one or multiple function(s) in an array. Each function is expected to return an array with plugin instances. These functions are called during initialization, receive the global data as argument and then decide under which conditions a plugin will be created and receive events. Simply put - when a rule returns a plugin this plugin will receive events, otherwise it will be ignored during [broadcast](#). Read more about that under [Rule Configuration](#).
+
+You might wonder why there is not just one single function? The multi-function approach is meant to better separate different types of rules and plugins. If everything is within on function it soon gets messy and more difficult to understand. However, you are free to use one single function for all your rules it it better suits your needs.
 
 ```javascript
 import {
@@ -67,9 +69,7 @@ import {
 datalayer.initialize({
   // ...
   rules: [
-    () => {
-      return [ new SomeAnalyticsPlugin({ myTrackServer: '//test/foo' }) ];
-    },
+    () => [ new SomeAnalyticsPlugin({ myTrackServer: '//test/foo' }) ],
     (data) => {
       if (['search', 'category', 'productdetail'].indexOf(data.page.type) > -1) {
         return [
@@ -102,33 +102,36 @@ TODO: explain testmode and its activation via URL
 There are different ways to pass data to datalayer.js, each has it's own specific usecase. Although you can mix these ways as you please, it might make sense to stick with one approach first, to keep your implementation maintainable and understandable.
 
 ### Using rendertime markup
-This way is more applicable for classical, server-rendered websites. You put `<meta>` tags like the following in your markup (i.e. your website's HTML, no matter how that is generated) to pass "rendertime" data or events to the datalayer. Of course we are not using any inline Javascript because inline scripts are just bad for your karma (and highly discouraged, too) ;-)
+Rendertime markup is the most convenient way to pass data from backend applications to the datalayer. You simply put `<meta>` tags like the following in your markup (i.e. your website's HTML, no matter how that is generated) to pass "rendertime" data or events to the datalayer. This makes it extremely comfortable for backend-rendered applications to transport data into the frontend. (Of course we are not using any inline Javascript here, because inline scripts are just bad for your karma ;-) ..)
 
 ```xml
-<meta name="dljs:data" content='{"page":{"type":"homepage","name":"My homepage"}}' />
+<meta name="dtlr:data" content='{"page":{"type":"homepage","name":"My homepage"}}' />
 ```
 
 ### Using the Javascript API
-This way is primarily designed for modern single-page applications that render their data just once and then change dynamically without reloading the entire page. It might as well be used to dynamically pass data in other scenarios, though. It involves a common script API that you include and use as you would do with any other library.
+This is designed to pass data during runtime of your application and most often used to propagate events from your application code to the datalayer.js plugins. It relies on a minimal script API that you include in your code and use it as you would do with any other library.
 
 ```javascript
 datalayer.broadcast('pageload', {"page":{"type":"homepage","name":"My homepage"}});
 ```
 
 ### Using the Method Queue Pattern (MQP)
-It is possible to access the datalayer using a common method queue pattern. This can become handy if you need asynchronous access from completely separate environments. A common case might be an A/B testing tool where you are outside your own script space and heavily rely on external initialization processes. In such situations you can simply use the following pattern that is well-known from affiliate tools:
+It is also possible to access the datalayer using a common method queue pattern. This can become handy if you need asynchronous access from completely separate environments. A common case might be an A/B testing tool where you are outside your own script space and heavily rely on external initialization processes. In such situations you can simply use the following pattern that is well-known from affiliate tools. Datalayer.js intercepts any calls to `_dtlrq.push` and executes the associated functions provided through the method queue.
 
 ```javascript
-_dalq = window._dalq || [];
-_dalq.push(['broadcast', 'my-cool-event', { foo: 'bar' }]);
+_dtlrq = window._dtlrq || [];
+_dtlrq.push(['broadcast', 'my-cool-event', { foo: 'bar' }]);
 ```
 
 ### Using Event Annotations
-For common event handling scenarios (e.g. click, focus, view for elements) there is an automation mechanism called [Event Annotations](#). These are based on special HTML attributes (e.g. `data-dal-event-click`) that can be applied to any element in the DOM. Elements with such annotation get automatically rigged with event handlers. This approach has also the great benefit of being semantically explicit. Further it circumvents the necessary Javscript glue code you would need when using the API.
+For common event handling scenarios (e.g. click, focus, view) there is also a simplified automation mechanism called [Event Annotations](#). These are based on special HTML attributes (e.g. `data-dtlr-event-click`) that can be applied to any element in the DOM. Elements with such annotation get automatically rigged with the respective event handlers. This approach has also the great benefit of being semantically explicit. Further it circumvents the necessary Javscript glue code you would need when using the API.
 
 ```html
-<a href="#" data-dal-event-click='{"name":"my-annotated-event","data":{"foo":"bar"}}'>Click me!</a>
+<a href="#" data-dtlr-event-click='{"name":"my-annotated-event","data":{"foo":"bar"}}'>Click me!</a>
 ```
+
+The previous example shows a simple event annotation used to bind a click-Handler to an element. When the `<a>` tag is clicked it causes an event with the name `my-annotated-event` and the data `{foo: 'bar'}` to be broadcasted by datalayer.js. It has the same effect as manually adding an `onclick` handler on the element and executing `dal.broadcast('my-annotated-event', {"foo":"bar"})` in its callback.
+
 
 
 # Conventions
@@ -146,12 +149,12 @@ TODO: explain event annotations, add some examples of declarative tracking
 
 
 # Models
-The model definition provides the schema that defines data and event patterns for an entire website. It is a convention that helps other people (developers, analysts, marketers, product management, etc.) understand what data to expect (or provide) where. You can think of it as the single point of truth of the "what and where of data" provided to datalayer.js. It is also really important to note that you are *completely free* to use your own type definitions instead of the default ones (in fact you are even expected to do that).
+The model definition provides the schema that defines data and event patterns for an entire website. It is a convention that helps other people (developers, analysts, marketers, product management, etc.) understand what data to expect (or provide) where. You can think of it as the single point of truth of the "what and where of data" provided to datalayer.js.
 
-Technically the model is nothing more than a big JSON object with three different (mandatory) properties, as described below.
+Technically the model is nothing more than a big JSON object with three different (mandatory) properties, as described in the next sections. You are also not limited to the available types. Instead you are *completely free* (and even encouraged) to use your own type definitions instead of the default ones.
 
 ## Types
-The `types` property in the model contains schema definitions of the available datatypes that can be used throughout the rest of the model (namely the *pages* and *events* definitions). It is using [Apache Avro](https://avro.apache.org/docs/current/) to describe types so it could be automatically parsed and processed (e.g. to validate consistency of provided data).
+The `types` property in the model contains schema definitions of the available data types that can be used throughout the rest of the model (namely the *pages* and *events* definitions). It is using [Apache Avro](https://avro.apache.org/docs/current/) to describe types so it can be parsed and processed (e.g. to automatically validate consistency of provided data on a webiste).
 
 ```json
 {
@@ -185,7 +188,9 @@ The `types` property in the model contains schema definitions of the available d
 ```
 
 ## Pages
-The `pages` property in the model describes which data is expected for the individual page types.
+The `pages` property in the model describes which data is expected for the individual pagetypes. A *pagetype* can be described as a generic, "single purpose" type of page like a *homepage*, a *product-list* or a *product-detail*. As a rule of thumb you could say that if you had a dedicated template for a certain page, then it should get it's own pagetype.
+
+On bigger websites this can easily become a list of tenth (or even hundreds) of different pagetypes. At Galeria Kaufhof we have a combination of webshop, corporate website, external websites and many more. We ended up having around a hundred different page types.
 
 ```json
 {
@@ -220,7 +225,7 @@ The `events` property in the model describes which events are available and how 
 ```
 
 # Javascript API
-The datalayer.js Javascript API is pretty simple and straightforward. The module itself contains exactly one object with the name `datalayer`. Import it either using ES6 `import` or CommonJS `require` syntax. The object contains the following public methods (Note: you can also use the method queue pattern through the global variable `_dalq` to access all of the described public API methods):
+The datalayer.js Javascript API is pretty simple and straightforward. The module itself contains exactly one object with the name `datalayer`. Import it either using ES6 `import` or CommonJS `require` syntax. The object contains the following public methods (Note: you can also use the method queue pattern through the global variable `_dtlrq` to access all of the described public API methods):
 
 ## initialize(options:Object): void
 Initialize the current datalayer instance with the given options (see section [Configuration](#configuration) for details). It is mandatory to call this once before the datalayer can be used. It sets up the data, scans for metatags/annotations and loads the requested plugins.
@@ -235,9 +240,9 @@ datalayer.initialize({
 This is the main entry point if you want to use any datalayer.js functionality outside of plugins. It is resolved when the `initialize` call is finished and all configured plugins are loaded based on the provided ruleset. You can bind to the returned Promise at any time during the app lifecycle to access the API. The global datalayer.js instance is passed as only argument to the `resolve` callback (you could also use the global instance as well but local variables are better practice).
 
 ```javascript
-datalayer.whenReady().then((dal) => {
+datalayer.whenReady().then((dtlr) => {
   // access data in datalayer (data is fully aggregated and available at this point)
-  console.log(dal.getData());
+  console.log(dtlr.getData());
 })
 ```
 
