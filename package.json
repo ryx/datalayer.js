@@ -4,7 +4,7 @@
   "description": "An open-source datalayer, tagmanager and frontend middleware, sitting between the client and any third parties",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/tape -r babel-register src/**/*.spec.js",
+    "test": "node_modules/.bin/tap -r babel-register src/**/*.spec.js",
     "test-pretty": "npm run test | node_modules/.bin/faucet"
   },
   "repository": {
@@ -28,10 +28,8 @@
     "eslint": "^4.8.0",
     "eslint-config-airbnb-base": "^12.0.2",
     "eslint-plugin-import": "^2.7.0",
-    "faucet": "0.0.1",
     "jsdom": "^11.3.0",
-    "tape": "^4.8.0",
-    "tape-promise": "^2.0.1",
+    "tap": "^10.7.2",
     "testdouble": "^3.2.6"
   },
   "dependencies": {

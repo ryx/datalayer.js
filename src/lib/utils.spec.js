@@ -1,4 +1,4 @@
-import test from 'tape';
+import { test } from 'tap';
 import td from 'testdouble';
 import { JSDOM } from 'jsdom';
 
@@ -27,6 +27,7 @@ import('./utils').then((module) => {
 
       td.verify(apiObj.method1(123, 'foo'));
       td.verify(apiObj.method2({ data: 'test' }));
+      t.pass('API methods have been called');
 
       st.end();
     });
@@ -39,6 +40,7 @@ import('./utils').then((module) => {
 
       td.verify(apiObj.method1(123, 'foo'));
       td.verify(apiObj.method2({ data: 'test' }));
+      t.pass('API methods have been called');
 
       st.end();
     });
@@ -57,6 +59,8 @@ import('./utils').then((module) => {
 
       st.end();
     });
+
+    t.end();
   });
 
   test('collectMetadata:', (t) => {
