@@ -16,6 +16,8 @@ That's it. Almost. There are many more details and possibilities of course. You 
 ## But what is wrong with external tag management?
 It depends. If you want, go and use some 3rd party tool. You might even be happy with it. However, if you are a developer or a bigger organization with multiple dev teams or just care about performance, stability and code control you really want to [understand the ideas and motivations behind datalayer.js](#) and maybe even use it.
 
+> They try to lure you with comments like "tag managers are great, because you don't need to change your software when you add new 'tags'" Honestly, how would you describe adding random scripts into a production environment, if not "changing the software"? They apparently miss the awareness that adding "pixels" and "tags" (i.e. Javascript code) is considered to be a production deployment. You insert new code into your production environment. In most cases it is untested, unknown, "blackbox" code, written by some third party. What else you can think of is more scary than putting someone else's code into your live environment? Exactly one thing. Letting someone else put someone else's code into your live environment (to scare you even more, it will most likely be a junior web designer in some marketing agency). Welcome to the world of modern "tag management".
+
 
 # Usage
 The basic usage can be divided into three different parts - integration, configuration and runtime (with focus on passing data and events to datalayer and plugins). The following paragraphs give a short introduction to these three topics. For more detailed information, check the dedicated sections for each topic.
@@ -54,7 +56,7 @@ After including the datalayer.js module you have to call the `initialize` method
 ### Rules and Plugin Loading
 The `rules` option ultimately controls which plugins to load when. It expects one or multiple function(s) in an array. Each function is expected to return an array with plugin instances. These functions are called during initialization, receive the global data as argument and then decide under which conditions a plugin will be created and receive events. Simply put - when a rule returns a plugin this plugin will receive events, otherwise it will be ignored during [broadcast](#). Read more about that under [Rule Configuration](#).
 
-You might wonder why there is not just one single function? The multi-function approach is meant to better separate different types of rules and plugins. If everything is within on function it soon gets messy and more difficult to understand. However, you are free to use one single function for all your rules it it better suits your needs.
+You might wonder why there is not just one single function? The multi-function approach is meant to better separate different types of rules and plugins. If everything is within one function it soon gets messy and more difficult to understand. However, you are free to use one single function for all your rules if that better suits your needs.
 
 ```javascript
 import {
@@ -99,7 +101,7 @@ datalayer.initialize({
 TODO: explain testmode and its activation via URL
 
 ## Passing Data
-There are different ways to pass data to datalayer.js, each has it's own specific usecase. Although you can mix these ways as you please, it might make sense to stick with one approach first, to keep your implementation maintainable and understandable.
+The first obvious question here might be "what data should I pass"? That's a good question and we will discuss it in detail in the next chapter, [Conventions](#). Let's first start with the "how". There are different ways to pass data to datalayer.js, each has it's own specific usecase. Although you can mix these ways as you please, it might make sense to stick with one approach first, to keep your implementation maintainable and understandable.
 
 ### Using rendertime markup
 Rendertime markup is the most convenient way to pass data from backend applications to the datalayer. You simply put `<meta>` tags like the following in your markup (i.e. your website's HTML, no matter how that is generated) to pass "rendertime" data or events to the datalayer. This makes it extremely comfortable for backend-rendered applications to transport data into the frontend. (Of course we are not using any inline Javascript here, because inline scripts are just bad for your karma ;-) ..)
@@ -139,6 +141,12 @@ TODO
 
 ## Rendertime Data
 TODO: explain rendertime data/events (take from old ODL docs)
+
+### Data vs. Events
+TODO: explain difference between data and events and their individual purpose
+
+### Handle Rendertime Data From Asynchronous Calls
+TODO: explain DOM re-scan
 
 ## Runtime Data
 TODO: explain runtime data/events (take from old ODL docs)
