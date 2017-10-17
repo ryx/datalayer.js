@@ -4,7 +4,8 @@ import { JSDOM } from 'jsdom';
 
 // stub dependencies
 const dom = new JSDOM('<!DOCTYPE html>');
-td.replace('./lib/window', dom.window);
+const window = td.replace('./lib/window', dom.window);
+const utils = td.replace('./lib/utils').default;
 
 /**
  * Mock plugin to test plugin specific stuff (event retrieval,
@@ -75,6 +76,17 @@ import('./datalayer').then((module) => {
         st.ok(dal.getPluginById('test/mockPlugin'), 'plugin should be returned');
         st.end();
       });
+    });
+
+    t.test('should create a method queue handler in window during odl.initialize', (st) => {
+      const dal = new module.Datalayer();
+
+      dal.initialize({ data: globalDataMock });
+
+      td.verify(utils.createMethodQueueHandler(window, '_dtlrq', dal));
+      st.pass('should install the method queue');
+
+      st.end();
     });
 
     t.end();

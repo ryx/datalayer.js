@@ -23,7 +23,7 @@ debug('debugging enabled');
 export class Datalayer {
   constructor() {
     this.initialized = false; // "ready" flag (true, if all plugins are loaded)
-    this.metaPrefix = 'dal:'; // prefix for meta[name] attribute
+    this.metaPrefix = 'dtlr:'; // prefix for meta[name] attribute
     this.globalData = {}; // data storage
     this.globalConfig = {}; // configuration object (passed via odl:config)
     this.testModeActive = Datalayer.isTestModeActive();
@@ -200,7 +200,7 @@ export class Datalayer {
     debug('plugins:', this.plugins);
 
     // install method queue
-    utils.createMethodQueueHandler(window, '_odlq', this);
+    utils.createMethodQueueHandler(window, '_dtlrq', this);
 
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
     this.initialized = true;
