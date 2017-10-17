@@ -4,7 +4,7 @@
   "description": "An open-source datalayer, tagmanager and frontend middleware, sitting between the client and any third parties",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/tap -r babel-register src/**/*.spec.js",
+    "test": "node_modules/.bin/tap -r babel-register \"src/**/*.spec.js\" -R spec",
     "test-pretty": "npm run test | node_modules/.bin/faucet"
   },
   "repository": {
