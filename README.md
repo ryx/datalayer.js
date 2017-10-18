@@ -159,12 +159,12 @@ TODO: explain event annotations, add some examples of declarative tracking
 
 
 # Models
-The model definition provides the schema that defines data and event patterns for an entire website. It is a convention that helps other people (developers, analysts, marketers, product management, etc.) understand what data to expect (or provide) where. You can think of it as the single point of truth of the "what and where of data" provided to datalayer.js.
+The model definition provides the schema that defines data and event patterns for your entire website. It ultimately defines which data ends up in your datalayer and what you can provide to third parties. Although, first and foremost, it is nothing more than a convention that guides other people (developers, analysts, marketers, product management, etc.) in understanding what data to expect (or provide) where. You can think of it as the single point of truth of the "what and where of data" provided to datalayer.js.
 
-Technically the model is nothing more than a big JSON object with three different (mandatory) properties, as described in the next sections. You are also not limited to the available types. Instead you are *completely free* (and even encouraged) to use your own type definitions instead of the default ones.
+Technically seen the model is nothing more than a big JSON object with a few different properties, as described in the next sections. You are also not limited to the available data types. Instead you are *completely free* (and even encouraged) to use your own type definitions instead of the default ones. But be warned - even if it has no real technical relevance it is maybe *the most important part of your entire datalayer structure*. If you get things wrong here, you'll miss something later. But don't worry, you are free to extend the model at any time. But it will cause developer effort and discussion, so plan well ;) ..
 
 ## Types
-The `types` property in the model contains schema definitions of the available data types that can be used throughout the rest of the model (namely the *pages* and *events* definitions). It is using [Apache Avro](https://avro.apache.org/docs/current/) to describe types so it can be parsed and processed (e.g. to automatically validate consistency of provided data on a webiste).
+The `types` property in the model contains schema definitions of the available data types that can be used throughout the rest of the model (namely the *pages* and *events* definitions). It is using [Apache Avro](https://avro.apache.org/docs/current/) to describe types so it can be parsed and processed, e.g. to automatically validate consistency of provided data on a website (we will eventually provide a validator for that purpose). Type definitions can become quite huge JSON structures
 
 ```json
 {
@@ -192,44 +192,58 @@ The `types` property in the model contains schema definitions of the available d
         { "name": "page", "type": "DALPageData" },
         { "name": "user", "type": "union", "fields": ["null", "DALUserData"] },
       ]
-    }
+    },
+    {
+      "name": "DALCategoryData",
+      "type": "record",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "totalHits", "type": "int" },
+        { "name": "eans", "type": "array", "items": "string" },
+        { "name": "aonrs", "type": "array", "items": "string" },
+        { "name": "productIds", "type": "array", "items": "string" },
+        { "name": "variantIds", "type": "array", "items": "string" },
+      ]
+    },
   ]
 }
 ```
 
 ## Pages
-The `pages` property in the model describes which data is expected for the individual pagetypes. A *pagetype* can be described as a generic, "single purpose" type of page like a *homepage*, a *product-list* or a *product-detail*. As a rule of thumb you could say that if you had a dedicated template for a certain page, then it should get it's own pagetype.
+The `pages` property in the model describes which data is expected for the individual pagetypes. A *pagetype* can be described as a generic, "single purpose" type of page like a *homepage*, a *productlist* or a *productdetail*. As a rule of thumb you could say that if you had a dedicated template for a certain page, then it should get it's own pagetype. On bigger websites this can easily become a list of tenth (or even hundreds) of different pagetypes. At Galeria Kaufhof we have a combination of webshop, corporate website, external websites and many more. We ended up having around a hundred different page types.
 
-On bigger websites this can easily become a list of tenth (or even hundreds) of different pagetypes. At Galeria Kaufhof we have a combination of webshop, corporate website, external websites and many more. We ended up having around a hundred different page types.
+The pagetype definition uses the datatypes declared via the `types` property. There is one special pagetype called `*`. It stands for "each page throughout the entire website". Usually it is used to provide common information like page or site specifics.
 
 ```json
 {
   "pages": {
-    "*": {
-      "site": "DALSiteData",
-      "page": "DALPageData",
-      "?user": "DALUserData"
-    },
+    "*": "DALGlobalData",
     "homepage": {},
     "search": {
       "search": "DALSearchData"
     },
     "category": {
       "category": "DALCategoryData",
-      "?search": "DALSearchData"
+      "search": { "type": "DALSearchData", "mandatory": false }
+    },
+    "productdetail": {
+      "product": "DALProductData"
     }
   }
 }
 ```
 
 ## Events
-The `events` property in the model describes which events are available and how their parameter signature should be. It can be used for runtime type checking, although that isn't yet implemented in the system.
+Tracking events is mandatory for deeper customer journey analysis, so you will likely have various events that shall be propagated to your datalayer. Common events could be "product-added-to-cart", "login-form-submit" or "layer-open", depending on how fine-grained you want to analyze the user behaviour.
+
+The `events` property in the model holds a description of all events available on your website and how their parameter signature should be. As already seen for the `pages`, the `events` use the same datatypes defined through the `types` property.
 
 ```json
 {
   "events": {
-    "pageload": ["DALGlobalData"],
-    "addtocart": [{"product":"DALProductData"}]
+    "page-load": ["DALGlobalData"],
+    "product-added": [{"product":"DALProductData"}]
   }
 }
 ```
