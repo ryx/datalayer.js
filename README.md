@@ -73,7 +73,9 @@ import {
 datalayer.initialize({
   // ...
   rules: [
+    // loaded on each page
     () => [ new SomeAnalyticsPlugin({ myTrackServer: '//test/foo' }) ],
+    // loaded when page.type is either search, category or productdetail
     (data) => {
       if (['search', 'category', 'productdetail'].indexOf(data.page.type) > -1) {
         return [
@@ -82,6 +84,7 @@ datalayer.initialize({
         ];
       }
     },
+    // loaded when page.type is checkout-confirmation
     (data) => {
       if (data.page.type === 'checkout-confirmation') {
         return [
@@ -90,8 +93,9 @@ datalayer.initialize({
         ];
       }
     },
+    // loaded when page.type is checkout-confirmation and campaign matches some specific advertiser
     (data) => {
-      if (data.page.type === 'checkout-confirmation' && channelCampaign.match(/psm\/(.*)someAdvertiser\//)) {
+      if (data.page.type === 'checkout-confirmation' && channelCampaign.match(/aff\/(.*)someAdvertiser\//)) {
         return [ new ProductSearchConversionPlugin({ mySpecialAttr: 'foo-123' })) ];
       }
     }
@@ -136,6 +140,8 @@ For common event handling scenarios (e.g. click, focus, view) there is also a si
 
 The previous example shows a simple event annotation used to bind a click-Handler to an element. When the `<a>` tag is clicked it causes an event with the name `my-annotated-event` and the data `{foo: 'bar'}` to be broadcasted by datalayer.js. It has the same effect as manually adding an `onclick` handler on the element and executing `dal.broadcast('my-annotated-event', {"foo":"bar"})` in its callback.
 
+## Building and Bundling
+After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
 
 
 # Conventions
