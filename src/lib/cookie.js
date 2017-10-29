@@ -34,7 +34,7 @@ function get(name) {
   const pairs = window.document.cookie.split(';');
   for (let i = 0; i < pairs.length; i += 1) {
     const pair = pairs[i].split('=', 2);
-    if (pair[0] === name) {
+    if (pair[0].trim() === name) {
       return pair[1];
     }
   }
