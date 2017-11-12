@@ -52,16 +52,27 @@ test('should broadcast a single event to subscribers', (t) => {
   t.end();
 });
 
-test('should broadcast event history to a newly added subscriber when receiveHistory is true', (t) => {
+test('should broadcast event history to a newly added subscriber when receiveHistory is true (default)', (t) => {
   const queue = new EventQueue();
   const subscriber = new EventSubscriber();
 
   queue.broadcastEvent('test', { foo: 123 });
   queue.broadcastEvent('test2', { foo: 123 });
-  queue.subscribe(subscriber, true);
+  queue.subscribe(subscriber);
 
   t.equal(subscriber.caughtEvents.length, 2, 'should have caught one event');
   t.deepEqual(subscriber.caughtEvents[0], ['test', { foo: 123 }], 'event 1 should contain expected data');
   t.deepEqual(subscriber.caughtEvents[1], ['test2', { foo: 123 }], 'event 1 should contain expected data');
+  t.end();
+});
+
+test('should NOT broadcast event history to a newly added subscriber when receiveHistory is false', (t) => {
+  const queue = new EventQueue();
+  const subscriber = new EventSubscriber();
+
+  queue.broadcastEvent('test');
+  queue.subscribe(subscriber, false);
+
+  t.equal(subscriber.caughtEvents.length, 0, 'should have caught no events yet');
   t.end();
 });
