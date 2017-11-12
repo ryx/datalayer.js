@@ -1,8 +1,18 @@
 # datalayer.js
-An open-source datalayer, tagmanager and *"frontend middleware"* (I love this term), sitting between the client and any third parties. Based on a [heavily opinionated set of conventions and data types](#), trying to standardize common 3rd party integration into today's websites.
+
+An open-source datalayer, tagmanager, and *"frontend middleware"*, proxying data between the client and any third parties. Based on a [heavily opinionated set of conventions and data types](#), trying to standardize common 3rd party integration into today's websites.
+
+           __      __        __                          _
+      ____/ /___ _/ /_____ _/ /___ ___  _____  _____    (_)____
+     / __  / __ `/ __/ __ `/ / __ `/ / / / _ \/ ___/   / / ___/
+    / /_/ / /_/ / /_/ /_/ / / /_/ / /_/ /  __/ /  _   / (__  )
+    \__,_/\__,_/\__/\__,_/_/\__,_/\__, /\___/_/  (_)_/ /____/
+                                 /____/           /___/
+
+# Info
 
 ## What is this exactly?
-A *developer-first, in-sourced tag management system* without external GUI. A very mature set of *conventions and virtual types to ensure a deterministic data flow* between backend and frontend. An *event system and plugin loader* to pass data from the client space to 3rd parties. A fully *test-driven environment* to handle and *quality-test your marketing attribution*. A blessing if you ever intend to switch to another web analytics tool (want to [understand this joke](#)?). Likely even more.
+A *developer-first, in-sourced tag management system* without external GUI. A very mature set of *conventions and virtual types to ensure a deterministic data flow* between backend and frontend. An *event system and plugin loader* to pass data from the client space to 3rd parties. A fully *test-driven environment* to handle and *quality-test your marketing attribution*. Also a blessing if you ever intend to switch to another web analytics tool ([read our success story](#)). Likely even more.
 
 Based on years of technical evolution and real-world problems we encountered and solved at Galeria Kaufhof and HBC Europe. Built mainly with scalability, testing and clear conventions in mind. Rewritten from the ground up to integrate with modern single-page applications as well as classical websites.
 
