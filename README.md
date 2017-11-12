@@ -18,7 +18,7 @@ It depends. If you want, go and use some 3rd party tool. You might even be happy
 
 But don't get fooled by comments like "tag managers are great, because you don't need to change your software when you want to add new 'tags'". Honestly - how would you describe adding random scripts into a production environment, if not "changing the software"? Those people completely miss the fact that adding Javascript code (because that is what said "pixels" and "tags" are!) into a website is considered to be a *production deployment*. You insert new code into your *production environment*. Directly. Without CI testing. In most cases it is *untested, unknown, "blackbox" code*, written by some *unknown third party*.
 
-So, what else can you think of that is more scary than putting someone else's code into your live environment? Exactly one thing. Letting someone else put someone else's code into your live environment. To scare you even more, it will most likely be a junior web designer in some marketing agency, led by online marketing departments without deeper technical knowledge. Yay! Welcome to the world of modern "tag management".
+So, what else can you think of that is more scary than putting someone else's code into your live environment? At least one thing. Letting someone else put someone else's code into your live environment. To scare you even more, it will most likely be a junior web designer in some marketing agency, led by online marketing departments without deeper technical knowledge. Yay! Welcome to the world of modern, external "tag management".
 
 
 # Usage
@@ -141,7 +141,7 @@ For common event handling scenarios (e.g. click, focus, view) there is also a si
 The previous example shows a simple event annotation used to bind a click-Handler to an element. When the `<a>` tag is clicked it causes an event with the name `my-annotated-event` and the data `{foo: 'bar'}` to be broadcasted by datalayer.js. It has the same effect as manually adding an `onclick` handler on the element and executing `dal.broadcast('my-annotated-event', {"foo":"bar"})` in its callback.
 
 ## Building and Bundling
-After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
+After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the system and tool landscape of your system. Common solutions are webpack, rollup or a more manual AMD-based setup using gulpor grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
 
 
 # Conventions
@@ -169,6 +169,8 @@ The model definition provides the schema that defines data and event patterns fo
 
 Technically seen the model is nothing more than a big JSON object with a few different properties, as described in the next sections. You are also not limited to the available data types. Instead you are *completely free* (and even encouraged) to use your own type definitions instead of the default ones. But be warned - even if it has no real technical relevance it is maybe *the most important part of your entire datalayer structure*. If you get things wrong here, you'll miss something later. But don't worry, you are free to extend the model at any time. But it will cause developer effort and discussion, so plan well ;) ..
 
+> A "model" in terms of datalayer.js is a single JSON document that defines at least two things: all available page types for a website, together with the data that is expected per page type, and all virtual type definitions that are used by those page types. Types are defined using [Apache Avro](https://avro.apache.org/docs/current/).
+
 ## Types
 The `types` property in the model contains schema definitions of the available data types that can be used throughout the rest of the model (namely the *pages* and *events* definitions). It is using [Apache Avro](https://avro.apache.org/docs/current/) to describe types so it can be parsed and processed, e.g. to automatically validate consistency of provided data on a website (we will eventually provide a validator for that purpose). Type definitions can become quite huge JSON structures
 
@@ -176,27 +178,10 @@ The `types` property in the model contains schema definitions of the available d
 {
   "types": [
     {
-      "name": "DALSiteData",
-      "type": "record",
-      "fields": [
-        { "name": "id", "type": "string" },
-      ]
-    },
-    {
       "name": "DALPageData",
       "type": "record",
       "fields": [
-        { "name": "type", "type": "string" },
-        { "name": "name", "type": "string" },
-      ]
-    },
-    {
-      "name": "DALGlobalData",
-      "type": "record",
-      "fields": [
-        { "name": "site", "type": "DALSiteData" },
-        { "name": "page", "type": "DALPageData" },
-        { "name": "user", "type": "union", "fields": ["null", "DALUserData"] },
+        { "name": "id", "type": "string" },
       ]
     },
     {
@@ -224,17 +209,19 @@ The pagetype definition uses the datatypes declared via the `types` property. Th
 ```json
 {
   "pages": {
-    "*": "DALGlobalData",
+    "*": {
+      "page": { "type:": "DALPageData" }
+    },
     "homepage": {},
     "search": {
-      "search": "DALSearchData"
+      "search": { "type:": "DALSearchData" }
     },
     "category": {
-      "category": "DALCategoryData",
+      "category": { "type:": "DALCategoryData" },
       "search": { "type": "DALSearchData", "mandatory": false }
     },
     "productdetail": {
-      "product": "DALProductData"
+      "product": { "type:": "DALProductData" },
     }
   }
 }
@@ -294,7 +281,20 @@ Get plugin with the given id and return a Promise. If the plugin is loaded the P
 Scans a given HTML element and its children for [rendertime markup](#) (e.g. `dl:data` or `dl:event` metatags) and [event annotations](#) (e.g. `data-dl-event-*` attributes on HTML elements). If anything is found it gets either `broadcast`'ed to the plugins or - in case of event annotation - hooked up with the necessary event handling mechanism. **Important:** If you asynchronously add markup to your page (e.g. after AJAX calls, lazy loading, etc.) and that markup may contain any datalayer.js metatags or annotations, then you HAVE TO call `scanHTMLElement` and pass it the newly added element - *after adding it to the DOM*! Otherwise the metadata or annotations won't be processed.
 
 
-# Plugin API
+# Plugins
+Datalayer.js provides a modular architecture where logic is encapsulated in plugins. These may access the global data aggregated by the DAL and also send and receive events.
+
+## Configuration Overrides
+It is possible to provide dedicated configurations to plugins on a by-page-basis. A popular usecase is to override URLs of a third-party system within integration tests. To achieve that you simply define a gk:dal:config-metatag, that can be used to override configuration within a service. The plugin HAS TO actively support configuration overrides for this to work.
+
+    <meta name="dtlr:config" content='{
+      "foo/bar/myTestService": {
+        "baseUrl": "mymockupserver"
+      }
+    }' />
+
+
+## API
  A very simple plugin might look like the following:
 
 ```javascript
