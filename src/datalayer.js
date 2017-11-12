@@ -8,6 +8,7 @@
 import window from './lib/window';
 import utils from './lib/utils';
 import cookie from './lib/cookie';
+import EventQueue from './lib/queue';
 
 // debugging helper
 /* eslint-disable func-names, no-console, prefer-spread, prefer-rest-params */
@@ -35,7 +36,7 @@ export class Datalayer {
     this.globalConfig = {}; // configuration object (passed via odl:config)
     this.testModeActive = Datalayer.isTestModeActive();
     this.plugins = []; // array with loaded plugins
-    this.broadcastQueue = []; // array with all events that have been fired already
+    this.queue = new EventQueue();
 
     // create promises
     this.readyPromiseResolver = null;
@@ -107,11 +108,8 @@ export class Datalayer {
    * @param  {Object}  data  the event data to pass along with the event, may be of any type
    */
   broadcast(name, data) {
-    this.plugins.forEach((plugin) => {
-      Datalayer.sendEventToPlugin(plugin, name, data);
-    });
-    debug('queuing broadcast for future purpose', name, data);
-    this.broadcastQueue.push([name, data]);
+    debug('broadcasting event', name, data);
+    this.queue.broadcastEvent(name, data);
   }
 
   /**
@@ -153,12 +151,8 @@ export class Datalayer {
     const plugin = new pluginClass(this, this.globalData, this.globalConfig[pluginId] || config);
     /* eslint-enable new-cap */
     this.plugins.push(plugin);
-    // broadcast all events that happened until now
-    for (let i = 0; i < this.broadcastQueue.length; i += 1) {
-      const event = this.broadcastQueue[i];
-      debug(`re-broadcasting event '${event[0]}' to plugin '${pluginId}'`);
-      Datalayer.sendEventToPlugin(plugin, event[0], event[1]);
-    }
+    // add plugin to event queue and broadcast all events that happened until now
+    this.queue.subscribe(plugin, true);
   }
 
   /**
@@ -252,19 +246,6 @@ export class Datalayer {
       return true;
     }
     return false;
-  }
-
-  /**
-   * Send event to the given plugin.
-   * @param {Object}  plugin the plugin reference (in this.plugins) to broadcast the event to
-   * @param {String}  eventName  the event name/type to be fired (e.g. 'load', addtocart', 'click', 'view') OR an object with all three parameters
-   * @param {Object}  eventData  the event data to pass along with the event, may be any type of data (not necessarily an object literal)
-   */
-  static sendEventToPlugin(plugin, eventName, eventData) {
-    if (plugin && typeof plugin.handleEvent === 'function') {
-      debug(`broadcasting '${eventName}' to plugin '${plugin.id}' with data:`, eventData);
-      plugin.handleEvent(eventName, eventData, (new Date()).getTime());
-    }
   }
 }
 
