@@ -2,20 +2,25 @@
   "name": "datalayerjs",
   "version": "0.0.1",
   "description": "An open-source datalayer, tagmanager and frontend middleware, sitting between the client and any third parties",
-  "main": "index.js",
+  "main": "dist/datalayer.cjs.js",
+  "module": "dist/datalayer.esm.js",
   "scripts": {
     "test": "node_modules/.bin/tap -r babel-register \"src/**/*.spec.js\" -R spec",
-    "test-pretty": "npm run test | node_modules/.bin/faucet"
+    "test-pretty": "npm run test | node_modules/.bin/faucet",
+    "build:cjs": "rollup src/datalayer.js --o dist/datalayer.cjs.js -f cjs",
+    "build:esm": "rollup src/datalayer.js --o dist/datalayer.esm.js -f es",
+    "build:umd": "rollup src/datalayer.js --o dist/datalayer.umd.js -f umd --name \"datalayerjs\"",
+    "build": "npm run build:cjs && npm run build:esm && npm run build:umd"
   },
   "repository": {
     "type": "git",
     "url": "git+https://ricopfaus@bitbucket.org/ricopfaus/datalayerjs.git"
   },
   "keywords": [
-    "Tagmanager",
-    "Datalayer",
-    "Affiliate",
-    "Attribution"
+    "tagmanager",
+    "datalayer",
+    "affiliate",
+    "attribution"
   ],
   "author": "Rico Pfaus",
   "license": "MIT",
@@ -23,12 +28,16 @@
   "devDependencies": {
     "babel-eslint": "^8.0.1",
     "babel-plugin-dynamic-import-node": "^1.1.0",
+    "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-register": "^6.26.0",
+    "babelrc-rollup": "^3.0.0",
     "eslint": "^4.8.0",
     "eslint-config-airbnb-base": "^12.0.2",
     "eslint-plugin-import": "^2.7.0",
     "jsdom": "^11.3.0",
+    "rollup": "^0.50.0",
+    "rollup-plugin-babel": "^3.0.2",
     "tap": "^10.7.2",
     "testdouble": "^3.2.6"
   },
