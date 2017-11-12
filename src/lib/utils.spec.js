@@ -19,8 +19,30 @@ import('./utils').then((module) => {
       return { contextObj, apiObj };
     };
 
+    t.test('should create a new method queue within the given context', (st) => {
+      const { contextObj, apiObj } = setupMQP();
+
+      delete contextObj._testq;
+      utils.createMethodQueueHandler(contextObj, '_testq', apiObj);
+
+      st.ok(typeof contextObj._testq !== 'undefined', 'method queue is defined');
+      st.ok(typeof contextObj._testq.push === 'function', 'push method exists');
+      st.end();
+    });
+
+    t.test('should use an existing method queue within the given context', (st) => {
+      const { contextObj, apiObj } = setupMQP();
+
+      utils.createMethodQueueHandler(contextObj, '_testq', apiObj);
+
+      st.ok(typeof contextObj._testq !== 'undefined', 'method queue is defined');
+      st.ok(typeof contextObj._testq.push === 'function', 'push method exists');
+      st.end();
+    });
+
     t.test('should recognize and execute methods that have been added BEFORE initialization', (st) => {
       const { contextObj, apiObj } = setupMQP();
+
       contextObj._testq.push(['method1', 123, 'foo']);
       contextObj._testq.push(['method2', { data: 'test' }]);
       utils.createMethodQueueHandler(contextObj, '_testq', apiObj);
@@ -28,7 +50,6 @@ import('./utils').then((module) => {
       td.verify(apiObj.method1(123, 'foo'));
       td.verify(apiObj.method2({ data: 'test' }));
       t.pass('API methods have been called');
-
       st.end();
     });
 

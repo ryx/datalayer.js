@@ -61,11 +61,12 @@ function collectMetadata(name, callback, context = null, data = {}) {
  * Create a method queue handler within the provided target object. It can be used to
  * communicate with the provided API without the need to directly access the module.
  *
- * @param context     {Object}  object scope in which to create handler (e.g. window)
+ * @param context     {Object}  object scope in which to create method queue (e.g. window)
  * @param queueName   {String}  identifier to use as method queue name (e.g. "_odlq")
  * @param apiObj      {Object}  object scope to use for calling the provided methods on
  */
 function createMethodQueueHandler(context, queueName, api = {}) {
+  // console.log('createMethodQueueHandler', context, queueName, api);
   function _mqExec(_api, _arr) {
     if (typeof _api[_arr[0]] === 'function') {
       /* eslint-disable prefer-spread */
@@ -75,10 +76,15 @@ function createMethodQueueHandler(context, queueName, api = {}) {
       throw new Error(`method "${_arr[0]}" not found in ${_api}`);
     }
   }
-  // define or get the method queue array
-  const mq = typeof context[queueName] !== 'undefined' ? context[queueName] : [];
+  // get the existing method queue array or create a new one
+  let mq = [];
+  if (typeof context[queueName] === 'undefined') {
+    context[queueName] = mq;
+  } else {
+    mq = context[queueName];
+  }
   // execute pending calls
-  while (mq.length) {
+  while (mq.length > 0) {
     _mqExec(api, mq.shift());
   }
   // override push method
