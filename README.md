@@ -1,6 +1,6 @@
 # datalayer.js
 
-An open-source datalayer, tagmanager, and *"frontend middleware"*, proxying data between the client and any third parties. Based on a [heavily opinionated set of conventions and data types](#), trying to standardize common 3rd party integration into today's websites.
+An open-source datalayer, tagmanager, and *"frontend middleware"*, proxying data between the client and any third parties. Based on a [customizable data model with a virtual type system](#models), trying to standardize common 3rd party integration into today's websites.
 
            __      __        __                          _
       ____/ /___ _/ /_____ _/ /___ ___  _____  _____    (_)____
@@ -24,7 +24,7 @@ The data expected by datalayer.js is defined by a set of conventions which are b
 That's it. Almost. There are many more details and possibilities of course. You can learn more about [rendertime data](#), [rendertime events](#), [runtime events](#) and [event annotations](#). It's also really helpful to understand the concept of [Models](#). We have a set of [predefined datatypes](#) (mainly focused on e-commerce websites) and a [default model](#). As well as [custom data models](#). Then there is the [rules configuration](#) for the plugin loading. We have [configuration overrides](#). And quite a bit more to come.
 
 ## But what is wrong with external tag management?
-It depends. If you want, go and use some 3rd party tool. You might even be happy with it. However, if you are a developer or a bigger organization with multiple dev teams or just care about performance, stability and code control you really want to [understand the ideas and motivations behind datalayer.js](#) and maybe even use it.
+It depends. If you want, go and use some 3rd party tool. You might even be happy with it. However, if you are a developer or a bigger organization with multiple dev teams or just care about performance, stability, and code control you really want to [understand the ideas and motivations behind datalayer.js](#) and maybe even use it.
 
 But don't get fooled by comments like "tag managers are great, because you don't need to change your software when you want to add new 'tags'". Honestly - how would you describe adding random scripts into a production environment, if not "changing the software"? Those people completely miss the fact that adding Javascript code (because that is what said "pixels" and "tags" are!) into a website is considered to be a *production deployment*. You insert new code into your *production environment*. Directly. Without CI testing. In most cases it is *untested, unknown, "blackbox" code*, written by some *unknown third party*.
 
@@ -151,7 +151,7 @@ For common event handling scenarios (e.g. click, focus, view) there is also a si
 The previous example shows a simple event annotation used to bind a click-Handler to an element. When the `<a>` tag is clicked it causes an event with the name `my-annotated-event` and the data `{foo: 'bar'}` to be broadcasted by datalayer.js. It has the same effect as manually adding an `onclick` handler on the element and executing `dal.broadcast('my-annotated-event', {"foo":"bar"})` in its callback.
 
 ## Building and Bundling
-After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the system and tool landscape of your system. Common solutions are webpack, rollup or a more manual AMD-based setup using gulpor grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
+After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the system and tool landscape of your system. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
 
 
 # Conventions
