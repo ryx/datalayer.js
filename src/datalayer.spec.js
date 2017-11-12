@@ -5,7 +5,6 @@ import { JSDOM } from 'jsdom';
 // stub dependencies
 const dom = new JSDOM('<!DOCTYPE html>');
 const window = td.replace('./lib/window', dom.window);
-const utils = td.replace('./lib/utils').default;
 
 /**
  * Mock plugin to test plugin specific stuff (event retrieval,
@@ -41,7 +40,7 @@ import('./datalayer').then((module) => {
   });
 
   test('datalayer.initialize:', (t) => {
-    t.test('should properly handle errors', (st) => {
+    t.test('should properly recognize invalid and/or missing data', (st) => {
       st.throws(
         () => datalayer.initialize({ data: { page: { } } }),
         /DALPageData is invalid or missing/gi,
@@ -64,7 +63,7 @@ import('./datalayer').then((module) => {
       st.end();
     });
 
-    t.test('should add a plugin using the `plugins` options passed to initialize', (st) => {
+    t.test('should add a plugin using the `plugins` option', (st) => {
       const dal = new module.Datalayer();
 
       dal.initialize({
@@ -78,14 +77,12 @@ import('./datalayer').then((module) => {
       });
     });
 
-    t.test('should create a method queue handler in window during odl.initialize', (st) => {
+    t.test('should create a method queue handler in window', (st) => {
       const dal = new module.Datalayer();
 
       dal.initialize({ data: globalDataMock });
 
-      td.verify(utils.createMethodQueueHandler(window, '_dtlrq', dal));
-      st.pass('should install the method queue');
-
+      st.ok(typeof window._dtlrq !== 'undefined', 'should install the _dtlrq method queue in window');
       st.end();
     });
 
