@@ -1,4 +1,11 @@
 /**
+ *        __      __        __                          _
+ *   ____/ /___ _/ /_____ _/ /___ ___  _____  _____    (_)____
+ *  / __  / __ `/ __/ __ `/ / __ `/ / / / _ \/ ___/   / / ___/
+ * / /_/ / /_/ / /_/ /_/ / / /_/ / /_/ /  __/ /  _   / (__  )
+ * \__,_/\__,_/\__/\__,_/_/\__,_/\__, /\___/_/  (_)_/ /____/
+ *                              /____/           /___/
+ *
  * Copyright (c) 2016-present, Rico Pfaus
  *
  * This source code is licensed under the MIT license found in the
@@ -161,7 +168,7 @@ export class Datalayer {
    */
   initialize(options) {
     if (this.initialized) {
-      // @XXX: remove
+      // @XXX: remove and allow multi-init (should simply have no negative impact!)
       console.warn('already initialized');
       return false;
     }
@@ -190,7 +197,6 @@ export class Datalayer {
     debug('collected data', this.globalData);
 
     // instantiate plugins based on config and provided ruleset
-    // @FIXME: always load plugins here, rule validation should be done on broadcast
     if (plugins.length) {
       plugins.forEach((pluginOptions) => {
         if (!pluginOptions.rule || this.validateRule(pluginOptions.rule)) {
@@ -210,7 +216,7 @@ export class Datalayer {
 
     if (options.broadcastPageload !== false) {
       debug('broadcasting initial pageload event');
-      this.broadcast('pagelod', this.globalData);
+      this.broadcast('pageload', this.globalData);
     }
 
     // collect event data from document and send events to plugins
