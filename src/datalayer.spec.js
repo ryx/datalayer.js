@@ -63,12 +63,28 @@ import('./datalayer').then((module) => {
       st.end();
     });
 
-    t.test('should add a plugin using the `plugins` option', (st) => {
+    t.test('should add single plugin when passing a function to the `plugins` option', (st) => {
       const dal = new module.Datalayer();
 
       dal.initialize({
         data: globalDataMock,
-        plugins: [{ type: MockPlugin, rule: true }],
+        plugins: () => [new MockPlugin()],
+      });
+
+      dal.whenReady().then(() => {
+        st.ok(dal.getPluginById('test/mockPlugin'), 'plugin should be returned');
+        st.end();
+      });
+    });
+
+    t.test('should add multiple plugins when passing an array to the `plugins` option', (st) => {
+      const dal = new module.Datalayer();
+
+      dal.initialize({
+        data: globalDataMock,
+        plugins: [
+          () => [new MockPlugin(), new MockPlugin()],
+        ],
       });
 
       dal.whenReady().then(() => {
@@ -123,7 +139,7 @@ import('./datalayer').then((module) => {
       dal.initialize({
         data: globalDataMock,
         plugins: [
-          { type: MockPlugin, rule: () => true, test: true },
+          () => (dal.isTestModeActive() ? [new MockPlugin()] : null),
         ],
       });
       dal.whenReady().then(() => {
@@ -184,7 +200,7 @@ import('./datalayer').then((module) => {
       const dal = new module.Datalayer();
       dal.initialize({ data: globalDataMock });
 
-      dal.addPlugin(MockPlugin, '');
+      dal.addPlugin(new MockPlugin());
 
       dal.whenReady().then(() => {
         st.ok(dal.getPluginById('test/mockPlugin'), 'plugin should be loaded');
@@ -196,84 +212,64 @@ import('./datalayer').then((module) => {
   });
 
   test('datalayer.broadcast:', (t) => {
-    // helper to broadcast an event to the given plugin and verify that it was caught
-    const broadcastAndVerifyEvent = (_t, dal, plugin) => {
-      const eventData = { foo: 'bar' };
-
-      dal.broadcast('my-test-event', eventData);
-
-      _t.ok(
-        typeof plugin.events['my-test-event'] !== 'undefined',
-        'plugin should have received the expected event',
-      );
-      _t.deepEqual(
-        plugin.events['my-test-event'],
-        eventData,
-        'event should contain the expected data',
-      );
-    };
-
-    // helper to create/initialize datalayer.js and pass the given plugins (and optional data)
-    const setupDatalayerWithPlugins = (plugins, data) => {
+    t.test('should broadcast an event to all available plugins', (st) => {
       const dal = new module.Datalayer();
-      dal.initialize({ data: data || globalDataMock, plugins });
+      const plugin1 = new MockPlugin();
+      const plugin2 = new MockPlugin();
+      const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
-      return dal;
-    };
-
-    t.test('should broadcast an event to plugins whose rule is undefined', (st) => {
-      const dal = setupDatalayerWithPlugins([{ type: MockPlugin }]);
+      dal.initialize({ data: globalDataMock, plugins: () => [plugin1, plugin2] });
 
       dal.whenReady().then(() => {
-        broadcastAndVerifyEvent(st, dal, dal.getPluginById('test/mockPlugin'));
-        st.end();
-      });
-    });
-
-    t.test('should broadcast an event to plugins whose rule equals "true" (boolean)', (st) => {
-      const dal = setupDatalayerWithPlugins([{ type: MockPlugin, rule: true }]);
-
-      dal.whenReady().then(() => {
-        broadcastAndVerifyEvent(st, dal, dal.getPluginById('test/mockPlugin'));
-        st.end();
-      });
-    });
-
-    t.test('should broadcast an event to plugins whose rule resolves to "true" (function)', (st) => {
-      const dal = setupDatalayerWithPlugins([
-        { type: MockPlugin, rule: true }, // this one should receive all events
-      ]);
-
-      dal.whenReady().then(() => {
-        broadcastAndVerifyEvent(st, dal, dal.getPluginById('test/mockPlugin'));
-        st.end();
-      });
-    });
-
-    /* @XXX: stupid test: plugin not loaded anyway, test in rules test instead!!
-    t.test('should NOT broadcast an event to plugins whose rule resolves to "false" (function)', (st) => {
-      const dal = setupDatalayerWithPlugins([
-        { type: MockPlugin, rule: () => false }, // this one should receive no events
-      ]);
-
-      dal.whenReady().then(() => {
-        dal.broadcast('my-test-event', { foo: 'bar' });
-
-        st.ok(
-          typeof dal.getPluginById('test/mockPlugin') === 'undefined',
-          'plugin should NOT be loaded',
+        dal.broadcast(expectedEvent.name, expectedEvent.data);
+        st.deepEqual(
+          plugin1.events[expectedEvent.name],
+          expectedEvent.data,
+          'plugin 1 should have caught the expected event and data',
+        );
+        st.deepEqual(
+          plugin2.events[expectedEvent.name],
+          expectedEvent.data,
+          'plugin 2 should have caught the expected event and data',
         );
         st.end();
       });
     });
-    */
 
     t.test('should broadcast an event that was sent BEFORE calling initialize', (st) => {
-      st.end();
+      const dal = new module.Datalayer();
+      const plugin = new MockPlugin();
+      const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
+
+      dal.broadcast(expectedEvent.name, expectedEvent.data);
+      dal.initialize({ data: globalDataMock, plugins: () => [plugin] });
+
+      dal.whenReady().then(() => {
+        st.deepEqual(
+          plugin.events[expectedEvent.name],
+          expectedEvent.data,
+          'plugin should have caught the expected event and data',
+        );
+        st.end();
+      });
     });
 
-    t.test('should broadcast an event that was sent AFTER calling initialize', (st) => {
-      st.end();
+    t.test('should broadcast an event that was sent AFTER calling initialize but before being ready', (st) => {
+      const dal = new module.Datalayer();
+      const plugin = new MockPlugin();
+      const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
+
+      dal.initialize({ data: globalDataMock, plugins: () => [plugin] });
+      dal.broadcast(expectedEvent.name, expectedEvent.data);
+
+      dal.whenReady().then(() => {
+        st.deepEqual(
+          plugin.events[expectedEvent.name],
+          expectedEvent.data,
+          'plugin should have caught the expected event and data',
+        );
+        st.end();
+      });
     });
 
     t.end();

@@ -41,7 +41,7 @@ export class Datalayer {
     this.metaPrefix = 'dtlr:'; // prefix for meta[name] attribute
     this.globalData = {}; // data storage
     this.globalConfig = {}; // configuration object (passed via odl:config)
-    this.testModeActive = Datalayer.isTestModeActive();
+    this.testModeActive = this.isTestModeActive();
     this.plugins = []; // array with loaded plugins
     this.queue = new EventQueue();
 
@@ -146,19 +146,13 @@ export class Datalayer {
   }
 
   /**
-   * Add the given plugin - creates a new instance of the plugin and adds it
-   * to the internal list of active plugins, overriding plugin config with
-   * globally defined configuration (if any).
-   * @param {Object} pluginClass  reference to the plugin class
-   * @param {Object} config configuration object with private configuration for this individual instance
+   * Add the given plugin instance to internal list and subscribe it to the event
+   * queue, then broadcast event history to it.
+   * @param {Object} plugin  reference to the plugin instance
    */
-  addPlugin(pluginClass, config = {}) {
-    const pluginId = pluginClass.getID();
-    /* eslint-disable new-cap */
-    const plugin = new pluginClass(this, this.globalData, this.globalConfig[pluginId] || config);
-    /* eslint-enable new-cap */
+  addPlugin(plugin) {
+    // add plugin , then broadcast all events that happened until now
     this.plugins.push(plugin);
-    // add plugin to event queue and broadcast all events that happened until now
     this.queue.subscribe(plugin, true);
   }
 
@@ -175,7 +169,7 @@ export class Datalayer {
 
     // validate options
     const data = options.data || {};
-    const plugins = options.plugins || [];
+    let plugins = options.plugins || [];
 
     // set config (@TODO: also collect config from markup here!)
     this.globalConfig = options.config || {};
@@ -185,22 +179,27 @@ export class Datalayer {
     this.scanForDataMarkup(window.document);
 
     // validate mandatory data (@TODO: we might use a model-based validation here somewhen)
-    if (!data.page || !data.page.type || !data.page.name) {
+    const gd = this.globalData;
+    if (!gd.page || !gd.page.type || !gd.page.name) {
       throw new Error('Supplied DALPageData is invalid or missing');
     }
-    if (!data.site || !data.site.id) {
+    if (!gd.site || !gd.site.id) {
       throw new Error('Supplied DALSiteData is invalid or missing');
     }
-    if (!data.user) {
+    if (!gd.user) {
       throw new Error('Supplied DALUserData is invalid or missing');
     }
     debug('collected data', this.globalData);
 
-    // instantiate plugins based on config and provided ruleset
+    // instantiate plugins based on config and provided ruleset (wrap single function in array first)
+    if (typeof plugins === 'function') {
+      plugins = [plugins];
+    }
     if (plugins.length) {
-      plugins.forEach((pluginOptions) => {
-        if (!pluginOptions.rule || this.validateRule(pluginOptions.rule)) {
-          this.addPlugin(pluginOptions.type, pluginOptions.config);
+      plugins.forEach((callback) => {
+        const pluginList = callback(this.globalData);
+        if (pluginList) {
+          pluginList.forEach(p => this.addPlugin(p));
         }
       });
     }
@@ -234,10 +233,11 @@ export class Datalayer {
     return this.initialized === true;
   }
 
+  /* eslint-disable class-methods-use-this */
   /**
    * Handle and (un-/)persist test mode for plugin delivery.
    */
-  static isTestModeActive() {
+  isTestModeActive() {
     // debug(window.location.search);
     if (cookie.get('__odltest__')) {
       debug('Cookie found');
