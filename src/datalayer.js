@@ -64,22 +64,6 @@ export class Datalayer {
   }
 
   /**
-   * Validate the given load rule and return either true or false.
-   * @param  {Object|boolean}  rule  rule object to validate or a boolean value
-   */
-  validateRule(rule) {
-    if (typeof rule === 'boolean') {
-      return rule;
-    } else if (typeof rule === 'function') {
-      const r = rule(this.globalData);
-      return r; // rule(globalData);
-    } else if (!rule.test || (rule.test === true && this.testModeActive)) {
-      return rule.rule(this.globalData);
-    }
-    return false;
-  }
-
-  /**
    * Returns the global data that came from one of the following sources:
    * a) it was passed to `.initialize` via configuration
    * b) it was collected and aggregated from the entire page by `.initialize`
