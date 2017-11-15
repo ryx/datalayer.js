@@ -28,19 +28,7 @@ const examplePlugin = require('./examplePlugin').default;
 
 // wait for datalayer to be ready and broadcast a custom event
 datalayer.whenReady().then(() => {
-  // scan DOM for markup
-  // datalayer.scanForDataMarkup(document);
-  // datalayer.scanForEventMarkup(document);
-
-  // broadcast an event to all our plugins
   datalayer.broadcast('say-hello', 'Hello from example.js');
-
-  // broadcast the global "load" event, passing an object of type DALGlobalData
-  /* datalayer.broadcast('load', {
-    page: { type: 'homepage', name: 'My Test Website' },
-    site: { id: 'MySite' },
-    user: {},
-  }); */
 });
 
 // initialize global datalayer instance
