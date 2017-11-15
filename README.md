@@ -281,47 +281,46 @@ Broadcast the given event with the name defined by `name` and the optional `data
 datalayer.broadcast('my-cool-event', { foo: 'bar' })
 ```
 
-## loadPlugin(id:string): Promise
-Load plugin with the given id and return a Promise. Once the plugin is loaded the Promise will be resolved with the plugin object instance as only parameter.
+## getData(): Object
+Returns the global data as one big object.
 
-## getPlugin(id:string): Promise
-Get plugin with the given id and return a Promise. If the plugin is loaded the Promise will be resolved with the plugin object instance as only parameter. If the plugin is not loaded and not scheduled for load, then the promise will be rejected with an error.
+## getPluginById(id:string): Object
+Get plugin with the given id and return it. If the plugin is unknown, the function returns null. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling from outside a plugin's lifecycle.
 
 ## scanHTMLElement(element:HTMLElement): void
-Scans a given HTML element and its children for [rendertime markup](#) (e.g. `dl:data` or `dl:event` metatags) and [event annotations](#) (e.g. `data-dl-event-*` attributes on HTML elements). If anything is found it gets either `broadcast`'ed to the plugins or - in case of event annotation - hooked up with the necessary event handling mechanism. **Important:** If you asynchronously add markup to your page (e.g. after AJAX calls, lazy loading, etc.) and that markup may contain any datalayer.js metatags or annotations, then you HAVE TO call `scanHTMLElement` and pass it the newly added element - *after adding it to the DOM*! Otherwise the metadata or annotations won't be processed.
+Scans a given HTML element and its children for [rendertime data](#using-rendertime-markup) (e.g. `dl:data` or `dl:event` metatags) and [event annotations](#using-event-annotations) (e.g. `data-dl-event-*` attributes on HTML elements). If anything is found it gets either `broadcast`'ed to the plugins or - in case of event annotation - hooked up with the necessary event handling mechanism. **Important:** If you asynchronously add markup to your page (e.g. after AJAX calls, lazy loading, etc.) and that markup may contain any datalayer.js metatags or annotations, then you HAVE TO call `scanHTMLElement` and pass it the newly added element - *after adding it to the DOM*! Otherwise the metadata or annotations won't be processed.
 
 
 # Plugins
-Datalayer.js provides a modular architecture where logic is encapsulated in plugins. These may access the global data aggregated by the DAL and also send and receive events.
-
-## Configuration Overrides
-It is possible to provide dedicated configurations to plugins on a by-page-basis. A popular usecase is to override URLs of a third-party system within integration tests. To achieve that you simply define a gk:dal:config-metatag, that can be used to override configuration within a service. The plugin HAS TO actively support configuration overrides for this to work.
-
-    <meta name="dtlr:config" content='{
-      "foo/bar/myTestService": {
-        "baseUrl": "mymockupserver"
-      }
-    }' />
-
+Datalayer.js provides a modular architecture where logic is encapsulated in plugins. These may access the global data aggregated by the datalayer and also send and receive events.
 
 ## API
- A very simple plugin might look like the following:
+ Plugins are very simple Javascript objects, providing a `handleEvent` method as only convention. In fact they don't actually need to be classes at all, you could use a simple object literal as well. However, it is strongly recommended to use classes to better separate construction logic and event handling. The following example illustrates the basic structure of a plugin.
 
 ```javascript
-export default class SomePlugin {
+class SomePlugin {
+  constructor() {
+    // perform any kind of setup here, e.g. add 3rd party script tag to DOM
+  }
+
   handleEvent(name, data) {
-    switch (name) {
-      case 'pageload': {
-        if (data.page.type === 'productdetail') {
-          // pass a fictional "product view" event to some third party
-          window._thirdParty.send('productViewEvent', {
-            sku: data.product.sku,
-            price: data.product.priceData.total,
-          });
-        }
+    // react on specific events sent by the datalayer and handle them
+    // in any way the 3rd party requires
+  }
+}
+```
+
+By default the plugins receive only one system-generated event named `pageload`. This event is automatically fired by the datatlayer right after initialization. It contains the global data object as aggregated from the page. A possible `handleEvent` call, handling a `pageload`, could look like this:
+
+```javascript
+handleEvent(name, data) {
+  switch (name) {
+    case 'pageload': {
+      if (data.page.type === 'productdetail') {
+        console.log(data.product);
       }
-      default:
     }
+    default:
   }
 }
 ```
