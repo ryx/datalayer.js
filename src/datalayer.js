@@ -104,29 +104,42 @@ export class Datalayer {
   }
 
   /**
-   * Scan a given HTMLElement for dal:data-Metatags and update global data accordingly.
+   * Scan a given HTMLElement for `dtlr:data` metatags and update global data accordingly.
    * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for data
    */
-  scanForDataMarkup(node = window.document) {
+  scanElementForDataMarkup(node = window.document) {
     return utils.collectMetadata(`${this.metaPrefix}data`, () => {}, node, this.globalData);
   }
 
   /**
-   * Scan a given HTMLElement for odl:event-Metatags and broadcast any events that
+   * Scan a given HTMLElement for `dtlr:event` metatags and broadcast any events that
    * were found.
    * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for events
    */
-  scanForEventMarkup(node) {
+  scanElementForEventMarkup(node) {
     return utils.collectMetadata(`${this.metaPrefix}event`, (err, element, obj) => {
       if (err) {
         console.error(err);
         return;
       }
-      if (!element.hasAttribute('data-odl-handled-event')) {
-        element.setAttribute('data-odl-handled-event', 1);
+      if (!element.hasAttribute('data-dtlr-handled-event')) {
+        element.setAttribute('data-dtlr-handled-event', 1);
         this.broadcast(obj.name, obj.data);
       }
     }, node);
+  }
+
+  /**
+   * Scan a given HTMLElement for `data-dtlr-event-*` annotations and hook up associated event
+   * handling.
+   * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for annotations
+   */
+  scanElementForAnnotations(node = window.document) {
+    return utils.collectMetadata(`${this.metaPrefix}data`, () => {}, node, this.globalData);
+  }
+
+  scanElement() {
+    console.log('TODO: scan for event annotations, data markup and event markup');
   }
 
   /**
@@ -160,7 +173,7 @@ export class Datalayer {
 
     // collect global data from document
     this.globalData = data;
-    this.scanForDataMarkup(window.document);
+    this.scanElementForDataMarkup(window.document);
 
     // validate mandatory data (@TODO: we might use a model-based validation here somewhen)
     const gd = this.globalData;
@@ -204,7 +217,7 @@ export class Datalayer {
 
     // collect event data from document and send events to plugins
     debug(`scanning for ${this.metaPrefix}event markup`);
-    this.scanForEventMarkup();
+    this.scanElementForEventMarkup();
 
     return true;
   }

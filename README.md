@@ -282,13 +282,13 @@ datalayer.broadcast('my-cool-event', { foo: 'bar' })
 ```
 
 ## getData(): Object
-Returns the global data as one big object.
+Returns the global data as one big object. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling it from outside a plugin's lifecycle.
 
 ## getPluginById(id:string): Object
-Get plugin with the given id and return it. If the plugin is unknown, the function returns null. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling from outside a plugin's lifecycle.
+Get plugin with the given id and return it. If the plugin is unknown, the function returns null. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling it from outside a plugin's lifecycle.
 
-## scanHTMLElement(element:HTMLElement): void
-Scans a given HTML element and its children for [rendertime data](#using-rendertime-markup) (e.g. `dl:data` or `dl:event` metatags) and [event annotations](#using-event-annotations) (e.g. `data-dl-event-*` attributes on HTML elements). If anything is found it gets either `broadcast`'ed to the plugins or - in case of event annotation - hooked up with the necessary event handling mechanism. **Important:** If you asynchronously add markup to your page (e.g. after AJAX calls, lazy loading, etc.) and that markup may contain any datalayer.js metatags or annotations, then you HAVE TO call `scanHTMLElement` and pass it the newly added element - *after adding it to the DOM*! Otherwise the metadata or annotations won't be processed.
+## scanElement(element:HTMLElement): void
+Scans a given HTML element and its children for [rendertime data](#using-rendertime-markup) (e.g. `dl:data` or `dl:event` metatags) and [event annotations](#using-event-annotations) (e.g. `data-dl-event-*` attributes on HTML elements). If anything is found it gets either `broadcast`'ed to the plugins or - in case of event annotation - hooked up with the necessary event handling mechanism. **Important:** If you asynchronously add markup to your page (e.g. after AJAX calls, lazy loading, etc.) and that markup may contain any datalayer.js metatags or annotations, then you HAVE TO call `scanElement` and pass it the newly added element - *after adding it to the DOM*! Otherwise the metadata or annotations won't be processed.
 
 
 # Plugins

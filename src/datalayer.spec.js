@@ -1,4 +1,4 @@
-import { test, skip } from 'tap';
+import { test } from 'tap';
 import td from 'testdouble';
 import { JSDOM } from 'jsdom';
 
@@ -274,6 +274,8 @@ import('./datalayer').then((module) => {
 
     t.end();
   });
+
+  // @TODO: scanElementForDataMarkup, scanElementForEventsMarkup
 
   td.reset();
 });
