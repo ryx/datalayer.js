@@ -6,6 +6,7 @@
   "module": "dist/datalayer.esm.js",
   "scripts": {
     "test": "node_modules/.bin/tap -r babel-register \"src/**/*.spec.js\" -R spec",
+    "test:lint": "eslint . --quiet",
     "test-pretty": "npm run test | node_modules/.bin/faucet",
     "build:cjs": "rollup src/datalayer.js --o dist/datalayer.cjs.js -f cjs",
     "build:esm": "rollup src/datalayer.js --o dist/datalayer.esm.js -f es",
