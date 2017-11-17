@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import { test } from 'tap';
 import td from 'testdouble';
 import { JSDOM } from 'jsdom';

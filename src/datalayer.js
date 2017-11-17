@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 /**
  *        __      __        __                          _
  *   ____/ /___ _/ /_____ _/ /___ ___  _____  _____    (_)____
@@ -25,7 +26,7 @@ function debug() {
     console.log.apply(console, ['[debug]:'].concat(Array.prototype.slice.call(arguments)));
   }
 }
-/* eslint-enable func-names */
+/* eslint-enable func-names, no-console, prefer-spread, prefer-rest-params */
 
 debug('debugging enabled');
 
@@ -134,8 +135,8 @@ export class Datalayer {
    * handling.
    * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for annotations
    */
-  scanElementForAnnotations(node = window.document) {
-    return utils.collectMetadata(`${this.metaPrefix}data`, () => {}, node, this.globalData);
+  scanElementForAnnotations() {
+    console.log('TODO: scan for event annotations');
   }
 
   scanElement() {
@@ -230,7 +231,6 @@ export class Datalayer {
     return this.initialized === true;
   }
 
-  /* eslint-disable class-methods-use-this */
   /**
    * Handle and (un-/)persist test mode for plugin delivery.
    */

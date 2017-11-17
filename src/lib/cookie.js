@@ -18,7 +18,10 @@ function set(name, value, options = {}) {
   if (options.domain) {
     def.push(`domain=${options.domain}`);
   }
-  const expires = options.expires && typeof options.expires.getTime !== 'undefined' ? options.expires.toUTCString() : options.expires;
+  let { expires } = options;
+  if (options.expires && typeof options.expires.getTime !== 'undefined') {
+    expires = options.expires.toUTCString();
+  }
   if (expires) {
     def.push(`expires=${expires}`);
   }
@@ -46,6 +49,7 @@ function get(name) {
  */
 function remove(name, options) {
   const opt2 = {};
+  /* eslint-disable guard-for-in, no-restricted-syntax */
   for (const key in (options || {})) opt2[key] = options[key];
   opt2.expires = (new Date(0)).toUTCString();
   opt2.maxAge = -1;
