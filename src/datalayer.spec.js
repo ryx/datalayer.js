@@ -207,7 +207,7 @@ describe('datalayer', () => {
     });
   });
 
-  describe('broadcast:', (t) => {
+  describe('broadcast:', () => {
     it('should broadcast an event to all available plugins', () => {
       const dal = new module.Datalayer();
       const plugin1 = new MockPlugin();
