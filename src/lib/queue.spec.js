@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
-import { test } from 'tap';
+import { describe, it, beforeEach } from 'mocha';
+import { assert } from 'chai';
 import EventQueue from './queue';
 
 // sample subscriber used for testing event broadcast
@@ -14,66 +15,66 @@ class EventSubscriber {
 }
 
 // test cases
+describe('EventQueue', () => {
+  describe('constructor:', () => {
+    it('should create a new EventQueue', () => {
+      const queue = new EventQueue();
 
-test('[constructor] should create a new EventQueue', (t) => {
-  const queue = new EventQueue();
+      assert.isTrue(queue instanceof EventQueue);
+    });
+  });
 
-  t.ok(queue instanceof EventQueue);
+  describe('subscribe', () => {
+    it('should properly subscribe a new subscriber', () => {
+      const queue = new EventQueue();
+      const subscriber = new EventSubscriber();
 
-  t.end();
-});
+      queue.subscribe(subscriber);
 
-test('[.subscribe] should properly subscribe a new subscriber', (t) => {
-  const queue = new EventQueue();
-  const subscriber = new EventSubscriber();
+      assert.equal(queue.subscribers[0], subscriber, 'queue should contain given subscriber');
+    });
 
-  queue.subscribe(subscriber);
+    it('should throw an error if trying to subscribe object without handleEvent method', () => {
+      const queue = new EventQueue();
 
-  t.equal(queue.subscribers[0], subscriber, 'queue should contain given subscriber');
-  t.end();
-});
+      assert.throws(() => queue.subscribe({}), 'subscriber has no handleEvent method');
+    });
 
-test('[.subscribe] should throw an error if trying to subscribe object without handleEvent method', (t) => {
-  const queue = new EventQueue();
+    it('should broadcast event history to a newly added subscriber when receiveHistory is true (default)', () => {
+      const queue = new EventQueue();
+      const subscriber = new EventSubscriber();
 
-  t.throws(() => queue.subscribe({}), 'subscriber has no handleEvent method');
+      queue.broadcastEvent('test', { foo: 123 });
+      queue.broadcastEvent('test2', { foo: 123 });
+      queue.subscribe(subscriber);
 
-  t.end();
-});
+      assert.equal(subscriber.caughtEvents.length, 2, 'should have caught two events');
+      assert.deepEqual(subscriber.caughtEvents[0], ['test', { foo: 123 }], 'event 1 should contain expected data');
+      assert.deepEqual(subscriber.caughtEvents[1], ['test2', { foo: 123 }], 'event 2 should contain expected data');
+    });
 
-test('[.subscribe] should broadcast event history to a newly added subscriber when receiveHistory is true (default)', (t) => {
-  const queue = new EventQueue();
-  const subscriber = new EventSubscriber();
+    it('should NOT broadcast event history to a newly added subscriber when receiveHistory is false', () => {
+      const queue = new EventQueue();
+      const subscriber = new EventSubscriber();
 
-  queue.broadcastEvent('test', { foo: 123 });
-  queue.broadcastEvent('test2', { foo: 123 });
-  queue.subscribe(subscriber);
+      queue.broadcastEvent('test');
+      queue.subscribe(subscriber, false);
 
-  t.equal(subscriber.caughtEvents.length, 2, 'should have caught two events');
-  t.deepEqual(subscriber.caughtEvents[0], ['test', { foo: 123 }], 'event 1 should contain expected data');
-  t.deepEqual(subscriber.caughtEvents[1], ['test2', { foo: 123 }], 'event 2 should contain expected data');
-  t.end();
-});
+      assert.equal(subscriber.caughtEvents.length, 0, 'should have caught no events yet');
+    });
+  });
 
-test('[.subscribe] should NOT broadcast event history to a newly added subscriber when receiveHistory is false', (t) => {
-  const queue = new EventQueue();
-  const subscriber = new EventSubscriber();
+  describe('broadcast', () => {
+    it('should broadcast a single event to registered subscribers', () => {
+      const queue = new EventQueue();
+      const subscriber = new EventSubscriber();
 
-  queue.broadcastEvent('test');
-  queue.subscribe(subscriber, false);
+      queue.subscribe(subscriber);
+      queue.broadcastEvent('test', { foo: 123 });
 
-  t.equal(subscriber.caughtEvents.length, 0, 'should have caught no events yet');
-  t.end();
-});
+      assert.equal(subscriber.caughtEvents.length, 1, 'should have caught one event');
+      assert.deepEqual(subscriber.caughtEvents[0], ['test', { foo: 123 }], 'event 1 should contain expected data');
+    });
 
-test('[.broadcast] should broadcast a single event to registered subscribers', (t) => {
-  const queue = new EventQueue();
-  const subscriber = new EventSubscriber();
-
-  queue.subscribe(subscriber);
-  queue.broadcastEvent('test', { foo: 123 });
-
-  t.equal(subscriber.caughtEvents.length, 1, 'should have caught one event');
-  t.deepEqual(subscriber.caughtEvents[0], ['test', { foo: 123 }], 'event 1 should contain expected data');
-  t.end();
+  })
 });

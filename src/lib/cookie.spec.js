@@ -1,4 +1,5 @@
-import { test } from 'tap';
+import { describe, it, beforeEach } from 'mocha';
+import { assert } from 'chai';
 import td from 'testdouble';
 import { JSDOM } from 'jsdom';
 
@@ -6,60 +7,53 @@ import { JSDOM } from 'jsdom';
 const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
 const window = td.replace('./window', dom.window);
 
-import('./cookie').then((module) => {
-  const cookie = module.default;
+describe('cookie', () => {
+  let [cookie] = [];
 
-  test('get', (t) => {
-    t.test('should get a cookie with a given name and return its value', (st) => {
+  beforeEach(() => import('./cookie').then((m) => { cookie = m.default; }));
+
+  describe('get', () => {
+    it('should get a cookie with a given name and return its value', () => {
       window.document.cookie = 'foo=bar';
       window.document.cookie = 'test=3598235';
-      st.is(cookie.get('foo'), 'bar');
-      st.is(cookie.get('test'), '3598235');
-      st.end();
+      assert.equal(cookie.get('foo'), 'bar');
+      assert.equal(cookie.get('test'), '3598235');
     });
-
-    t.end();
   });
 
-  test('set', (t) => {
-    t.test('should set a cookie with a given name to a given value', (st) => {
+  describe('set', () => {
+    it('should set a cookie with a given name to a given value', () => {
       cookie.set('xyz', 'foofoofoo');
-      t.ok(window.document.cookie.indexOf('xyz=foofoofoo') > -1);
-      st.end();
+      assert.isTrue(window.document.cookie.indexOf('xyz=foofoofoo') > -1);
     });
 
-    t.test('should restrict a cookie to a given path using options.path', (st) => {
+    it('should restrict a cookie to a given path using options.path', () => {
       cookie.set('xyz', 'foofoofoo', { path: '/' });
       console.log('T', window.document.cookie);
-      t.ok(window.document.cookie.indexOf('xyz=foofoofoo;path=/') > -1);
-      st.end();
+      assert.isTrue(window.document.cookie.indexOf('xyz=foofoofoo;path=/') > -1);
     });
 
-    t.test('should restrict a cookie to a given domain using options.domain', (st) => {
+    it('should restrict a cookie to a given domain using options.domain', () => {
       cookie.set('xyz', 'foofoofoo', { domain: 'foo.bar.com' });
-      t.ok(window.document.cookie.indexOf('xyz=foofoofoo;domain=foo.bar.com') > -1);
-      st.end();
+      assert.isTrue(window.document.cookie.indexOf('xyz=foofoofoo;domain=foo.bar.com') > -1);
     });
 
-    t.test('should set the max-age of a cookie using options.maxAge', (st) => {
+    it('should set the max-age of a cookie using options.maxAge', () => {
       cookie.set('xyz', 'foofoofoo', { maxAge: 123456 });
-      t.ok(window.document.cookie.indexOf('xyz=foofoofoo;max-age=123456') > -1);
-      st.end();
+      assert.isTrue(window.document.cookie.indexOf('xyz=foofoofoo;max-age=123456') > -1);
     });
 
-    t.test('should set the expiry date of a cookie using options.expires', (st) => {
+    it('should set the expiry date of a cookie using options.expires', () => {
       cookie.set('xyz', 'foofoofoo', { expires: '2016-12-22T00:00:00' });
-      t.ok(window.document.cookie.indexOf('xyz=foofoofoo;expires=2016-12-22T00:00:00') > -1);
-      st.end();
+      assert.isTrue(window.document.cookie.indexOf('xyz=foofoofoo;expires=2016-12-22T00:00:00') > -1);
     });
   });
 
-  test('remove', (t) => {
-    t.test('should remove a cookie with a given name', (st) => {
+  describe('remove', () => {
+    it('should remove a cookie with a given name', () => {
       window.document.cookie = 'foo=bar;';
       cookie.remove('foo');
-      t.ok(window.document.cookie.indexOf('foo=null;') > -1);
-      st.end();
+      assert.isTrue(window.document.cookie.indexOf('foo=null;') > -1);
     });
   });
 });

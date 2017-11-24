@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
-import { test } from 'tap';
+import { describe, it, beforeEach } from 'mocha';
+import { assert } from 'chai';
 import td from 'testdouble';
 import { JSDOM } from 'jsdom';
 
@@ -26,45 +27,50 @@ class MockPlugin {
   }
 }
 
-// load library to be tested (XXX: enable debugging flag?)
-import('./datalayer').then((module) => {
-  const datalayer = module.default;
-  const globalDataMock = {
-    site: { id: 'mysite' },
-    page: { name: 'foo', type: 'bar' },
-    user: {},
-  };
+describe('datalayer', () => {
+  let [module, datalayer, globalDataMock] = [];
 
-  test('datalayer:', (t) => {
-    t.ok(typeof datalayer === 'object', 'should be an object');
-    t.end();
+  beforeEach(() => {
+    // setup per-test fixtures
+    globalDataMock = {
+      site: { id: 'mysite' },
+      page: { name: 'foo', type: 'bar' },
+      user: {},
+    };
+    // import module
+    return import('./datalayer').then((m) => {
+      datalayer = m.default;
+      module = m;
+    });
   });
 
-  test('datalayer.initialize:', (t) => {
-    t.test('should properly recognize invalid and/or missing data', (st) => {
-      st.throws(
+  it('should be an object', () => {
+    assert.isTrue(typeof datalayer === 'object');
+  });
+
+  describe('initialize:', () => {
+    it('should properly recognize invalid and/or missing data', () => {
+      assert.throws(
         () => datalayer.initialize({ data: { page: { } } }),
         /DALPageData is invalid or missing/gi,
         'should complain about invalid page data',
       );
 
-      st.throws(
+      assert.throws(
         () => datalayer.initialize({ data: { page: globalDataMock.page } }),
         /DALSiteData is invalid or missing/gi,
         'should complain about missing site data',
       );
 
       // TODO: invalid site data
-      st.throws(
+      assert.throws(
         () => datalayer.initialize({ data: { page: globalDataMock.page, site: globalDataMock.site } }),
         /DALUserData is invalid or missing/gi,
         'should complain about missing user data',
       );
-
-      st.end();
     });
 
-    t.test('should add single plugin when passing a function to the `plugins` option', (st) => {
+    it('should add single plugin when passing a function to the `plugins` option', () => {
       const dal = new module.Datalayer();
 
       dal.initialize({
@@ -72,13 +78,12 @@ import('./datalayer').then((module) => {
         plugins: () => [new MockPlugin()],
       });
 
-      dal.whenReady().then(() => {
-        st.ok(dal.getPluginById('test/mockPlugin'), 'plugin should be returned');
-        st.end();
+      return dal.whenReady().then(() => {
+        assert.isDefined(dal.getPluginById('test/mockPlugin'), 'plugin should be returned');
       });
     });
 
-    t.test('should add multiple plugins when passing an array to the `plugins` option', (st) => {
+    it('should add multiple plugins when passing an array to the `plugins` option', () => {
       const dal = new module.Datalayer();
 
       dal.initialize({
@@ -88,74 +93,69 @@ import('./datalayer').then((module) => {
         ],
       });
 
-      dal.whenReady().then(() => {
-        st.ok(dal.getPluginById('test/mockPlugin'), 'plugin should be returned');
-        st.end();
+      return dal.whenReady().then(() => {
+        assert.isDefined(dal.getPluginById('test/mockPlugin'), 'plugin should be returned');
       });
     });
 
-    t.test('should create a method queue handler in window', (st) => {
+    it('should create a method queue handler in window', () => {
       const dal = new module.Datalayer();
 
       dal.initialize({ data: globalDataMock });
 
-      st.ok(typeof window._dtlrq !== 'undefined', 'should install the _dtlrq method queue in window');
-      st.end();
+      assert.isDefined(window._dtlrq);
     });
-
-    t.end();
   });
 
-  test('datalayer.testMode:', (t) => {
-    t.test('enable / disable via URL', (st) => {
+  describe('testMode:', () => {
+    it('should enable/disable testMode via URL', () => {
       dom.reconfigure({ url: 'http://example.com?__odltest__=1' });
       const dal = new module.Datalayer();
       // console.log(dal);
       // console.log('.innerHTML', dom.window.document.querySelector('body'));
       // console.log('.cookie', dom.window.document.cookie);
       dal.initialize({ data: globalDataMock });
-      st.ok(dal.inTestMode(), 'should activate testmode if URL contains __odltest__=1');
+      assert.isTrue(dal.inTestMode(), 'should activate testmode if URL contains __odltest__=1');
 
       dom.reconfigure({ url: 'http://example.com' });
       const dal2 = new module.Datalayer();
       dal2.initialize({ data: globalDataMock });
-      st.ok(dal2.inTestMode(), 'should still BE in testmode, even after fake reload');
+      assert.isTrue(dal2.inTestMode(), 'should still BE in testmode, even after fake reload');
 
       dom.reconfigure({ url: 'http://example.com?__odltest__=0' });
       const dal3 = new module.Datalayer();
       dal3.initialize({ data: globalDataMock });
-      st.notOk(dal3.inTestMode(), 'should disable testmode if URL contains __odltest__=0');
+      assert.isFalse(dal3.inTestMode(), 'should disable testmode if URL contains __odltest__=0');
 
       dom.reconfigure({ url: 'http://example.com' });
       const dal4 = new module.Datalayer();
       dal4.initialize({ data: globalDataMock });
-      st.notOk(dal4.inTestMode(), 'should still NOT BE in testmode, even after fake reload');
-
-      st.end();
+      assert.isFalse(dal4.inTestMode(), 'should still NOT BE in testmode, even after fake reload');
     });
 
-    t.test('should load a specified plugin, if testmode is active, the mode evaluates to "test" and the rule evaluates to "true"', (st) => {
+    it('should load a specified plugin, if testmode is active, the mode evaluates to "test" and the rule evaluates to "true"', () => {
       dom.reconfigure({ url: 'http://example.com?__odltest__=1' });
       const dal = new module.Datalayer();
+
       dal.initialize({
         data: globalDataMock,
         plugins: [
           () => (dal.isTestModeActive() ? [new MockPlugin()] : null),
         ],
       });
-      dal.whenReady().then(() => {
-        st.isNot(
+
+      return dal.whenReady().then(() => {
+        assert.notEqual(
           dal.getPluginById('test/mockPlugin'),
           null,
           'plugin should be loaded',
         );
-        st.end();
       });
     });
 
     /*
     // @FIXME: doesn't work
-    test('should NOT load a specified plugin, if testmode is inactive, the mode evaluates to "test" and the rule evaluates to "true"', (st) => {
+    it('should NOT load a specified plugin, if testmode is inactive, the mode evaluates to "test" and the rule evaluates to "true"', (st) => {
       dom.reconfigure({ url: 'http://example.com?__odltest__=0' });
       const dal = new module.Datalayer();
       dal.initialize({
@@ -164,56 +164,51 @@ import('./datalayer').then((module) => {
           { type: MockPlugin, rule: () => true, test: true },
         ],
       });
-      dal.whenReady().then(() => {
-        st.is(dal.getPluginById('test/mockPlugin', null));
-        st.end();
+      return dal.whenReady().then(() => {
+        assert.equal(dal.getPluginById('test/mockPlugin', null));
       });
     });
     */
-
-    t.end();
   });
 
-  test('datalayer.whenReady:', (t) => {
-    t.test('should resolve when called BEFORE initialize', (st) => {
+  describe('whenReady:', () => {
+    it('should resolve when called BEFORE initialize', () => {
       const dal = new module.Datalayer();
-      dal.whenReady().then(() => {
-        st.ok(dal.isReady(), 'datalayer should be ready');
-        st.end();
+
+      const promise = dal.whenReady().then(() => {
+        assert.isTrue(dal.isReady(), 'datalayer should be ready');
       });
       dal.initialize({ data: globalDataMock });
+
+      return promise;
     });
 
-    t.test('should resolve when called AFTER initialize', (st) => {
+    it('should resolve when called AFTER initialize', () => {
       const dal = new module.Datalayer();
+
       dal.initialize({ data: globalDataMock });
-      dal.whenReady().then(() => {
-        st.ok(dal.isReady(), 'datalayer should be ready');
-        st.end();
+
+      return dal.whenReady().then(() => {
+        assert.isTrue(dal.isReady(), 'datalayer should be ready');
       });
     });
-
-    t.end();
   });
 
-  test('datalayer.addPlugin:', (t) => {
-    t.test('should add a plugin using addPlugin', (st) => {
+  describe('addPlugin:', () => {
+    it('should add a plugin using addPlugin', () => {
       const dal = new module.Datalayer();
       dal.initialize({ data: globalDataMock });
 
       dal.addPlugin(new MockPlugin());
 
-      dal.whenReady().then(() => {
-        st.ok(dal.getPluginById('test/mockPlugin'), 'plugin should be loaded');
-        st.end();
+      return dal.whenReady().then(() => {
+        assert.isDefined(dal.getPluginById('test/mockPlugin'), 'plugin should be loaded');
       });
     });
-
-    t.end();
   });
 
-  test('datalayer.broadcast:', (t) => {
-    t.test('should broadcast an event to all available plugins', (st) => {
+  describe('broadcast:', (t) => {
+    it('should broadcast an event to all available plugins', () => {
       const dal = new module.Datalayer();
       const plugin1 = new MockPlugin();
       const plugin2 = new MockPlugin();
@@ -221,23 +216,22 @@ import('./datalayer').then((module) => {
 
       dal.initialize({ data: globalDataMock, plugins: () => [plugin1, plugin2] });
 
-      dal.whenReady().then(() => {
+      return dal.whenReady().then(() => {
         dal.broadcast(expectedEvent.name, expectedEvent.data);
-        st.deepEqual(
+        assert.deepEqual(
           plugin1.events[expectedEvent.name],
           expectedEvent.data,
           'plugin 1 should have caught the expected event and data',
         );
-        st.deepEqual(
+        assert.deepEqual(
           plugin2.events[expectedEvent.name],
           expectedEvent.data,
           'plugin 2 should have caught the expected event and data',
         );
-        st.end();
       });
     });
 
-    t.test('should broadcast an event that was sent BEFORE calling initialize', (st) => {
+    it('should broadcast an event that was sent BEFORE calling initialize', () => {
       const dal = new module.Datalayer();
       const plugin = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
@@ -246,16 +240,15 @@ import('./datalayer').then((module) => {
       dal.initialize({ data: globalDataMock, plugins: () => [plugin] });
 
       dal.whenReady().then(() => {
-        st.deepEqual(
+        assert.deepEqual(
           plugin.events[expectedEvent.name],
           expectedEvent.data,
           'plugin should have caught the expected event and data',
         );
-        st.end();
       });
     });
 
-    t.test('should broadcast an event that was sent AFTER calling initialize but before being ready', (st) => {
+    it('should broadcast an event that was sent AFTER calling initialize but before being ready', () => {
       const dal = new module.Datalayer();
       const plugin = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
@@ -263,20 +256,13 @@ import('./datalayer').then((module) => {
       dal.initialize({ data: globalDataMock, plugins: () => [plugin] });
       dal.broadcast(expectedEvent.name, expectedEvent.data);
 
-      dal.whenReady().then(() => {
-        st.deepEqual(
+      return dal.whenReady().then(() => {
+        assert.deepEqual(
           plugin.events[expectedEvent.name],
           expectedEvent.data,
           'plugin should have caught the expected event and data',
         );
-        st.end();
       });
     });
-
-    t.end();
   });
-
-  // @TODO: scanElementForDataMarkup, scanElementForEventsMarkup
-
-  td.reset();
 });
