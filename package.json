@@ -41,7 +41,6 @@
     "mocha": "^4.0.1",
     "rollup": "^0.50.0",
     "rollup-plugin-babel": "^3.0.2",
-    "tap": "^10.7.2",
     "testdouble": "^3.2.6"
   },
   "dependencies": {
