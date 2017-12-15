@@ -130,17 +130,9 @@ export class Datalayer {
     }, node);
   }
 
-  /**
-   * Scan a given HTMLElement for `data-dtlr-event-*` annotations and hook up associated event
-   * handling.
-   * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for annotations
-   */
-  scanElementForAnnotations() {
-    console.log('TODO: scan for event annotations');
-  }
-
-  scanElement() {
-    console.log('TODO: scan for event annotations, data markup and event markup');
+  scanElement(node) {
+    this.globalData = this.scanElementForDataMarkup(node);
+    this.scanElementForEventMarkup(node);
   }
 
   /**

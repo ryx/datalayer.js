@@ -21,7 +21,7 @@ The Datalayer collects data from the website (i.e. the developer passes data to 
 
 The data expected by datalayer.js is defined by a set of conventions which are based on a [virtual type system](#). A dedicated [model](#) exactly defines what data is expected on which page. A page with a type of `category` for example would expect an object of type `DALCategoryData` holding information about the category. Check the section [Models](#) for more information about how this is connected.
 
-That's it. Almost. There are many more details and possibilities of course. You can learn more about [rendertime data](#), [rendertime events](#), [runtime events](#) and [event annotations](#). It's also really helpful to understand the concept of [Models](#). We have a set of [predefined datatypes](#) (mainly focused on e-commerce websites) and a [default model](#). As well as [custom data models](#). Then there is the [rules configuration](#) for the plugin loading. We have [configuration overrides](#). And quite a bit more to come.
+That's it. Almost. There are many more details and possibilities of course. You can learn more about [rendertime data](#), [rendertime events](#) and [runtime events](#). It's also really helpful to understand the concept of [Models](#). We have a set of [predefined datatypes](#) (mainly focused on e-commerce websites) and a [default model](#). As well as [custom data models](#). Then there is the [rules configuration](#) for the plugin loading. We have [configuration overrides](#). And if you think you know everything, go and check out the [extensions](#).
 
 ## But what is wrong with external tag management?
 It depends. If you want, go and use some 3rd party tool. You might even be happy with it. However, if you are a developer or a bigger organization with multiple dev teams or just care about performance, stability, and code control you really want to [understand the ideas and motivations behind datalayer.js](#) and maybe even use it.
@@ -141,15 +141,6 @@ _dtlrq = window._dtlrq || [];
 _dtlrq.push(['broadcast', 'my-cool-event', { foo: 'bar' }]);
 ```
 
-### Using Event Annotations
-For common event handling scenarios (e.g. click, focus, view) there is also a simplified automation mechanism called [Event Annotations](#). These are based on special HTML attributes (e.g. `data-dtlr-event-click`) that can be applied to any element in the DOM. Elements with such annotation get automatically rigged with the respective event handlers. This approach has also the great benefit of being semantically explicit. Further it circumvents the necessary Javscript glue code you would need when using the API.
-
-```html
-<a href="#" data-dtlr-event-click='{"name":"my-annotated-event","data":{"foo":"bar"}}'>Click me!</a>
-```
-
-The previous example shows a simple event annotation used to bind a click-Handler to an element. When the `<a>` tag is clicked it causes an event with the name `my-annotated-event` and the data `{foo: 'bar'}` to be broadcasted by datalayer.js. It has the same effect as manually adding an `onclick` handler on the element and executing `dal.broadcast('my-annotated-event', {"foo":"bar"})` in its callback.
-
 ## Building and Bundling
 After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the system and tool landscape of your system. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
 
@@ -168,9 +159,6 @@ TODO: explain DOM re-scan
 
 ## Runtime Data
 TODO: explain runtime data/events (take from old ODL docs)
-
-## Event Annotations
-TODO: explain event annotations, add some examples of declarative tracking
 
 
 
@@ -330,3 +318,40 @@ If you have a traditional, server-rendered, multi-page website then the lifecycl
 
 For single-page apps (SPAs) the lifecycle methods are extremely crucial.
 @TODO: explain lifecycle methods
+
+
+# Extensions
+Like in any good middleware, the core of datalayer.js can be easily extended with new functionality. The process is somewhat similar to other libraries like e.g. [express](#) and works by adding extensions through the `use` method on the datalayer instance. The extension then automatically connects to certain event hooks and receives data and broadcasts.
+
+## Using extensions
+Usage example for one of the factory extensions that enables even annotations.
+```javascript
+import datalayer from 'datalayerjs';
+import annotations from 'datalayerjs/extensions/annotations';
+
+datalayer
+  .use(annotations())
+  .initialize(...);
+```
+
+## Extension API
+Creating an extension is pretty easy. It just requires a simple module with the following structure.
+```javascript
+export default (config) => class ExampleExtension {
+  constructor(datalayer) {
+    this.datalayer = datalayer;
+    // init prerequisites
+    // ...
+  }
+
+  // handle element scan (called before/after scanElementFor*)
+  beforeScanElement(element) {}
+
+  afterScanElement(element) {}
+
+  // handle event broadcast (called before/after broadcasting event to plugins)
+  beforeBroadcast(name, data) {}
+
+  afterBroadcast(name, data) {}
+}
+```
