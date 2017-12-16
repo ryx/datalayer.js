@@ -26,8 +26,8 @@ export default config => class Annotations {
   /**
    *
    * @param {HTMLElement} element  HTML element to initialize the callback for
-   * @param {String} type
-   * @param {Function} callback
+   * @param {String} type event type
+   * @param {Function} callback function to be called when event is fired
    */
   static initializeAnnotationCallback(element, type, callback) {
     const elements = element.querySelectorAll(`[data-${config.attributePrefix}-event-${type}]`);
@@ -42,13 +42,13 @@ export default config => class Annotations {
   // handle element scan (called before/after scanElementFor*)
   beforeScanElement(element) {
     Annotations.initializeAnnotationCallback(element, 'click', (e) => {
-      const str = e && e.currentTarget && e.currentTarget.getAttribute(`data-${config.attributePrefix}-event-click`);
+      const str = e && e.currentTarget ? e.currentTarget.getAttribute(`data-${config.attributePrefix}-event-click`) : null;
       if (str) {
         this.parseAndBroadcastJSON(str);
       }
     });
     Annotations.initializeAnnotationCallback(element, 'view', (e) => {
-      const str = e && e.currentTarget && e.currentTarget.getAttribute(`data-${config.attributePrefix}-event-view`);
+      const str = e && e.currentTarget ? e.currentTarget.getAttribute(`data-${config.attributePrefix}-event-view`) : null;
       if (str) {
         this.parseAndBroadcastJSON(str);
       }
