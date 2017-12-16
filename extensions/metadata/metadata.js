@@ -94,9 +94,14 @@ export default config => class Metadata {
     }, element);
   }
 
-  // handle element scan (called before/after scanElementFor*)
+  // handle datalayer initialization (called before/after scanElementFor*)
   beforeInitialize(element) {
     // scan element for metadata and return the global data
     return this.scanElementForData(element);
+  }
+
+  // handle element scan (called before/after scanElementFor*)
+  beforeScanElement(element) {
+    return this.scanElementForEvents(element);
   }
 };
