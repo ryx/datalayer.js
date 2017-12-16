@@ -1,6 +1,6 @@
 /**
  * Offical datalayer.js core extension that parses the DOM for
- * special metatags with datalayer.js data.
+ * special metatags with datalayer.js data and events.
  */
 
 /**
@@ -62,15 +62,41 @@ function collectMetadata(name, callback, context = null, data = {}) {
   return data;
 }
 
-export default config => class RendertimeData {
+export default config => class Metadata {
   constructor(datalayer) {
     this.datalayer = datalayer;
     this.globalData = {};
   }
 
+  /**
+   * Scan a given HTMLElement for `dtlr:data` metatags and update global data accordingly.
+   * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for data
+   */
+  scanElementForData(element = window.document) {
+    return collectMetadata(`${config.metaPrefix}data`, () => {}, element, this.globalData);
+  }
+
+  /**
+   * Scan a given HTMLElement for `dtlr:event` metatags and broadcast any events that
+   * were found.
+   * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for events
+   */
+  scanElementForEvents(element) {
+    return collectMetadata(`${config.metaPrefix}event`, (err, _element, obj) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      if (!_element.hasAttribute('data-dtlr-handled-event')) {
+        _element.setAttribute('data-dtlr-handled-event', 1);
+        this.broadcast(obj.name, obj.data);
+      }
+    }, element);
+  }
+
   // handle element scan (called before/after scanElementFor*)
   beforeInitialize(element) {
     // scan element for metadata and return the global data
-    return collectMetadata(`${config.metaPrefix}data`, () => {}, element, this.globalData);
+    return this.scanElementForData(element);
   }
 };
