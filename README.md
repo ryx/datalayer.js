@@ -117,28 +117,10 @@ datalayer.initialize({
 TODO: explain testmode and its activation via URL
 
 ## Passing Data
-The first obvious question here might be "what data should I pass"? That's a good question and we will discuss it in detail in the next chapter, [Conventions](#). Let's first start with the "how". There are different ways to pass data to datalayer.js, each has it's own specific usecase. Although you can mix these ways as you please, it might make sense to stick with one approach first, to keep your implementation maintainable and understandable.
-
-### Using rendertime markup
-Rendertime markup is the most convenient way to pass data from backend applications to the datalayer. You simply put `<meta>` tags like the following in your markup (i.e. your website's HTML, no matter how that is generated) to pass "rendertime" data or events to the datalayer. This makes it extremely comfortable for backend-rendered applications to transport data into the frontend. (Of course we are not using any inline Javascript here, because inline scripts are just bad for your karma ;-) ..)
-
-```xml
-<meta name="dtlr:data" content='{"page":{"type":"homepage","name":"My homepage"}}' />
-```
-
-### Using the Javascript API
-This is designed to pass data during runtime of your application and most often used to propagate events from your application code to the datalayer.js plugins. It relies on a minimal script API that you include in your code and use it as you would do with any other library.
+The first obvious question here might be "what data should I pass"? That's a good question and we will discuss it in detail in the next chapter, [Conventions](#). Let's first start with the "how". The default way of communicating with datalayer.js relies on a minimal script API that you include in your code and use it as you would do with any other library. There are more (extremely useful) ways of interaction, when using extensions. Check [/src/extensions](#) for additional information.
 
 ```javascript
 datalayer.broadcast('pageload', {"page":{"type":"homepage","name":"My homepage"}});
-```
-
-### Using the Method Queue Pattern (MQP)
-It is also possible to access the datalayer using a common method queue pattern. This can become handy if you need asynchronous access from completely separate environments. A common case might be an A/B testing tool where you are outside your own script space and heavily rely on external initialization processes. In such situations you can simply use the following pattern that is well-known from affiliate tools. Datalayer.js intercepts any calls to `_dtlrq.push` and executes the associated functions provided through the method queue.
-
-```javascript
-_dtlrq = window._dtlrq || [];
-_dtlrq.push(['broadcast', 'my-cool-event', { foo: 'bar' }]);
 ```
 
 ## Building and Bundling
@@ -324,7 +306,7 @@ For single-page apps (SPAs) the lifecycle methods are extremely crucial.
 Like in any good middleware, the core of datalayer.js can be easily extended with new functionality. The process is somewhat similar to other libraries like e.g. [express](#) and works by adding extensions through the `use` method on the datalayer instance. The extension then automatically connects to certain event hooks and receives data and broadcasts.
 
 ## Using extensions
-Usage example for one of the factory extensions that enables even annotations.
+Usage example for one of the factory extensions, enabling the "event annotations" feature.
 ```javascript
 import datalayer from 'datalayerjs';
 import annotations from 'datalayerjs/extensions/annotations';
