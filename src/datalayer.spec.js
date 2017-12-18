@@ -265,4 +265,65 @@ describe('datalayer', () => {
       });
     });
   });
+
+  describe('extensions:', () => {
+    // dummy extension for testing
+    let dummyExtensionInstance = null;
+    const dummyExtension = config => class DummyExtension {
+      constructor(dtlr) {
+        this.datalayer = dtlr;
+        this.config = config;
+        dummyExtensionInstance = this;
+      }
+    };
+
+    describe('use:', () => {
+      it('should load an extension when calling use', () => {
+        const dal = new module.Datalayer();
+
+        dal.use(dummyExtension({ test: '123' }));
+
+        assert(dal.extensions.length === 1);
+      });
+
+      it('should pass the configuration to the extension', () => {
+        const dal = new module.Datalayer();
+        const cfg = { test: '123' };
+
+        dal.use(dummyExtension(cfg));
+
+        assert(dal.extensions[0].config === cfg);
+      });
+
+      it('should return the datalayer instance', () => {
+        const dal = new module.Datalayer();
+
+        assert.equal(dal.use(dummyExtension()), dal);
+      });
+    });
+
+    describe('triggerExtensionHook:', () => {
+      it('should trigger a given extension hook', () => {
+        const dal = new module.Datalayer();
+
+        // create extension, then inject our spy, then trigger hooks
+        dal.use(dummyExtension());
+        dummyExtensionInstance.myTestingHook = td.function();
+        dal.triggerExtensionHook('myTestingHook');
+
+        td.verify(dummyExtensionInstance.myTestingHook());
+      });
+
+      it('should trigger an extension hook and pass the expected arguments to the hook function', () => {
+        const dal = new module.Datalayer();
+
+        // create extension, then inject our spy, then trigger hooks
+        dal.use(dummyExtension());
+        dummyExtensionInstance.myTestingHook = td.function();
+        dal.triggerExtensionHook('myTestingHook', 'foo', 'bar', 123, { foo: 'bar' });
+
+        td.verify(dummyExtensionInstance.myTestingHook('foo', 'bar', 123, { foo: 'bar' }));
+      });
+    });
+  });
 });

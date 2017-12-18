@@ -7,7 +7,7 @@
  * \__,_/\__,_/\__/\__,_/_/\__,_/\__, /\___/_/  (_)_/ /____/
  *                              /____/           /___/
  *
- * Copyright (c) 2016-present, Rico Pfaus
+ * Copyright (c) 2016 - present, Rico Pfaus
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -44,6 +44,7 @@ export class Datalayer {
     this.globalConfig = {}; // configuration object (passed via odl:config)
     this.testModeActive = this.isTestModeActive();
     this.plugins = []; // array with loaded plugins
+    this.extensions = []; // array with loaded extensions
     this.queue = new EventQueue();
 
     // create promises
@@ -62,6 +63,32 @@ export class Datalayer {
    */
   whenReady() {
     return this.readyPromise;
+  }
+
+  /**
+   * Load and use the given extension.
+   * @param {Object} extension datalayer extension class object (as returned by factory method)
+   * @returns {Datalayer} the current instance
+   */
+  use(ExtensionClass) {
+    const instance = new ExtensionClass(this);
+    this.extensions.push(instance);
+    return this;
+  }
+
+  /**
+   * Trigger an extension hook with the given name and the given arguments. Causes all extensions
+   * to receive the given hook and addtional parameters.
+   * @param {String} name name of hook to be executed
+   * @param {*} rest rest parameters
+   */
+  triggerExtensionHook(name, ...rest) {
+    for (let i = 0; i < this.extensions.length; i += 1) {
+      const extension = this.extensions[i];
+      if (typeof extension[name] === 'function') {
+        extension[name](...rest);
+      }
+    }
   }
 
   /**
@@ -244,11 +271,10 @@ export class Datalayer {
   }
 }
 
-// create new ODL singleton instance
+// create new datalayer singleton instance
 const datalayer = new Datalayer();
 
-// XXX: store ODL reference in window (currently needed for functionally testing ODL plugins)
+// XXX: store datalayer reference in window (currently needed for functionally testing plugins)
 window._datalayer = datalayer;
-
 
 export default datalayer;
