@@ -222,9 +222,6 @@ export class Datalayer {
     }
     debug('plugins:', this.plugins);
 
-    // install method queue
-    utils.createMethodQueueHandler(window, '_dtlrq', this);
-
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
     this.initialized = true;
     // debug('broadcasting initialize event', this.broadcast('initialize', this.globalData));
