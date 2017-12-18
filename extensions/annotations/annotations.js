@@ -4,7 +4,7 @@
  * event annotations. The annotations follow a simple syntax and can be
  * provided via a `data-dtlr-event-*` attribute.
  */
-export default config => class Annotations {
+export default (config = {}) => class Annotations {
   constructor(datalayer) {
     this.datalayer = datalayer;
     // init prerequisites

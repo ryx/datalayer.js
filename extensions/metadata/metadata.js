@@ -62,7 +62,7 @@ function collectMetadata(name, callback, context = null, data = {}) {
   return data;
 }
 
-export default config => class Metadata {
+export default (config = {}) => class Metadata {
   constructor(datalayer) {
     this.datalayer = datalayer;
     this.globalData = {};
