@@ -139,7 +139,7 @@ describe('datalayer', () => {
 
       dal.initialize({
         data: globalDataMock,
-        plugins: [
+        rules: [
           () => (dal.isTestModeActive() ? [new MockPlugin()] : null),
         ],
       });
@@ -214,7 +214,7 @@ describe('datalayer', () => {
       const plugin2 = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
-      dal.initialize({ data: globalDataMock, plugins: () => [plugin1, plugin2] });
+      dal.initialize({ data: globalDataMock, rules: () => [plugin1, plugin2] });
 
       return dal.whenReady().then(() => {
         dal.broadcast(expectedEvent.name, expectedEvent.data);
@@ -237,7 +237,7 @@ describe('datalayer', () => {
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
       dal.broadcast(expectedEvent.name, expectedEvent.data);
-      dal.initialize({ data: globalDataMock, plugins: () => [plugin] });
+      dal.initialize({ data: globalDataMock, rules: () => [plugin] });
 
       dal.whenReady().then(() => {
         assert.deepEqual(

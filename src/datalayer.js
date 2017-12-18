@@ -186,7 +186,7 @@ export class Datalayer {
 
     // validate options
     const data = options.data || {};
-    let plugins = options.plugins || [];
+    let rules = options.rules || [];
 
     // set config (@TODO: also collect config from markup here!)
     this.globalConfig = options.config || {};
@@ -209,11 +209,11 @@ export class Datalayer {
     debug('collected data', this.globalData);
 
     // instantiate plugins based on config and provided ruleset (wrap single function in array first)
-    if (typeof plugins === 'function') {
-      plugins = [plugins];
+    if (typeof rules === 'function') {
+      rules = [rules];
     }
-    if (plugins.length) {
-      plugins.forEach((callback) => {
+    if (rules.length) {
+      rules.forEach((callback) => {
         const pluginList = callback(this.globalData);
         if (pluginList) {
           pluginList.forEach(p => this.addPlugin(p));
