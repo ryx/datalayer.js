@@ -4,19 +4,19 @@ import { assert } from 'chai';
 import td from 'testdouble';
 import { JSDOM } from 'jsdom';
 
-// stub dependencies
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
-const window = td.replace('../../src/lib/window', dom.window);
-
 describe('methodQueue', () => {
-  let [methodQueue, datalayerMock] = [];
+  let [methodQueue, datalayerMock, dom, window] = [];
 
-  beforeEach(() => import('./methodQueue.js').then((m) => {
-    methodQueue = m;
+  beforeEach(() => {
+    dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
+    window = td.replace('../../src/lib/window', dom.window);
     datalayerMock = {
       broadcast: td.function(),
     };
-  }));
+    return import('./methodQueue.js').then((m) => {
+      methodQueue = m;
+    });
+  });
 
   describe('module:', () => {
     it('should export a factory which returns the extension class', () => {
@@ -30,7 +30,7 @@ describe('methodQueue', () => {
 
       new ExtensionClass(datalayerMock);
 
-      assert.isObject(window._dtlrq);
+      assert.isArray(window._dtlrq);
     });
 
     it('should install a global method queue with a custom name if provided in config', () => {
@@ -38,7 +38,7 @@ describe('methodQueue', () => {
 
       new ExtensionClass(datalayerMock);
 
-      assert.isObject(window._myqueue);
+      assert.isArray(window._myqueue);
     });
   });
 
