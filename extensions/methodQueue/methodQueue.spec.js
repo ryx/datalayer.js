@@ -18,11 +18,13 @@ describe('methodQueue', () => {
     };
   }));
 
-  describe('methodQueue extension:', () => {
+  describe('module:', () => {
     it('should export a factory which returns the extension class', () => {
       assert.isFunction(methodQueue.default());
     });
+  });
 
+  describe('extension factory:', () => {
     it('should install a global method queue with the default name', () => {
       const ExtensionClass = methodQueue.default();
 
