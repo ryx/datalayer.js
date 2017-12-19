@@ -1,12 +1,18 @@
 /**
  * Offical datalayer.js core extension that parses the DOM for
  * special metatags with datalayer.js data and events.
+ *
+ * Copyright (c) 2016 - present, Rico Pfaus
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
+import window from '../../src/lib/window';
 
 /**
  *  Helper method - extend object with other object
  */
-function extend(obj1, obj2) {
+export function extend(obj1, obj2) {
   const keys = Object.keys(obj2);
   for (let i = 0; i < keys.length; i += 1) {
     const val = obj2[keys[i]];
@@ -33,7 +39,7 @@ function extend(obj1, obj2) {
  * if defined it limits the lookup context to the given element
  * @param {Object}  data  initial data, gets extended with the collected data
  */
-function collectMetadata(name, callback, context = null, data = {}) {
+export function collectMetadata(name, callback, context = null, data = {}) {
   // get parent element to be queried (or use entire document as default)
   let parent = window.document;
   if (context) {
@@ -62,26 +68,17 @@ function collectMetadata(name, callback, context = null, data = {}) {
   return data;
 }
 
-export default (config = {}) => class Metadata {
+export default (config = { metaPrefix: 'dtlr:' }) => class Metadata {
   constructor(datalayer) {
     this.datalayer = datalayer;
     this.globalData = {};
   }
 
-  /**
-   * Scan a given HTMLElement for `dtlr:data` metatags and update global data accordingly.
-   * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for data
-   */
-  scanElementForData(element = window.document) {
+  beforeInitialize(element = window.document) {
     return collectMetadata(`${config.metaPrefix}data`, () => {}, element, this.globalData);
   }
 
-  /**
-   * Scan a given HTMLElement for `dtlr:event` metatags and broadcast any events that
-   * were found.
-   * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for events
-   */
-  scanElementForEvents(element) {
+  beforeParseDOMNode(element) {
     return collectMetadata(`${config.metaPrefix}event`, (err, _element, obj) => {
       if (err) {
         console.error(err);
@@ -89,19 +86,8 @@ export default (config = {}) => class Metadata {
       }
       if (!_element.hasAttribute('data-dtlr-handled-event')) {
         _element.setAttribute('data-dtlr-handled-event', 1);
-        this.broadcast(obj.name, obj.data);
+        this.datalayer.broadcast(obj.name, obj.data);
       }
     }, element);
-  }
-
-  // handle datalayer initialization (called before/after scanElementFor*)
-  beforeInitialize(element) {
-    // scan element for metadata and return the global data
-    return this.scanElementForData(element);
-  }
-
-  // handle element scan (called before/after scanElementFor*)
-  beforeScanElement(element) {
-    return this.scanElementForEvents(element);
   }
 };
