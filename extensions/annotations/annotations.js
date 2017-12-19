@@ -3,6 +3,11 @@
  * datalayer.scanElement and parses the provided DOM node for existing
  * event annotations. The annotations follow a simple syntax and can be
  * provided via a `data-dtlr-event-*` attribute.
+ *
+ * Copyright (c) 2016 - present, Rico Pfaus
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
 export default (config = {}) => class Annotations {
   constructor(datalayer) {
