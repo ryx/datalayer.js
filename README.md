@@ -26,9 +26,9 @@ That's it. Almost. There are many more details and possibilities of course. You 
 ## But what is wrong with external tag management?
 It depends. If you want, go and use some 3rd party tool. You might even be happy with it. However, if you are a developer or a bigger organization with multiple dev teams or just care about performance, stability, and code control you really want to [understand the ideas and motivations behind datalayer.js](#) and maybe even use it.
 
-But don't get fooled by comments like "tag managers are great, because you don't need to change your software when you want to add new 'tags'". Honestly - how would you describe adding random scripts into a production environment, if not "changing the software"? Those people completely miss the fact that adding Javascript code (because that is what said "pixels" and "tags" are!) into a website is considered to be a *production deployment*. You insert new code into your *production environment*. Directly. Without CI testing. In most cases it is *untested, unknown, "blackbox" code*, written by some *unknown third party*.
+But don't get fooled by comments like "tag managers are great, because you don't need to change your software when you want to add new 'tags'". Honestly - how would you describe adding random scripts into a production environment, if not "changing the software"? Call me old-fashioned, but adding Javascript code (because that is what said "pixels" and "tags" are!) into a live website is a *production deployment* to me. You insert new code into your *production environment*. Directly. Without CI testing. In most cases it is *untested, unknown, "blackbox" code*, written by some *unknown third party*.
 
-So, what else can you think of that is more scary than putting someone else's code into your live environment? At least one thing. Letting someone else put someone else's code into your live environment. To scare you even more, it will most likely be a junior web designer in some marketing agency, led by online marketing departments without deeper technical knowledge. Yay! Welcome to the world of modern, external "tag management".
+So, what else can you think of that is more scary than putting someone else's code into your live environment? At least one thing. Letting _someone else_ put _someone else's code_ into your live environment. To scare you even more, it will most likely be a junior web designer in some marketing agency, led by online marketing departments without deeper technical knowledge. Yay! Welcome to the world of modern, external "tag management".
 
 
 # Usage
@@ -37,29 +37,35 @@ The basic usage can be divided into three different parts - integration, configu
 ## Integration
 Datalayer.js comes as [UMD module](https://github.com/umdjs/umd) which means you can use it either directly via a `<script>` tag, by using an AMD loader (e.g. [requirejs](http://requirejs.org/)) or as [commonJS module](http://wiki.commonjs.org/wiki/Modules/1.1) (e.g. nodejs's `require`). These brief examples illustrate the different styles:
 
+### Using ES6-style imports
+The most common way might be to use the ES6 import notation (though you might also use traditional `require` syntax instead).
+```javascript
+import datalayer from 'datalayerjs';
+
+datalayer.initialize({});
+```
+
+### Using AMD-style includes
+AMD-style includes are available, too. This example also show loading one of the core extensions as module dependency.
+```javascript
+require(['datalayerjs', 'datalayerjs/extensions/annotations'], (datalayer, annotations) => {
+  datalayer
+    .use(annotations())
+    .initialize({});
+});
+```
+
 ### Using the Method Queue Pattern
-The method queue pattern (MQP) offers a very simple, asynchronous, non-blocking script include that should work in almost any environment under any circumstances. It might feel a little old fashioned, but works reliably like nothing else.
+The method queue pattern (MQP) integration is available through the [methodQueue extension](#). It offers a very simple, asynchronous, non-blocking script include that should work in almost any environment under any circumstances. It might feel a little old fashioned, but works reliably like nothing else. Important: when using this integration you need to pass in the extensions to be loaded via the `data-datalayer-config` attribute. Otherwise the method queue won't be available.
 
 ```html
-<script type="text/javascript" src="/path/to/datalayer.js" async></script>
+<script
+  type="text/javascript" src="/path/to/datalayer.js" async data-datalayer-config='{"extensions":["methodQueue"]}'
+></script>
 <script>
 _dtlrq = window._dtlrq || [];
 _dtlrq.push('initialize', {});
 </script>
-```
-
-### Using AMD-style includes
-```javascript
-require(['datalayerjs'], (datalayer) => {
-  datalayer.initialize({});
-});
-```
-
-### Using CommonJS style
-ES6 import (might also use traditional `require` syntax instead)
-```javascript
-import datalayer from 'datalayerjs';
-datalayer.initialize({});
 ```
 
 ## Configuration
