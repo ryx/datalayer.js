@@ -14,7 +14,7 @@
  *
  */
 import window from './lib/window';
-import utils from './lib/utils';
+// import utils from './lib/utils';
 import cookie from './lib/cookie';
 import EventQueue from './lib/queue';
 
@@ -135,16 +135,16 @@ export class Datalayer {
    * Scan a given HTMLElement for `dtlr:data` metatags and update global data accordingly.
    * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for data
    */
-  scanElementForDataMarkup(node = window.document) {
+  /* scanElementForDataMarkup(node = window.document) {
     return utils.collectMetadata(`${this.metaPrefix}data`, () => {}, node, this.globalData);
-  }
+  } */
 
   /**
    * Scan a given HTMLElement for `dtlr:event` metatags and broadcast any events that
    * were found.
    * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for events
    */
-  scanElementForEventMarkup(node) {
+  /* scanElementForEventMarkup(node) {
     return utils.collectMetadata(`${this.metaPrefix}event`, (err, element, obj) => {
       if (err) {
         console.error(err);
@@ -155,11 +155,12 @@ export class Datalayer {
         this.broadcast(obj.name, obj.data);
       }
     }, node);
-  }
+  } */
 
-  scanElement(node) {
-    this.globalData = this.scanElementForDataMarkup(node);
-    this.scanElementForEventMarkup(node);
+  parseDOMNode(node) {
+    this.triggerExtensionHook('beforeParseDOMNode', node);
+    // this.globalData = this.scanElementForDataMarkup(node);
+    // this.scanElementForEventMarkup(node);
   }
 
   /**
@@ -192,8 +193,9 @@ export class Datalayer {
     this.globalConfig = options.config || {};
 
     // collect global data from document
-    this.globalData = data;
-    this.scanElementForDataMarkup(window.document);
+    // this.globalData = data;
+    // this.scanElementForDataMarkup(window.document);
+    this.globalData = this.triggerExtensionHook('beforeInitialize', data);
 
     // validate mandatory data (@TODO: we might use a model-based validation here somewhen)
     const gd = this.globalData;
@@ -234,9 +236,10 @@ export class Datalayer {
 
     // collect event data from document and send events to plugins
     debug(`scanning for ${this.metaPrefix}event markup`);
-    this.scanElementForEventMarkup();
+    // this.scanElementForEventMarkup();
+    this.parseDOMNode(window);
 
-    return true;
+    return this;
   }
 
   inTestMode() {

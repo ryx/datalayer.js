@@ -40,6 +40,14 @@ describe('methodQueue', () => {
 
       assert.isArray(window._myqueue);
     });
+
+    it('should execute the associated API method when adding a method to the queue BEFORE init', () => {
+      // ...
+    });
+
+    it('should execute the associated API method when adding a method to the queue AFTER init', () => {
+      // ...
+    });
   });
 
   describe('createMethodQueueHandler:', () => {
