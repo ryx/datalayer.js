@@ -2,7 +2,7 @@
 Official datalayer.js core extension that allows to create datalayer events for common user interactions (click/focus/view) using a semantic annotation syntax.
 
 ## Info
-This extension provides a simplified automation mechanism called "event annotations" that can be used for common event handling scenarios (e.g. click, focus, view). Such annotations are simply defined using a `data-dtlr-event-*` attribute in the markup and can be applied to any element in the DOM. Elements with such annotation get automatically attached with the respective event handlers. Besides the obvious simplicity, this approach has also the great benefit of being semantically explicit. Additonally, it reduces the necessary Javascript glue code required when using the datalayer.js API directly.
+This extension provides so called "event annotations" that greatly simplify the vast majority of event handling scenarios (e.g. click, focus, view). Such annotations are simply defined using a `data-dtlr-event-*` attribute in the markup and can be applied to any element in the DOM. Elements with such annotation get automatically attached with the respective event handlers. Besides the obvious simplicity, this approach has the advantage of being semantically explicit. Additionally, it reduces the necessary Javascript glue code required when using the datalayer.js API directly.
 
 ## Usage
 First enable the extension in your code, then use event annotations anywhere to easily broadcast datalayer events without setting up additional script logic.

@@ -53,10 +53,7 @@ datalayer
     // provide plugins to be loaded, together with display rules and private configuration
     // (you can use the same plugin multiple times, with variying configuration)
     plugins: [
-      {
-        type: new ExamplePlugin({ testProp: 'myplugin-private-number-1' }),
-        rule: true, // load on any page
-      },
+      new ExamplePlugin({ testProp: 'myplugin-private-number-1' }),
     ],
   })
   .then((dtlr) => {

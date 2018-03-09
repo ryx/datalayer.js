@@ -2,7 +2,7 @@
 Official datalayer.js core extension that allows accessing the datalayer API through a global method queue.
 
 ## Info
-This extensions makes it possible to access the datalayer using the method queue pattern (as known from affiliate tools). This can become handy if you need asynchronous access from completely separate environments. A common case might be an A/B testing tool where you are outside your own script space and heavily rely on external initialization processes. Datalayer.js intercepts any calls to `_dtlrq.push` and executes the associated functions provided through the method queue.
+This extensions makes it possible to access the datalayer using the method queue pattern (as known from popular affiliate tools). This can become handy if you need asynchronous access from completely separate environments. A common case might be an A/B testing tool where you are outside your own script space and heavily rely on external initialization processes. Datalayer.js intercepts any calls to `_dtlrq.push` and executes the associated functions provided through the method queue.
 
 ## Usage
 First enable the extension in your code

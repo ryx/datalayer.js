@@ -88,27 +88,12 @@ import {
 
 datalayer.initialize({
   // ...
-  rules: [
-    // loaded on each page
-    () => [ new SomeAnalyticsPlugin({ myTrackServer: '//test/foo' }) ],
-    // loaded when page.type is either search, category or productdetail
-    (data) => {
-      if (['search', 'category', 'productdetail'].indexOf(data.page.type) > -1) {
-        return [
-          new SomeSocialMediaPlugin(),
-          new SomeBidManagementPlugin(),
-        ];
-      }
-    },
-    // loaded when page.type is checkout-confirmation
-    (data) => {
-      if (data.page.type === 'checkout-confirmation') {
-        return [
-          new SomeConversionPlugin({ mySpecialAttr: 'foo-123' }),
-          new SomeOtherConversionPlugin({ someAccountId: 'askfjh89uasd' }),
-        ];
-      }
-    },
+  plugins: [
+    new SomeAnalyticsPlugin({ myTrackServer: '//test/foo' }),
+    new SomeSocialMediaPlugin(),
+    new SomeBidManagementPlugin(),
+    new SomeConversionPlugin({ mySpecialAttr: 'foo-123' }),
+    new SomeOtherConversionPlugin({ someAccountId: 'askfjh89uasd' }),
     // loaded when page.type is checkout-confirmation and campaign matches some specific advertiser
     (data) => {
       if (data.page.type === 'checkout-confirmation' && channelCampaign.match(/aff\/(.*)someAdvertiser\//)) {
@@ -130,7 +115,7 @@ datalayer.broadcast('pageload', {"page":{"type":"homepage","name":"My homepage"}
 ```
 
 ## Building and Bundling
-After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the system and tool landscape of your system. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
+After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the framework and tool landscape of your application or website. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
 
 
 # Conventions
@@ -151,11 +136,13 @@ TODO: explain runtime data/events (take from old ODL docs)
 
 
 # Models
-The model definition provides the schema that defines data and event patterns for your entire website. It ultimately defines which data ends up in your datalayer and what you can provide to third parties. Although, first and foremost, it is nothing more than a convention that guides other people (developers, analysts, marketers, product management, etc.) in understanding what data to expect (or provide) where. You can think of it as the single point of truth of the "what and where of data" provided to datalayer.js.
+Models are a fundamental part of any datalayer.js-driven website. Although not mandatory from a technical perspective (yet), they are the foundation for implementing and validating your data. That makes them a very important cornerstone for collaboration between developers, business departments and digital analysts.
 
-Technically seen the model is nothing more than a big JSON object with a few different properties, as described in the next sections. You are also not limited to the available data types. Instead you are *completely free* (and even encouraged) to use your own type definitions instead of the default ones. But be warned - even if it has no real technical relevance it is maybe *the most important part of your entire datalayer structure*. If you get things wrong here, you'll miss something later. But don't worry, you are free to extend the model at any time. But it will cause developer effort and discussion, so plan well ;) ..
+> A "model" in terms of datalayer.js is a single JSON document that defines at least two things: all available page types for a website and all virtual type definitions that are used by those page types. Types are defined using [Apache Avro](https://avro.apache.org/docs/current/).
 
-> A "model" in terms of datalayer.js is a single JSON document that defines at least two things: all available page types for a website, together with the data that is expected per page type, and all virtual type definitions that are used by those page types. Types are defined using [Apache Avro](https://avro.apache.org/docs/current/).
+The model definition provides the schema that defines data and event patterns for your entire website. It ultimately defines which data ends up in your datalayer and what you can provide to third parties. Although, first and foremost, it is nothing more than a convention that guides other people (developers, analysts, marketers, product management, etc.) in understanding what data to expect (or provide) where. You can think of it as the single source of truth regarding the data provided to datalayer.js.
+
+Technically seen the model is nothing more than a big JSON object with a few different properties, as described in the next sections. You are also not limited to the available data types. Instead you are *completely free* (and even encouraged) to use your own type definitions instead of the default ones. But be warned - even if it has no real technical relevance it is maybe *the most important part of your entire datalayer structure*. If you get things wrong here, you'll miss something later. Of course you are free to extend the model at any time. But it will cause developer effort and discussion, so plan well ;) ..
 
 ## Types
 The `types` property in the model contains schema definitions of the available data types that can be used throughout the rest of the model (namely the *pages* and *events* definitions). It is using [Apache Avro](https://avro.apache.org/docs/current/) to describe types so it can be parsed and processed, e.g. to automatically validate consistency of provided data on a website (we will eventually provide a validator for that purpose). Type definitions can become quite huge JSON structures
@@ -188,9 +175,9 @@ The `types` property in the model contains schema definitions of the available d
 ```
 
 ## Pages
-The `pages` property in the model describes which data is expected for the individual pagetypes. A *pagetype* can be described as a generic, "single purpose" type of page like a *homepage*, a *productlist* or a *productdetail*. As a rule of thumb you could say that if you had a dedicated template for a certain page, then it should get it's own pagetype. On bigger websites this can easily become a list of tenth (or even hundreds) of different pagetypes. At Galeria Kaufhof we have a combination of webshop, corporate website, external websites and many more. We ended up having around a hundred different page types.
+The `pages` property in the model describes which data is expected for the individual pagetypes. A *pagetype* can be described as a generic, "single purpose" type of page like a *homepage*, a *productlist* or a *productdetail*. As a rule of thumb you could say that if there is a dedicated template for a certain kind of page, then it should get it's own pagetype in the datalayer, too. On bigger websites this can easily become a list of tenth (or even hundreds) of different pagetypes. At Galeria Kaufhof we have a combination of webshop, corporate website, external websites and many more. We ended up having around a hundred different page types and even more events.
 
-The pagetype definition uses the datatypes declared via the `types` property. There is one special pagetype called `*`. It stands for "each page throughout the entire website". Usually it is used to provide common information like page or site specifics.
+The pagetype definition uses the datatypes declared via the `types` property. There is one special pagetype called `*`. It stands for "any page throughout the entire website". Usually it is used to provide common information like page or site specifics.
 
 ```json
 {
@@ -203,7 +190,7 @@ The pagetype definition uses the datatypes declared via the `types` property. Th
       "search": { "type:": "DALSearchData" }
     },
     "category": {
-      "category": { "type:": "DALCategoryData" },
+      "category": { "type": "DALCategoryData" },
       "search": { "type": "DALSearchData", "mandatory": false }
     },
     "productdetail": {
@@ -214,21 +201,21 @@ The pagetype definition uses the datatypes declared via the `types` property. Th
 ```
 
 ## Events
-Tracking events is mandatory for deeper customer journey analysis, so you will likely have various events that shall be propagated to your datalayer. Common events could be "product-added-to-cart", "login-form-submit" or "layer-open", depending on how fine-grained you want to analyze the user behaviour.
+Event tracking is mandatory for deeper customer journey analysis, so you will likely have various events that shall be propagated to your datalayer. Common events might be "product-added-to-cart", "login-form-submitted" or "layer-opened", depending on how fine-grained you want to analyze the user behaviour.
 
-The `events` property in the model holds a description of all events available on your website and how their parameter signature should be. As already seen for the `pages`, the `events` use the same datatypes defined through the `types` property.
+The `events` property in the model holds a description of all events available on your website and how their parameter signature should be. As already seen for the `pages`, the `events` use the same datatypes that have been defined using the `types` property.
 
 ```json
 {
   "events": {
-    "page-load": ["DALGlobalData"],
+    "page-loaded": ["DALGlobalData"],
     "product-added": [{"product":"DALProductData"}]
   }
 }
 ```
 
 # Javascript API
-The datalayer.js Javascript API is pretty simple and straightforward. The module itself contains exactly one object with the name `datalayer`. Import it either using ES6 `import` or CommonJS `require` syntax. The object contains the following public methods (Note: you can also use the method queue pattern through the global variable `_dtlrq` to access all of the described public API methods):
+The Javascript API is the common way to interact with datalayer.js. The module itself contains exactly one object with the name `datalayer`. Import it either using ES6 `import` or CommonJS `require` syntax. The object contains the following public methods (NOTE: with the methodQueue extension you can access all of the described public API methods via the method queue pattern):
 
 ## initialize(options:Object): void
 Initialize the current datalayer instance with the given options (see section [Configuration](#configuration) for details). It is mandatory to call this once before the datalayer can be used. It sets up the data, scans for metatags/annotations and loads the requested plugins.
@@ -277,6 +264,10 @@ Datalayer.js provides a modular architecture where logic is encapsulated in plug
 class SomePlugin {
   constructor() {
     // perform any kind of setup here, e.g. add 3rd party script tag to DOM
+  }
+
+  handleActivate(page) {
+    // return true if page.type should be handled by this plugin
   }
 
   handleEvent(name, data) {
