@@ -15,6 +15,10 @@ const datalayer = require('../src/datalayer').default;
 const examplePlugin = require('./examplePlugin').default;
 // END: DOM fake
 
+// import extensions
+import datalayer from 'datalayerjs';
+import { metadata, annotations } from 'datalayerjs/extensions';
+
 /**
  * EXAMPLE 1: basic initialization of datalayer.js
  *

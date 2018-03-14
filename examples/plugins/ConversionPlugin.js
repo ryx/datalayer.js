@@ -1,4 +1,4 @@
-// import datalayer from 'datalayerjs';
+import datalayer from 'datalayerjs';
 
 /**
  * Example of a common conversion tracking plugin.
@@ -15,6 +15,10 @@ export default class SomePlugin {
     s.async = true;
     document.querySelector('head').appendChild(s);
     /* eslint-enable */
+  }
+
+  handleActivate(page) {
+    page.type === 'checkout-confirmation';
   }
 
   /* eslint-disable class-methods-use-this */
@@ -39,7 +43,7 @@ export default class SomePlugin {
     }
   }
 
-  destroy() {
+  handleDestroy() {
     // TODO: plugin should remove itself from DOM again
   }
 }

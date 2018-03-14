@@ -1,7 +1,3 @@
-# datalayer.js
-
-An open-source datalayer, tagmanager, and *"frontend middleware"*, proxying data between the client and any third parties. Based on a [customizable data model with a virtual type system](#models), trying to standardize common 3rd party integration into today's websites.
-
            __      __        __                          _
       ____/ /___ _/ /_____ _/ /___ ___  _____  _____    (_)____
      / __  / __ `/ __/ __ `/ / __ `/ / / / _ \/ ___/   / / ___/
@@ -9,7 +5,9 @@ An open-source datalayer, tagmanager, and *"frontend middleware"*, proxying data
     \__,_/\__,_/\__/\__,_/_/\__,_/\__, /\___/_/  (_)_/ /____/
                                  /____/           /___/
 
-# Info
+# datalayer.js
+
+An open-source datalayer, tagmanager, and *"frontend middleware"*, proxying data between the client and any third parties. Based on a [customizable data model with a virtual type system](#models), aimed at standardizing and simplifying the process of 3rd party integration into today's websites.
 
 ## What is this exactly?
 A *developer-first, in-sourced tag management system* without external GUI. A very mature set of *conventions and virtual types to ensure a deterministic data flow* between backend and frontend. An *event system and plugin loader* to pass data from the client space to 3rd parties. A fully *test-driven environment* to handle and *quality-test your marketing attribution*. Also a blessing if you ever intend to switch to another web analytics tool ([read our success story](#)). Likely even more.
@@ -26,13 +24,13 @@ That's it. Almost. There are many more details and possibilities of course. You 
 ## But what is wrong with external tag management?
 It depends. If you want, go and use some 3rd party tool. You might even be happy with it. However, if you are a developer or a bigger organization with multiple dev teams or just care about performance, stability, and code control you really want to [understand the ideas and motivations behind datalayer.js](#) and maybe even use it.
 
-But don't get fooled by comments like "tag managers are great, because you don't need to change your software when you want to add new 'tags'". Honestly - how would you describe adding random scripts into a production environment, if not "changing the software"? Call me old-fashioned, but adding Javascript code (because that is what said "pixels" and "tags" are!) into a live website is a *production deployment* to me. You insert new code into your *production environment*. Directly. Without CI testing. In most cases it is *untested, unknown, "blackbox" code*, written by some *unknown third party*.
+At least don't get fooled by comments like "tag managers are great, because you don't need to change your software when you want to add new 'tags'". Honestly - how would you describe adding random scripts into a production environment, if not "changing the software"? Call me old-fashioned, but adding Javascript code (because that is what said "pixels" and "tags" are!) into a live website is a *production deployment* to me. You insert new code into your *production environment*. Directly. Without CI testing. In most cases it is *untested, unknown, "blackbox" code*, written by some *unknown third party*.
 
-So, what else can you think of that is more scary than putting someone else's code into your live environment? At least one thing. Letting _someone else_ put _someone else's code_ into your live environment. To scare you even more, it will most likely be a junior web designer in some marketing agency, led by online marketing departments without deeper technical knowledge. Yay! Welcome to the world of modern, external "tag management".
+So, what else can you think of that is more scary than putting someone else's code into your live environment? Well, to me it's even worse if _someone else_ puts _someone else's code_ into my live environment. To scare you even more, it will most likely be a junior web designer in some marketing agency, led by online marketing departments without deeper technical knowledge. Yay! Welcome to the world of modern, external "tag management".
 
 
 # Usage
-The basic usage can be divided into three different parts - integration, configuration and runtime (with focus on passing data and events to datalayer and plugins). The following paragraphs give a short introduction to these three topics. For more detailed information, check the dedicated sections for each topic.
+The usage can be divided into three different parts - [Integration](#integration), [Configuration](#configuration) and [Runtime](#passing-data) (with focus on passing data and events to datalayer and plugins). The following paragraphs give a short introduction to these three topics. For more detailed information, check the dedicated sections for each topic.
 
 ## Integration
 Datalayer.js comes as [UMD module](https://github.com/umdjs/umd) which means you can use it either directly via a `<script>` tag, by using an AMD loader (e.g. [requirejs](http://requirejs.org/)) or as [commonJS module](http://wiki.commonjs.org/wiki/Modules/1.1) (e.g. nodejs's `require`). These brief examples illustrate the different styles:
@@ -60,7 +58,10 @@ The method queue pattern (MQP) integration is available through the [methodQueue
 
 ```html
 <script
-  type="text/javascript" src="/path/to/datalayer.js" async data-datalayer-config='{"extensions":["methodQueue"]}'
+  type="text/javascript"
+  src="/path/to/datalayer.js"
+  async
+  data-datalayer-config='{"extensions":["methodQueue"]}'
 ></script>
 <script>
 _dtlrq = window._dtlrq || [];
@@ -71,10 +72,8 @@ _dtlrq.push('initialize', {});
 ## Configuration
 After including the datalayer.js module you have to call the `initialize` method on the global instance to perform basic setup and tell datalayer.js which plugins to load. Options are provided using a configuration object that is passed to the initialize method. You can read more about the available options in the [documentation for the initialize method](#).
 
-### Rules and Plugin Loading
-The `rules` option ultimately controls which plugins to load when. It expects one or multiple function(s) in an array. Each function is expected to return an array with plugin instances. These functions are called during initialization, receive the global data as argument and then decide under which conditions a plugin will be created and receive events. Simply put - when a rule returns a plugin this plugin will receive events, otherwise it will be ignored during [broadcast](#). Read more about that under [Rule Configuration](#).
-
-You might wonder why there is not just one single function? The multi-function approach is meant to better separate different types of rules and plugins. If everything is within one function it soon gets messy and more difficult to understand. However, you are free to use one single function for all your rules if that better suits your needs.
+### Loading Plugins via the `plugins` Option
+The `plugins` option is the easiest and straightforward way to load plugins. You simply pass a list of plugins to be load and initialize them using their constructor. This should work for most common usecases. ONe thing to keep in mind is that this _leaves the entire decision about what data the plugin receives to the plugin itself_, as the plugins take data from your website according to their own preferences.
 
 ```javascript
 import {
@@ -83,17 +82,31 @@ import {
   SomeBidManagementPlugin,
   SomeConversionPlugin,
   SomeOtherConversionPlugin,
-  ProductSearchConversionPlugin,
 } from './myCustomPlugins';
 
 datalayer.initialize({
-  // ...
+  // load plugins according to their own ruleset
   plugins: [
     new SomeAnalyticsPlugin({ myTrackServer: '//test/foo' }),
     new SomeSocialMediaPlugin(),
     new SomeBidManagementPlugin(),
     new SomeConversionPlugin({ mySpecialAttr: 'foo-123' }),
     new SomeOtherConversionPlugin({ someAccountId: 'askfjh89uasd' }),
+  ],
+});
+```
+
+### Loading Plugins using Custom Rules
+The other (more flexible but also slightly more complex) way is the `rules` option, which expects one or multiple function(s) in an array. Each function is expected to return an array with plugin instances. These functions are called during initialization, receive the global data as argument and then decide under which conditions a plugin will be created and receives events. Simply put - when a rule returns a plugin this plugin will receive events, otherwise it will be ignored during [broadcast](#). Read more about that under [Rule Configuration](#).
+
+```javascript
+import {
+  ProductSearchConversionPlugin,
+} from './myCustomPlugins';
+
+datalayer.initialize({
+  // provide deciated loading rules and override plugin's own ruleset
+  rules: [
     // loaded when page.type is checkout-confirmation and campaign matches some specific advertiser
     (data) => {
       if (data.page.type === 'checkout-confirmation' && channelCampaign.match(/aff\/(.*)someAdvertiser\//)) {
@@ -108,7 +121,10 @@ datalayer.initialize({
 TODO: explain testmode and its activation via URL
 
 ## Passing Data
-The first obvious question here might be "what data should I pass"? That's a good question and we will discuss it in detail in the next chapter, [Conventions](#). Let's first start with the "how". The default way of communicating with datalayer.js relies on a minimal script API that you include in your code and use it as you would do with any other library. There are more (extremely useful) ways of interaction, when using extensions. Check [/src/extensions](#) for additional information.
+The default way of communicating with datalayer.js relies on a small [Javascript API](#javascript-api). You [include it in your code](#integration) and use it as you would do with any other library. Additionally, there are more (extremely powerful) ways of interaction using extensions. Check [/src/extensions](#) for additional information.
+
+### Sending An Event to the Datalayer
+The usual way of sending events to the datalayer uses the [`broadcast`](#broadcast-name-string-data-any-void) method.
 
 ```javascript
 datalayer.broadcast('pageload', {"page":{"type":"homepage","name":"My homepage"}});
@@ -118,25 +134,8 @@ datalayer.broadcast('pageload', {"page":{"type":"homepage","name":"My homepage"}
 After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the framework and tool landscape of your application or website. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
 
 
-# Conventions
-TODO
-
-## Rendertime Data
-TODO: explain rendertime data/events (take from old ODL docs)
-
-### Data vs. Events
-TODO: explain difference between data and events and their individual purpose
-
-### Handle Rendertime Data From Asynchronous Calls
-TODO: explain DOM re-scan
-
-## Runtime Data
-TODO: explain runtime data/events (take from old ODL docs)
-
-
-
 # Models
-Models are a fundamental part of any datalayer.js-driven website. Although not mandatory from a technical perspective (yet), they are the foundation for implementing and validating your data. That makes them a very important cornerstone for collaboration between developers, business departments and digital analysts.
+Models are a fundamental part of any datalayer.js-driven website. They are the foundation for implementing and validating your data, without being mandatory from a technical perspective. They are, however, a very important cornerstone for collaboration between developers, business departments and digital analysts.
 
 > A "model" in terms of datalayer.js is a single JSON document that defines at least two things: all available page types for a website and all virtual type definitions that are used by those page types. Types are defined using [Apache Avro](https://avro.apache.org/docs/current/).
 

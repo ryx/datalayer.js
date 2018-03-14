@@ -7,12 +7,21 @@ import { PAGETYPE_CONVERSION } from 'datalayerjs/types';
  */
 export default class ExamplePlugin extends Plugin {
   /**
-   * Return the plugin's unique ID. Plugins have to provide an id by convention,
-   * this is required for configuration overrides and also helpful for debugging.
-   * @return {String} id of the plugin
+   * Constructor, just takes a configuration and sets up the internal plugin id. Never
+   * do any DOM manipulation in here, use the lifecycle methods for any business logic
+   * instead.
+   * @param {Object} config
    */
-  static getId() {
-    return 'my/test/examplePlugin';
+  constructor(config = {}) {
+    super('my-plugin-id', config);
+  }
+
+  /**
+   * Initialize any DOM resources for this plugin. Called exactly once, when
+   * the plugin is activated for the first time.
+   */
+  onInit() {
+    // setup third party resources
   }
 
   /**
@@ -22,7 +31,7 @@ export default class ExamplePlugin extends Plugin {
    * plugin's default and prohibit data access whenever necessary.
    * @param {DALPageData} data  the current data object for the current page context
    */
-  handleActivate(data) {
+  onActivate(data) {
     return data.page.type === PAGETYPE_CONVERSION;
   }
 
@@ -31,13 +40,13 @@ export default class ExamplePlugin extends Plugin {
    * @param {string} name of event to be handled
    * @param {any} data event data, type and structure depend on event type
    */
-  handleEvent(name, data) {
+  onEvent(name, data) {
     switch (name) {
       case 'pageload':
         console.log('Page loaded');
         break;
       case 'say-hello':
-        console.log(`Hello from ${this.constructor.getId()}\n` +
+        console.log(`Hello from ${this.getId()}\n` +
           `My event data: ${data}\n` +
           `My testProp from config: ${this.config.testProp}`);
         break;
