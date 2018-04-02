@@ -14,14 +14,14 @@
  *
  */
 import window from './lib/window';
-// import utils from './lib/utils';
+import { extend } from './lib/utils';
 import cookie from './lib/cookie';
 import EventQueue from './lib/queue';
 
 // debugging helper
 /* eslint-disable func-names, no-console, prefer-spread, prefer-rest-params */
-const DEBUG = typeof process.env.DEBUG !== 'undefined';
-function debug() {
+const DEBUG = typeof process.env.DTLR_DEBUG !== 'undefined';
+export function debug() {
   if (DEBUG) {
     console.log.apply(console, ['[debug]:'].concat(Array.prototype.slice.call(arguments)));
   }
@@ -81,14 +81,19 @@ export class Datalayer {
    * to receive the given hook and addtional parameters.
    * @param {String} name name of hook to be executed
    * @param {*} rest rest parameters
+   * @returns {Array} array with return values of all extension hook calls
    */
   triggerExtensionHook(name, ...rest) {
+    debug(`Datalayer.triggerExtensionHook: triggering extension hook "${name}"`);
+    const result = [];
     for (let i = 0; i < this.extensions.length; i += 1) {
       const extension = this.extensions[i];
       if (typeof extension[name] === 'function') {
-        extension[name](...rest);
+        result.push(extension[name](...rest));
       }
     }
+    debug('Datalayer.triggerExtensionHook result:', result);
+    return result;
   }
 
   /**
@@ -127,35 +132,9 @@ export class Datalayer {
    * @param  {Object}  data  the event data to pass along with the event, may be of any type
    */
   broadcast(name, data) {
-    debug('broadcasting event', name, data);
+    debug(`Datalayer.broadcast: broadcasting event "${name}"`, data);
     this.queue.broadcastEvent(name, data);
   }
-
-  /**
-   * Scan a given HTMLElement for `dtlr:data` metatags and update global data accordingly.
-   * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for data
-   */
-  /* scanElementForDataMarkup(node = window.document) {
-    return utils.collectMetadata(`${this.metaPrefix}data`, () => {}, node, this.globalData);
-  } */
-
-  /**
-   * Scan a given HTMLElement for `dtlr:event` metatags and broadcast any events that
-   * were found.
-   * @param {String|HTMLElement}  node  DOM node or CSS selector to scan for events
-   */
-  /* scanElementForEventMarkup(node) {
-    return utils.collectMetadata(`${this.metaPrefix}event`, (err, element, obj) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      if (!element.hasAttribute('data-dtlr-handled-event')) {
-        element.setAttribute('data-dtlr-handled-event', 1);
-        this.broadcast(obj.name, obj.data);
-      }
-    }, node);
-  } */
 
   parseDOMNode(node) {
     this.triggerExtensionHook('beforeParseDOMNode', node);
@@ -187,15 +166,17 @@ export class Datalayer {
 
     // validate options
     const data = options.data || {};
-    let rules = options.rules || [];
 
     // set config (@TODO: also collect config from markup here!)
     this.globalConfig = options.config || {};
 
-    // collect global data from document
-    // this.globalData = data;
-    // this.scanElementForDataMarkup(window.document);
-    this.globalData = this.triggerExtensionHook('beforeInitialize', data);
+    // collect global data from options and extensions
+    this.globalData = extend({}, data);
+    const initializeHookResult = this.triggerExtensionHook('beforeInitialize');
+    initializeHookResult.forEach(r => extend(this.globalData, typeof r !== 'undefined' ? r : {}));
+    if (!this.globalData) {
+      throw new Error('Supplied DALGlobalData is invalid or missing');
+    }
 
     // validate mandatory data (@TODO: we might use a model-based validation here somewhen)
     const gd = this.globalData;
@@ -208,9 +189,18 @@ export class Datalayer {
     if (!gd.user) {
       throw new Error('Supplied DALUserData is invalid or missing');
     }
-    debug('collected data', this.globalData);
+    debug('Datalayer.initialize: collected data', this.globalData);
 
     // instantiate plugins based on config and provided ruleset (wrap single function in array first)
+    const plugins = options.plugins || [];
+    if (plugins) {
+      plugins.forEach(plugin => this.addPlugin(plugin));
+    }
+    debug('Datalayer.initialize: plugins loaded', this.plugins);
+
+    /*
+    // instantiate plugins based on config and provided ruleset (wrap single function in array first)
+    let rules = options.rules || [];
     if (typeof rules === 'function') {
       rules = [rules];
     }
@@ -222,7 +212,8 @@ export class Datalayer {
         }
       });
     }
-    debug('plugins:', this.plugins);
+    debug('Datalayer.initialize: plugins (after rules):', this.plugins);
+    */
 
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
     this.initialized = true;
@@ -230,14 +221,13 @@ export class Datalayer {
     this.readyPromiseResolver();
 
     if (options.broadcastPageload !== false) {
-      debug('broadcasting initial pageload event');
+      debug('Datalayer.initialize: broadcasting initial pageload event');
       this.broadcast('pageload', this.globalData);
     }
 
     // collect event data from document and send events to plugins
-    debug(`scanning for ${this.metaPrefix}event markup`);
-    // this.scanElementForEventMarkup();
-    this.parseDOMNode(window);
+    debug('Datalayer.initialize: scanning DOM');
+    this.parseDOMNode(window.document);
 
     return this;
   }
@@ -255,20 +245,58 @@ export class Datalayer {
    */
   isTestModeActive() {
     // debug(window.location.search);
-    if (cookie.get('__odltest__')) {
-      debug('Cookie found');
-      if (window.location.search.match(/__odltest__=0/gi)) {
-        debug('Removing cokie');
-        cookie.remove('__odltest__', { path: '/' });
+    if (cookie.get('__dtlrtest__')) {
+      debug('Datalayer.isTestModeActive: cookie found');
+      if (window.location.search.match(/__dtlrtest__=0/gi)) {
+        debug('Datalayer.isTestModeActive: removing cookie');
+        cookie.remove('__dtlrtest__', { path: '/' });
         return false;
       }
       return true;
-    } else if (window.location.search.match(/__odltest__=1/gi)) {
-      cookie.set('__odltest__', '1', { path: '/', maxAge: 3600 * 24 * 7 });
+    } else if (window.location.search.match(/__dtlrtest__=1/gi)) {
+      cookie.set('__dtlrtest__', '1', { path: '/', maxAge: 3600 * 24 * 7 });
       return true;
     }
     return false;
   }
+}
+
+/**
+ * Baseclass for all datalayer.js plugins.
+ *
+ * TESTING!!!
+ */
+export class Plugin {
+  constructor(id, config = {}) {
+    this.id = id;
+    this.config = config;
+  }
+
+  getId() {
+    return this.id;
+  }
+
+  /**
+   * Initialize any DOM resources for this plugin. Called exactly once, when
+   * the plugin is activated for the first time.
+   */
+  handleInit() {}
+
+  /**
+   * Decides whether this plugin will receive data within the current context.
+   * The decision about load handling is done by the plugin to keep the config
+   * short and clean. However, the datalayer configuration can overrule the
+   * plugin's default and prohibit data access whenever necessary.
+   * @param {D7rPageData} data  the current data object for the current page context
+   */
+  handleActivate(data) {}
+
+  /**
+   * Main event handling callback.
+   * @param {string} name of event to be handled
+   * @param {any} data event data, type and structure depend on event type
+   */
+  handleEvent(name, data) {}
 }
 
 // create new datalayer singleton instance

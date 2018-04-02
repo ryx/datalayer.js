@@ -6,7 +6,7 @@ import { JSDOM } from 'jsdom';
 
 // stub dependencies
 const dom = new JSDOM('<!DOCTYPE html>');
-const window = td.replace('./lib/window', dom.window);
+td.replace('./lib/window', dom.window);
 
 /**
  * Mock plugin to test plugin specific stuff (event retrieval,
@@ -75,7 +75,7 @@ describe('datalayer', () => {
 
       dal.initialize({
         data: globalDataMock,
-        plugins: () => [new MockPlugin()],
+        plugins: [new MockPlugin()],
       });
 
       return dal.whenReady().then(() => {
@@ -88,9 +88,7 @@ describe('datalayer', () => {
 
       dal.initialize({
         data: globalDataMock,
-        plugins: [
-          () => [new MockPlugin(), new MockPlugin()],
-        ],
+        plugins: [new MockPlugin(), new MockPlugin()],
       });
 
       return dal.whenReady().then(() => {
@@ -98,6 +96,7 @@ describe('datalayer', () => {
       });
     });
 
+    /*
     it('should create a method queue handler in window', () => {
       const dal = new module.Datalayer();
 
@@ -105,27 +104,28 @@ describe('datalayer', () => {
 
       assert.isDefined(window._dtlrq);
     });
+    */
   });
 
   describe('testMode:', () => {
     it('should enable/disable testMode via URL', () => {
-      dom.reconfigure({ url: 'http://example.com?__odltest__=1' });
+      dom.reconfigure({ url: 'http://example.com?__dtlrtest__=1' });
       const dal = new module.Datalayer();
       // console.log(dal);
       // console.log('.innerHTML', dom.window.document.querySelector('body'));
       // console.log('.cookie', dom.window.document.cookie);
       dal.initialize({ data: globalDataMock });
-      assert.isTrue(dal.inTestMode(), 'should activate testmode if URL contains __odltest__=1');
+      assert.isTrue(dal.inTestMode(), 'should activate testmode if URL contains __dtlrtest__=1');
 
       dom.reconfigure({ url: 'http://example.com' });
       const dal2 = new module.Datalayer();
       dal2.initialize({ data: globalDataMock });
       assert.isTrue(dal2.inTestMode(), 'should still BE in testmode, even after fake reload');
 
-      dom.reconfigure({ url: 'http://example.com?__odltest__=0' });
+      dom.reconfigure({ url: 'http://example.com?__dtlrtest__=0' });
       const dal3 = new module.Datalayer();
       dal3.initialize({ data: globalDataMock });
-      assert.isFalse(dal3.inTestMode(), 'should disable testmode if URL contains __odltest__=0');
+      assert.isFalse(dal3.inTestMode(), 'should disable testmode if URL contains __dtlrtest__=0');
 
       dom.reconfigure({ url: 'http://example.com' });
       const dal4 = new module.Datalayer();
@@ -133,15 +133,14 @@ describe('datalayer', () => {
       assert.isFalse(dal4.inTestMode(), 'should still NOT BE in testmode, even after fake reload');
     });
 
+    // @FIXME: I _think_ this is a false positive
     it('should load a specified plugin, if testmode is active, the mode evaluates to "test" and the rule evaluates to "true"', () => {
-      dom.reconfigure({ url: 'http://example.com?__odltest__=1' });
+      dom.reconfigure({ url: 'http://example.com?__dtlrtest__=1' });
       const dal = new module.Datalayer();
 
       dal.initialize({
         data: globalDataMock,
-        rules: [
-          () => (dal.isTestModeActive() ? [new MockPlugin()] : null),
-        ],
+        plugins: [new MockPlugin()],
       });
 
       return dal.whenReady().then(() => {
@@ -156,7 +155,7 @@ describe('datalayer', () => {
     /*
     // @FIXME: doesn't work
     it('should NOT load a specified plugin, if testmode is inactive, the mode evaluates to "test" and the rule evaluates to "true"', (st) => {
-      dom.reconfigure({ url: 'http://example.com?__odltest__=0' });
+      dom.reconfigure({ url: 'http://example.com?__dtlrtest__=0' });
       const dal = new module.Datalayer();
       dal.initialize({
         data: globalDataMock,
@@ -214,7 +213,7 @@ describe('datalayer', () => {
       const plugin2 = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
-      dal.initialize({ data: globalDataMock, rules: () => [plugin1, plugin2] });
+      dal.initialize({ data: globalDataMock, plugins: [plugin1, plugin2] });
 
       return dal.whenReady().then(() => {
         dal.broadcast(expectedEvent.name, expectedEvent.data);
@@ -237,7 +236,7 @@ describe('datalayer', () => {
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
       dal.broadcast(expectedEvent.name, expectedEvent.data);
-      dal.initialize({ data: globalDataMock, rules: () => [plugin] });
+      dal.initialize({ data: globalDataMock, plugins: [plugin] });
 
       dal.whenReady().then(() => {
         assert.deepEqual(
@@ -248,12 +247,12 @@ describe('datalayer', () => {
       });
     });
 
-    it('should broadcast an event that was sent AFTER calling initialize but before being ready', () => {
+    it('should broadcast an event that was sent AFTER calling initialize but BEFORE being ready', () => {
       const dal = new module.Datalayer();
       const plugin = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
-      dal.initialize({ data: globalDataMock, plugins: () => [plugin] });
+      dal.initialize({ data: globalDataMock, plugins: [plugin] });
       dal.broadcast(expectedEvent.name, expectedEvent.data);
 
       return dal.whenReady().then(() => {
@@ -275,6 +274,12 @@ describe('datalayer', () => {
         this.config = config;
         dummyExtensionInstance = this;
       }
+
+      /* eslint-disable class-methods-use-this */
+      myTestingHook(data) {
+        return data;
+      }
+      /* eslint-enable */
     };
 
     describe('use:', () => {
@@ -312,6 +317,27 @@ describe('datalayer', () => {
         dal.triggerExtensionHook('myTestingHook');
 
         td.verify(dummyExtensionInstance.myTestingHook());
+      });
+
+      it('should trigger a given extension hook with the provided arguments', () => {
+        const dal = new module.Datalayer();
+
+        // create extension, then inject our spy, then trigger hooks
+        dal.use(dummyExtension());
+        dummyExtensionInstance.myTestingHook = td.function();
+        dal.triggerExtensionHook('myTestingHook', { bar: 'foo' });
+
+        td.verify(dummyExtensionInstance.myTestingHook({ bar: 'foo' }));
+      });
+
+      it('should trigger a given extension hook and return the individual hook results inside an array', () => {
+        const dal = new module.Datalayer();
+
+        // create extension, then trigger hooks and check returned value
+        dal.use(dummyExtension());
+        const ret = dal.triggerExtensionHook('myTestingHook', { bar: 'foo' });
+
+        assert.deepEqual(ret, [{ bar: 'foo' }]);
       });
 
       it('should trigger an extension hook and pass the expected arguments to the hook function', () => {
