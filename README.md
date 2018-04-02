@@ -10,23 +10,16 @@
 An open-source datalayer, tagmanager, and *"frontend middleware"*, proxying data between the client and any third parties. Based on a [customizable data model with a virtual type system](#models), aimed at standardizing and simplifying the process of 3rd party integration into today's websites.
 
 ## What is this exactly?
-A *developer-first, in-sourced tag management system* without external GUI. A very mature set of *conventions and virtual types to ensure a deterministic data flow* between backend and frontend. An *event system and plugin loader* to pass data from the client space to 3rd parties. A fully *test-driven environment* to handle and *quality-test your marketing attribution*. Also a blessing if you ever intend to switch to another web analytics tool ([read our success story](#)). Likely even more.
+A *developer-first, in-sourced tag management system* without external GUI. A very mature set of *conventions and virtual types to ensure a deterministic data flow* between backend and frontend. An *event system and plugin loader* to pass data from the client space to 3rd parties. A fully *test-driven environment* to handle and *quality-test your marketing attribution*. A blessing if you ever intend to switch to another web analytics tool.
 
 Based on years of technical evolution and real-world problems we encountered and solved at Galeria Kaufhof and HBC Europe. Built mainly with scalability, testing and clear conventions in mind. Rewritten from the ground up to integrate with modern single-page applications as well as classical websites.
 
+Why don't we use an external tag management system? We did. And we soon learned the danger behind marketing claims like "tag managers are great, because you don't need to change your software when you want to add new 'tags'". Phrases like this lead to the false assumption, that this is all safe and painless. I strongly believe that adding random scripts into a production environment should be called "changing the software" either way. Call me old-fashioned, but adding Javascript code (because that is what said "pixels" and "tags" are!) into a live website is a "production deployment" per definition to me. You insert new code into your production environment. Directly. Without CI testing. In most cases it is untested, unknown, "blackbox" code, written by some unknown third party. That's one of the major reasons behind the idea of insourcing the whole tag management.
+
 ## How does it work?
-The Datalayer collects data from the website (i.e. the developer passes data to it) and aggregates it to one data object. Then the plugin loader starts loading it's plugins based on a user-defined rule configuration (e.g. analytics scripts on each page, conversion pixels only on order confirmation, etc. ). Plugins then receive events which contain specific data (one is the "pageload" event that passes the previously aggregated data object to the plugin). Plugins can then pass data to third parties as desired. That's the big picture.
+The Datalayer "collects" data from the website (i.e. it gets passed from different parts of your application) and aggregates it to one data object. Then the plugin loader starts loading it's plugins based on a given rule configuration (e.g. analytics scripts on each page, conversion pixels only on order confirmation, etc. ). Plugins then receive events which contain specific data. One such event is the "pageload" event, that passes the previously aggregated data object to the plugin. Plugins can then provide data to third parties as desired. That's the big picture.
 
-The data expected by datalayer.js is defined by a set of conventions which are based on a [virtual type system](#). A dedicated [model](#) exactly defines what data is expected on which page. A page with a type of `category` for example would expect an object of type `DALCategoryData` holding information about the category. Check the section [Models](#) for more information about how this is connected.
-
-That's it. Almost. There are many more details and possibilities of course. You can learn more about [rendertime data](#), [rendertime events](#) and [runtime events](#). It's also really helpful to understand the concept of [Models](#). We have a set of [predefined datatypes](#) (mainly focused on e-commerce websites) and a [default model](#). As well as [custom data models](#). Then there is the [rules configuration](#) for the plugin loading. We have [configuration overrides](#). And if you think you know everything, go and check out the [extensions](#).
-
-## But what is wrong with external tag management?
-It depends. If you want, go and use some 3rd party tool. You might even be happy with it. However, if you are a developer or a bigger organization with multiple dev teams or just care about performance, stability, and code control you really want to [understand the ideas and motivations behind datalayer.js](#) and maybe even use it.
-
-At least don't get fooled by comments like "tag managers are great, because you don't need to change your software when you want to add new 'tags'". Honestly - how would you describe adding random scripts into a production environment, if not "changing the software"? Call me old-fashioned, but adding Javascript code (because that is what said "pixels" and "tags" are!) into a live website is a *production deployment* to me. You insert new code into your *production environment*. Directly. Without CI testing. In most cases it is *untested, unknown, "blackbox" code*, written by some *unknown third party*.
-
-So, what else can you think of that is more scary than putting someone else's code into your live environment? Well, to me it's even worse if _someone else_ puts _someone else's code_ into my live environment. To scare you even more, it will most likely be a junior web designer in some marketing agency, led by online marketing departments without deeper technical knowledge. Yay! Welcome to the world of modern, external "tag management".
+How do [Models](#models) fit in there? The data expected by datalayer.js is defined by a set of conventions. These are based on a simple yet flexible, [virtual type system](#types). Such a model defines what data is expected on which page. E.g. a page with a type of `category` for example might expect an object of type `CategoryData` holding information about the category. Check the section [Models](#) for more information about how this is connected.
 
 
 # Usage
@@ -299,7 +292,7 @@ For single-page apps (SPAs) the lifecycle methods are extremely crucial.
 
 
 # Extensions
-Like in any good middleware, the core of datalayer.js can be easily extended with new functionality. The process is somewhat similar to other libraries like e.g. [express](#) and works by adding extensions through the `use` method on the datalayer instance. The extension then automatically connects to certain event hooks and receives data and broadcasts.
+The core of datalayer.js can be easily extended with new functionality. The process is somewhat similar to other middleware libraries like e.g. [express](#) and works by adding extensions through the `use` method on the datalayer instance. The extension then automatically connects to certain event hooks and receives data and broadcasts.
 
 ## Using extensions
 Usage example for one of the factory extensions, enabling the "event annotations" feature.
@@ -333,3 +326,4 @@ export default (config) => class ExampleExtension {
   afterBroadcast(name, data) {}
 }
 ```
+
