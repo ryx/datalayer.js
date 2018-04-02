@@ -8,6 +8,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import window from '../../src/lib/window';
+import { debug } from '../../src/datalayer';
 
 /**
  *  Helper method - extend object with other object
@@ -75,7 +76,9 @@ export default (config = { metaPrefix: 'dtlr:' }) => class Metadata {
   }
 
   beforeInitialize(element = window.document) {
-    return collectMetadata(`${config.metaPrefix}data`, () => {}, element, this.globalData);
+    const md = collectMetadata(`${config.metaPrefix}data`, () => {}, element, this.globalData);
+    debug(`Metadata.beforeInitialize: selector is "${config.metaPrefix}data"`, md);
+    return md;
   }
 
   beforeParseDOMNode(element) {

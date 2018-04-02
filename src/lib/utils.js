@@ -1,19 +1,24 @@
 import window from './window';
 
-// extend object with other object
-function extend(obj1, obj2) {
-  const keys = Object.keys(obj2);
+/**
+ * Extend (i.e. deep-merge) a given target object using a given source object.
+ * @param {Object}  target  object to merge into
+ * @param {Object}  source  object to be merged
+ * @returns {Object} the resulting, deeply merged object
+ */
+export function extend(target, source) {
+  const keys = Object.keys(source);
   for (let i = 0; i < keys.length; i += 1) {
-    const val = obj2[keys[i]];
+    const val = source[keys[i]];
     let src;
     if (['string', 'number', 'boolean'].indexOf(typeof val) === -1 && typeof val.length === 'undefined') {
-      src = extend(obj1[keys[i]] || {}, val);
+      src = extend(target[keys[i]] || {}, val);
     } else {
       src = val;
     }
-    obj1[keys[i]] = src;
+    target[keys[i]] = src;
   }
-  return obj1;
+  return target;
 }
 
 /**
@@ -28,7 +33,7 @@ function extend(obj1, obj2) {
  * if defined it limits the lookup context to the given element
  * @param {Object}  data  initial data, gets extended with the collected data
  */
-function collectMetadata(name, callback, context = null, data = {}) {
+export function collectMetadata(name, callback, context = null, data = {}) {
   // get parent element to be queried (or use entire document as default)
   let parent = window.document;
   if (context) {
@@ -65,7 +70,7 @@ function collectMetadata(name, callback, context = null, data = {}) {
  * @param queueName   {String}  identifier to use as method queue name (e.g. "_odlq")
  * @param apiObj      {Object}  object scope to use for calling the provided methods on
  */
-function createMethodQueueHandler(context, queueName, api = {}) {
+export function createMethodQueueHandler(context, queueName, api = {}) {
   // console.log('createMethodQueueHandler', context, queueName, api);
   function _mqExec(_api, _arr) {
     if (typeof _api[_arr[0]] === 'function') {

@@ -1,3 +1,5 @@
+import { debug } from '../../src/datalayer';
+
 /**
  * Offical datalayer.js core extension that works on any given call to
  * datalayer.scanElement and parses the provided DOM node for existing
@@ -17,9 +19,10 @@ export default (config = { attributePrefix: 'dtlr' }) => class Annotations {
   }
 
   /**
-   * Helper that calls DAL.broadcast with a given JSON string (parsed to object first).
+   * Helper that calls datalayer.broadcast with a given JSON string (parsed to object first).
    */
   parseAndBroadcastJSON(jsonString) {
+    debug('Annotations.parseAndBroadcastJSON:', jsonString);
     try {
       const o = JSON.parse(jsonString);
       this.datalayer.broadcast(o.name, o.data);
@@ -36,8 +39,9 @@ export default (config = { attributePrefix: 'dtlr' }) => class Annotations {
    */
   static initializeAnnotationCallback(element, type, callback) {
     const elements = element.querySelectorAll(`[data-${config.attributePrefix}-event-${type}]`);
-    // @XXX use `for` because `elements` is NO real Array in IE, so forEach might break
+    debug(`Annotations.initializeAnnotationCallback: looking for type "${type}"`, elements);
     if (elements) {
+      // @XXX use `for` because `elements` is NO real Array in IE, so forEach might break
       for (let i = 0; i < elements.length; i += 1) {
         callback(elements[i]);
       }
@@ -45,17 +49,18 @@ export default (config = { attributePrefix: 'dtlr' }) => class Annotations {
   }
 
   // handle element scan (called before/after scanElementFor*)
-  beforeScanElement(element) {
-    Annotations.initializeAnnotationCallback(element, 'click', (e) => {
-      const str = e && e.currentTarget ? e.currentTarget.getAttribute(`data-${config.attributePrefix}-event-click`) : null;
-      if (str) {
-        this.parseAndBroadcastJSON(str);
+  beforeParseDOMNode(element) {
+    debug('Annotations.beforeParseDOMNode');
+    Annotations.initializeAnnotationCallback(element, 'click', (el) => {
+      const eventData = el ? el.getAttribute(`data-${config.attributePrefix}-event-click`) : null;
+      if (eventData) {
+        this.parseAndBroadcastJSON(eventData);
       }
     });
-    Annotations.initializeAnnotationCallback(element, 'view', (e) => {
-      const str = e && e.currentTarget ? e.currentTarget.getAttribute(`data-${config.attributePrefix}-event-view`) : null;
-      if (str) {
-        this.parseAndBroadcastJSON(str);
+    Annotations.initializeAnnotationCallback(element, 'view', (el) => {
+      const eventData = el ? el.getAttribute(`data-${config.attributePrefix}-event-view`) : null;
+      if (eventData) {
+        this.parseAndBroadcastJSON(eventData);
       }
     });
   }
