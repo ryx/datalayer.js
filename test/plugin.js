@@ -3,11 +3,10 @@
 // outside a real browser. Usually we would use common ES6 imports
 // like the following instead:
 
-// import datalayer from '../src/datalayer';
-// import examplePlugin from './examplePlugin';
+// import datalayer, { Plugin } from '../src/datalayer';
+// import { metadata, annotations } from 'datalayerjs/extensions';
 //
 // START: DOM fake (only for easy execution with babel-node)
-import td from 'testdouble';
 import { JSDOM } from 'jsdom';
 
 const mockdata = {
@@ -23,7 +22,9 @@ const dom = new JSDOM(`<!DOCTYPE html>
   </body>
 </html>
 `);
-td.replace('../src/lib/window', dom.window);
+// stub dependencies
+global.window = dom.window;
+global.document = window.document;
 
 // import datalayer and related libs
 const datalayerjs = require('../src/datalayer');
