@@ -7,7 +7,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import window from '../../src/lib/window';
 
 /**
  * Create a method queue handler within the provided target object. It can be used to

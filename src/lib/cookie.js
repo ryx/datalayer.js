@@ -2,7 +2,10 @@
  * Very thin cookie-wrapper to ease testing, based on implementation by
  * Christophe Porteneuve (http://github.com/tdd/cookies-js-helper)
  */
-import window from './window';
+// import window from './window';
+
+// define window global
+// const { window } = global;
 
 /**
  * Set a cookie with the given name and options.

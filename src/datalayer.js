@@ -13,10 +13,13 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import window from './lib/window';
+// import window from './lib/window';
 import { extend } from './lib/utils';
 import cookie from './lib/cookie';
 import EventQueue from './lib/queue';
+
+// define window global
+// const { window } = global;
 
 // debugging helper
 /* eslint-disable func-names, no-console, prefer-spread, prefer-rest-params */

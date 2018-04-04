@@ -1,33 +1,34 @@
 /* eslint-disable max-len, no-new */
-import { describe, it, beforeEach, afterEach } from 'mocha';
-import { assert } from 'chai';
-import td from 'testdouble';
 import { JSDOM } from 'jsdom';
 
-// stub dependencies
+// properly define implicit globals
+const {
+  describe,
+  it,
+  beforeEach,
+  expect,
+} = global;
 
 describe('metadata', () => {
-  let [metadata, datalayerMock, dom, window] = [];
+  let [metadata, datalayerMock, dom] = [];
 
   beforeEach(() => {
-    dom = new JSDOM(`<!DOCTYPE html><html data-unique="${Math.random() * 100}"><body></body></html>`);
-    window = td.replace('../../src/lib/window', dom.window);
+    // stub dependencies
+    dom = new JSDOM('<!DOCTYPE html>');
+    global.window = dom.window;
+    global.document = window.document;
+
     datalayerMock = {
-      broadcast: td.function(),
+      broadcast: jest.fn(),
     };
     return import('./metadata.js').then((m) => {
       metadata = m;
     });
   });
 
-  afterEach(() => {
-    window.close();
-    dom = null;
-  });
-
   describe('module:', () => {
     it('should export a factory which returns the extension class', () => {
-      assert.isFunction(metadata.default());
+      expect(typeof metadata.default()).toBe('function');
     });
   });
 
@@ -39,7 +40,7 @@ describe('metadata', () => {
 
       const extension = new ExtensionClass(datalayerMock);
 
-      assert.deepEqual(extension.beforeInitialize(), data);
+      expect(extension.beforeInitialize()).toEqual(data);
     });
 
     it('should broadcast events found in "dtlr:event" metatags when calling "beforeParseDOMNode"', () => {
@@ -50,7 +51,7 @@ describe('metadata', () => {
 
       extension.beforeParseDOMNode(window.document);
 
-      td.verify(datalayerMock.broadcast(eventData.name, eventData.data));
+      expect(datalayerMock.broadcast).toHaveBeenCalledWith(eventData.name, eventData.data);
     });
   });
 
@@ -59,11 +60,7 @@ describe('metadata', () => {
       const data = { stringProp: 'hello', numberProp: 42, numberProp2: 76.54 };
       window.document.querySelector('body').innerHTML = `<meta name="dal:data" content='${JSON.stringify(data)}' />`;
 
-      assert.deepEqual(
-        metadata.collectMetadata('dal:data', () => {}),
-        data,
-        'collected metadata is equal to original data'
-      );
+      expect(metadata.collectMetadata('dal:data', () => {})).toEqual(data);
     });
 
     it('should accept a different parent context as argument and collect metatags only within that element', () => {
@@ -73,15 +70,11 @@ describe('metadata', () => {
         `<meta name="dal:data" content='${JSON.stringify(data)}' />` +
         `<div id="data-container"><meta name="dal:data" content='${JSON.stringify(innerData)}' /></div>`;
 
-      assert.deepEqual(
-        metadata.collectMetadata('dal:data', () => {}, '#data-container'),
-        innerData,
-        'collected metadata contains only inner data'
-      );
+      expect(metadata.collectMetadata('dal:data', () => {}, '#data-container')).toEqual(innerData);
     });
 
     it('should return false if context cannot be found', () => {
-      assert.isFalse(metadata.collectMetadata('dal:data', () => {}, '#non-existent'));
+      expect(metadata.collectMetadata('dal:data', () => {}, '#non-existent')).toBe(false);
     });
 
     it('should fire a callback for each collected metatag and pass element and JSON.parse\'d content', () => {
@@ -93,11 +86,11 @@ describe('metadata', () => {
 
       metadata.collectMetadata('dal:data', (err, element, content) => collectedData.push(content));
 
-      assert.deepEqual(
-        collectedData,
-        [{ foo: 'bar' }, { foo: 'bar' }, { foo: 'bar' }],
-        'should contain the parsed JSON from the metatags as array',
-      );
+      expect(collectedData).toEqual([
+        { foo: 'bar' },
+        { foo: 'bar' },
+        { foo: 'bar' },
+      ]);
     });
 
     it('should return an object with an aggregation of all provided metatags\' data', () => {
@@ -106,137 +99,130 @@ describe('metadata', () => {
         '<meta name="dal:data" content=\'{"string2":"foo","number2":76}\' />' +
         '<meta name="dal:data" content=\'{"string3":"bar","number3":777}\' />';
 
-      assert.deepEqual(
-        metadata.collectMetadata('dal:data', () => {}),
-        {
-          string1: 'hello',
-          number1: 42,
-          number2: 76,
-          string2: 'foo',
-          number3: 777,
-          string3: 'bar',
-        },
-        'should contain the aggregated data',
-      );
+      expect(metadata.collectMetadata('dal:data', () => {})).toEqual({
+        string1: 'hello',
+        number1: 42,
+        number2: 76,
+        string2: 'foo',
+        number3: 777,
+        string3: 'bar',
+      });
     });
   });
 
   describe('extend:', () => {
     it('should extend a given flat object with another flat object, overriding existing props', () => {
-      assert.deepEqual(
-        metadata.extend({
-          prop1: 'val1',
-          prop2: 42,
-          prop3: true,
-          prop4: 20.16,
-        }, {
-          prop4: 77.123,
-          propNew1: 'newVal1',
-          propNew2: 71,
-        }),
-        {
-          prop1: 'val1',
-          prop2: 42,
-          prop3: true,
-          prop4: 77.123,
-          propNew1: 'newVal1',
-          propNew2: 71,
-        }
-      );
+      const result = metadata.extend({
+        prop1: 'val1',
+        prop2: 42,
+        prop3: true,
+        prop4: 20.16,
+      }, {
+        prop4: 77.123,
+        propNew1: 'newVal1',
+        propNew2: 71,
+      });
+
+      expect(result).toEqual({
+        prop1: 'val1',
+        prop2: 42,
+        prop3: true,
+        prop4: 77.123,
+        propNew1: 'newVal1',
+        propNew2: 71,
+      });
     });
 
     it('should deep-extend a given flat object with a nested object', () => {
-      assert.deepEqual(
-        metadata.extend({
-          prop1: 'val1',
-          prop2: 42,
-          prop3: true,
-          prop4: 20.16,
-        }, {
-          prop4: 77.123,
-          propNew1: 'newVal1',
-          propNew2: {
-            propNewDeep1: 'newDeepVal1',
-            propNewDeep2: 42,
-            propNewDeep3: true,
-            propNewDeep4: 20.16,
-          },
-          propArray: [
-            1, 2, 3, 4,
-          ],
-        }),
-        {
-          prop1: 'val1',
-          prop2: 42,
-          prop3: true,
-          prop4: 77.123,
-          propNew1: 'newVal1',
-          propNew2: {
-            propNewDeep1: 'newDeepVal1',
-            propNewDeep2: 42,
-            propNewDeep3: true,
-            propNewDeep4: 20.16,
-          },
-          propArray: [
-            1, 2, 3, 4,
-          ],
-        }
-      );
+      const result = metadata.extend({
+        prop1: 'val1',
+        prop2: 42,
+        prop3: true,
+        prop4: 20.16,
+      }, {
+        prop4: 77.123,
+        propNew1: 'newVal1',
+        propNew2: {
+          propNewDeep1: 'newDeepVal1',
+          propNewDeep2: 42,
+          propNewDeep3: true,
+          propNewDeep4: 20.16,
+        },
+        propArray: [
+          1, 2, 3, 4,
+        ],
+      });
+
+      expect(result).toEqual({
+        prop1: 'val1',
+        prop2: 42,
+        prop3: true,
+        prop4: 77.123,
+        propNew1: 'newVal1',
+        propNew2: {
+          propNewDeep1: 'newDeepVal1',
+          propNewDeep2: 42,
+          propNewDeep3: true,
+          propNewDeep4: 20.16,
+        },
+        propArray: [
+          1, 2, 3, 4,
+        ],
+      });
     });
 
     it('should deep-extend a given nested object with another nested object and deep-overwrite members', () => {
-      assert.deepEqual(
-        metadata.extend({
-          prop1: 'val1',
-          prop2: {
-            propDeep1: 'deepVal1',
-            propDeep2: 42,
-            propDeep3: true,
-            propDeep4: {
-              propDeeper1: 'deeperVal1',
-              propDeeper2: 777,
-              propDeeper3: 'I will survive',
-              propDeepArray: [],
-              propDeepArrayWithObjectMembers: [
-                { foo: 'bar' },
-              ],
-            },
+      const result = metadata.extend({
+        prop1: 'val1',
+        prop2: {
+          propDeep1: 'deepVal1',
+          propDeep2: 42,
+          propDeep3: true,
+          propDeep4: {
+            propDeeper1: 'deeperVal1',
+            propDeeper2: 777,
+            propDeeper3: 'I will survive',
+            propDeepArray: [],
+            propDeepArrayWithObjectMembers: [
+              { foo: 'bar' },
+            ],
           },
-          prop3: 'lone survivor',
-        }, {
-          prop1: 'newVal1',
-          prop2: {
-            propDeep1: 'newDeepVal1',
-            propDeep2: 84,
-            propDeep3: false,
-            propDeep4: {
-              propDeeper1: 'newDeeperVal1',
-              propDeeper2: 888,
-              propDeepArrayWithObjectMembers: [
-                { foo2: 'bar2' },
-              ],
-            },
-          },
-        }),
-        {
-          prop1: 'newVal1',
-          prop2: {
-            propDeep1: 'newDeepVal1',
-            propDeep2: 84,
-            propDeep3: false,
-            propDeep4: {
-              propDeeper1: 'newDeeperVal1',
-              propDeeper2: 888,
-              propDeeper3: 'I will survive',
-              propDeepArray: [],
-              propDeepArrayWithObjectMembers: [
-                { foo2: 'bar2' },
-              ],
-            },
-          },
-          prop3: 'lone survivor',
         },
-      );
+        prop3: 'lone survivor',
+      }, {
+        prop1: 'newVal1',
+        prop2: {
+          propDeep1: 'newDeepVal1',
+          propDeep2: 84,
+          propDeep3: false,
+          propDeep4: {
+            propDeeper1: 'newDeeperVal1',
+            propDeeper2: 888,
+            propDeepArrayWithObjectMembers: [
+              { foo2: 'bar2' },
+            ],
+          },
+        },
+      });
+
+      expect(result).toEqual({
+        prop1: 'newVal1',
+        prop2: {
+          propDeep1: 'newDeepVal1',
+          propDeep2: 84,
+          propDeep3: false,
+          propDeep4: {
+            propDeeper1: 'newDeeperVal1',
+            propDeeper2: 888,
+            propDeeper3: 'I will survive',
+            propDeepArray: [],
+            propDeepArrayWithObjectMembers: [
+              { foo2: 'bar2' },
+            ],
+          },
+        },
+        prop3: 'lone survivor',
+      });
     });
   });
 });

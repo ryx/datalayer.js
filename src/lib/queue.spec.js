@@ -1,7 +1,11 @@
 /* eslint-disable max-len */
-import { describe, it, beforeEach } from 'mocha';
-import { assert } from 'chai';
 import EventQueue from './queue';
+
+const {
+  describe,
+  it,
+  expect,
+} = global;
 
 // sample subscriber used for testing event broadcast
 class EventSubscriber {
@@ -20,7 +24,7 @@ describe('EventQueue', () => {
     it('should create a new EventQueue', () => {
       const queue = new EventQueue();
 
-      assert.isTrue(queue instanceof EventQueue);
+      expect(queue instanceof EventQueue).toBe(true);
     });
   });
 
@@ -31,13 +35,13 @@ describe('EventQueue', () => {
 
       queue.subscribe(subscriber);
 
-      assert.equal(queue.subscribers[0], subscriber, 'queue should contain given subscriber');
+      expect(queue.subscribers[0]).toBe(subscriber);
     });
 
     it('should throw an error if trying to subscribe object without handleEvent method', () => {
       const queue = new EventQueue();
 
-      assert.throws(() => queue.subscribe({}), 'subscriber has no handleEvent method');
+      expect(() => queue.subscribe({})).toThrow();
     });
 
     it('should broadcast event history to a newly added subscriber when receiveHistory is true (default)', () => {
@@ -48,9 +52,9 @@ describe('EventQueue', () => {
       queue.broadcastEvent('test2', { foo: 123 });
       queue.subscribe(subscriber);
 
-      assert.equal(subscriber.caughtEvents.length, 2, 'should have caught two events');
-      assert.deepEqual(subscriber.caughtEvents[0], ['test', { foo: 123 }], 'event 1 should contain expected data');
-      assert.deepEqual(subscriber.caughtEvents[1], ['test2', { foo: 123 }], 'event 2 should contain expected data');
+      expect(subscriber.caughtEvents.length).toEqual(2);
+      expect(subscriber.caughtEvents[0]).toEqual(['test', { foo: 123 }]);
+      expect(subscriber.caughtEvents[1]).toEqual(['test2', { foo: 123 }]);
     });
 
     it('should NOT broadcast event history to a newly added subscriber when receiveHistory is false', () => {
@@ -60,7 +64,7 @@ describe('EventQueue', () => {
       queue.broadcastEvent('test');
       queue.subscribe(subscriber, false);
 
-      assert.equal(subscriber.caughtEvents.length, 0, 'should have caught no events yet');
+      expect(subscriber.caughtEvents.length).toEqual(0);
     });
   });
 
@@ -72,9 +76,8 @@ describe('EventQueue', () => {
       queue.subscribe(subscriber);
       queue.broadcastEvent('test', { foo: 123 });
 
-      assert.equal(subscriber.caughtEvents.length, 1, 'should have caught one event');
-      assert.deepEqual(subscriber.caughtEvents[0], ['test', { foo: 123 }], 'event 1 should contain expected data');
+      expect(subscriber.caughtEvents.length).toEqual(1);
+      expect(subscriber.caughtEvents[0]).toEqual(['test', { foo: 123 }]);
     });
-
-  })
+  });
 });

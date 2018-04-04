@@ -1,5 +1,3 @@
-import window from './window';
-
 /**
  * Extend (i.e. deep-merge) a given target object using a given source object.
  * @param {Object}  target  object to merge into

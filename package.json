@@ -5,9 +5,9 @@
   "main": "dist/datalayer.cjs.js",
   "module": "dist/datalayer.esm.js",
   "scripts": {
-    "test": "node_modules/.bin/mocha --recursive -r babel-register \"src/**/*.spec.js\"",
+    "test:spec": "jest --coverage",
     "test:lint": "eslint . --quiet",
-    "test-pretty": "npm run test | node_modules/.bin/faucet",
+    "test": "npm run test:lint && npm run test:spec",
     "build:cjs": "rollup src/datalayer.js --o dist/datalayer.cjs.js -f cjs",
     "build:esm": "rollup src/datalayer.js --o dist/datalayer.esm.js -f es",
     "build:umd": "rollup src/datalayer.js --o dist/datalayer.umd.js -f umd --name \"datalayerjs\"",
@@ -33,17 +33,20 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-register": "^6.26.0",
     "babelrc-rollup": "^3.0.0",
-    "chai": "^4.1.2",
     "eslint": "^4.8.0",
     "eslint-config-airbnb-base": "^12.0.2",
     "eslint-plugin-import": "^2.7.0",
+    "jest": "^22.4.3",
+    "jest-environment-jsdom": "^22.4.3",
+    "jest-environment-jsdom-global": "^1.0.3",
     "jsdom": "^11.3.0",
-    "mocha": "^4.0.1",
     "rollup": "^0.50.0",
-    "rollup-plugin-babel": "^3.0.2",
-    "testdouble": "^3.2.6"
+    "rollup-plugin-babel": "^3.0.2"
   },
   "dependencies": {
     "promise": "^8.0.1"
+  },
+  "jest": {
+    "testEnvironment": "jest-environment-jsdom-global"
   }
 }
