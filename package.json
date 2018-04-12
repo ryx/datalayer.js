@@ -11,7 +11,8 @@
     "build:cjs": "rollup src/datalayer.js --o dist/datalayer.cjs.js -f cjs",
     "build:esm": "rollup src/datalayer.js --o dist/datalayer.esm.js -f es",
     "build:umd": "rollup src/datalayer.js --o dist/datalayer.umd.js -f umd --name \"datalayerjs\"",
-    "build": "npm run build:cjs && npm run build:esm && npm run build:umd"
+    "build": "npm run build:cjs && npm run build:esm && npm run build:umd",
+    "dev": "DTLR_DEBUG=1 babel-node test/plugin.js"
   },
   "repository": {
     "type": "git",
