@@ -26,13 +26,13 @@ describe('metadata', () => {
     });
   });
 
-  describe('module:', () => {
+  describe('module', () => {
     it('should export a factory which returns the extension class', () => {
       expect(typeof metadata.default()).toBe('function');
     });
   });
 
-  describe('extension factory:', () => {
+  describe('extension factory', () => {
     it('should collect, aggregate and return "dtlr:data" metatags when calling "beforeInitialize"', () => {
       const ExtensionClass = metadata.default();
       const data = { data: { foo: 'bar', numberProp2: 42 } };
@@ -55,7 +55,7 @@ describe('metadata', () => {
     });
   });
 
-  describe('collectMetadata:', () => {
+  describe('collectMetadata', () => {
     it('should return an object with an aggregation of all provided metatags\' data', () => {
       const data = { stringProp: 'hello', numberProp: 42, numberProp2: 76.54 };
       window.document.querySelector('body').innerHTML = `<meta name="dal:data" content='${JSON.stringify(data)}' />`;
@@ -110,7 +110,7 @@ describe('metadata', () => {
     });
   });
 
-  describe('extend:', () => {
+  describe('extend', () => {
     it('should extend a given flat object with another flat object, overriding existing props', () => {
       const result = metadata.extend({
         prop1: 'val1',
