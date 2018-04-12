@@ -2,7 +2,7 @@ import { debug } from '../../src/datalayer';
 
 /**
  * Offical datalayer.js core extension that works on any given call to
- * datalayer.scanElement and parses the provided DOM node for existing
+ * datalayer.beforeParseDOMNode and parses the provided node for existing
  * event annotations. The annotations follow a simple syntax and can be
  * provided via a `data-dtlr-event-*` attribute.
  *
