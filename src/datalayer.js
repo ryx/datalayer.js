@@ -42,7 +42,6 @@ debug('debugging enabled');
 export class Datalayer {
   constructor() {
     this.initialized = false; // "ready" flag (true, if all plugins are loaded)
-    this.metaPrefix = 'dtlr:'; // prefix for meta[name] attribute
     this.globalData = {}; // data storage
     this.globalConfig = {}; // configuration object (passed via odl:config)
     this.testModeActive = this.isTestModeActive();
@@ -50,7 +49,7 @@ export class Datalayer {
     this.extensions = []; // array with loaded extensions
     this.queue = new EventQueue();
 
-    // create promises
+    // create Promise reflecting readiness
     this.readyPromiseResolver = null;
     this.readyPromiseRejector = null;
     this.readyPromise = new Promise((resolve, reject) => {
@@ -139,10 +138,14 @@ export class Datalayer {
     this.queue.broadcastEvent(name, data);
   }
 
+  /**
+   * Parse a given DOM node. Passes the given node to an extension hook named
+   * `beforeParseDOMNode`. Extensions can then do whatever the want, e.g. parse
+   * the node for metadata or other information.
+   * @param {HTMLElement} node the DOM node to be parsed
+   */
   parseDOMNode(node) {
     this.triggerExtensionHook('beforeParseDOMNode', node);
-    // this.globalData = this.scanElementForDataMarkup(node);
-    // this.scanElementForEventMarkup(node);
   }
 
   /**
@@ -151,7 +154,8 @@ export class Datalayer {
    * @param {Object} plugin  reference to the plugin instance
    */
   addPlugin(plugin) {
-    // add plugin , then broadcast all events that happened until now
+    // add plugin , then broadcast all events that happened since initialization
+    // @FIXME: add timestamp to events so plugins can decide to ignore old events
     this.plugins.push(plugin);
     this.queue.subscribe(plugin, true);
   }
@@ -194,7 +198,7 @@ export class Datalayer {
     }
     debug('Datalayer.initialize: collected data', this.globalData);
 
-    // instantiate plugins based on config and provided ruleset (wrap single function in array first)
+    // add provided plugins
     const plugins = options.plugins || [];
     if (plugins) {
       plugins.forEach(plugin => this.addPlugin(plugin));
@@ -220,15 +224,9 @@ export class Datalayer {
 
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
     this.initialized = true;
-    // debug('broadcasting initialize event', this.broadcast('initialize', this.globalData));
     this.readyPromiseResolver();
 
-    if (options.broadcastPageload !== false) {
-      debug('Datalayer.initialize: broadcasting initial pageload event');
-      this.broadcast('pageload', this.globalData);
-    }
-
-    // collect event data from document and send events to plugins
+    // parse DOM and trigger extensions hooks
     debug('Datalayer.initialize: scanning DOM');
     this.parseDOMNode(window.document);
 
@@ -290,9 +288,11 @@ export class Plugin {
    * The decision about load handling is done by the plugin to keep the config
    * short and clean. However, the datalayer configuration can overrule the
    * plugin's default and prohibit data access whenever necessary.
-   * @param {D7rPageData} data  the current data object for the current page context
+   * @param {DatalayerPageData} data  the current data object for the current page context
    */
-  handleActivate(data) {}
+  handleActivate(data) {
+    return true;
+  }
 
   /**
    * Main event handling callback.
