@@ -135,12 +135,17 @@ export class Datalayer {
    */
   broadcast(name, data) {
     debug(`Datalayer.broadcast: broadcasting event "${name}"`, data);
-    this.queue.broadcastEvent(name, data);
+    this.queue.broadcastEvent(name, data, (subscriber) => {
+      if (typeof subscriber.shouldReceiveEvent === 'function') {
+        return subscriber.shouldReceiveEvent(this.globalData);
+      }
+      return true;
+    });
   }
 
   /**
    * Parse a given DOM node. Passes the given node to an extension hook named
-   * `beforeParseDOMNode`. Extensions can then do whatever the want, e.g. parse
+   * `beforeParseDOMNode`. Extensions can then do whatever they want, e.g. parse
    * the node for metadata or other information.
    * @param {HTMLElement} node the DOM node to be parsed
    */

@@ -75,7 +75,7 @@ class ConversionPlugin extends Plugin {
     // setup third party resources
   }
 
-  shouldActivate(data) {
+  shouldReceiveEvent(data) {
     return data.page.type === 'conversion';
   }
 

@@ -258,7 +258,7 @@ class SomePlugin {
     // perform any kind of setup here, e.g. add 3rd party script tag to DOM
   }
 
-  handleActivate(page) {
+  shouldReceiveEvent(page) {
     // return true if page.type should be handled by this plugin
   }
 
@@ -269,12 +269,12 @@ class SomePlugin {
 }
 ```
 
-By default the plugins receive only one system-generated event named `pageload`. This event is automatically fired by the datatlayer right after initialization. It contains the global data object as aggregated from the page. A possible `handleEvent` call, handling a `pageload`, could look like this:
+By default the plugins receive only one system-generated event named `page-loaded`. This event is automatically fired by the datatlayer right after initialization. It contains the global data object as aggregated from the page. A possible `handleEvent` call, handling a `page-loaded`, could look like this:
 
 ```javascript
 handleEvent(name, data) {
   switch (name) {
-    case 'pageload': {
+    case 'page-loaded': {
       if (data.page.type === 'productdetail') {
         console.log(data.product);
       }

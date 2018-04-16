@@ -208,7 +208,7 @@ describe('datalayer', () => {
   });
 
   describe('broadcast', () => {
-    it('should broadcast an event to all available plugins', () => {
+    it('should broadcast an event to all available and interested plugins', () => {
       const dal = new module.Datalayer();
       const plugin1 = new MockPlugin();
       const plugin2 = new MockPlugin();
@@ -246,6 +246,20 @@ describe('datalayer', () => {
 
       return dal.whenReady().then(() => {
         expect(plugin.events[expectedEvent.name]).toEqual(expectedEvent.data);
+      });
+    });
+
+    it('should NOT broadcast event to plugins that are not interested (shouldReceiveEvent() === false)', () => {
+      const dal = new module.Datalayer();
+      const plugin = new MockPlugin();
+      plugin.shouldReceiveEvent = () => false;
+      const expectedEvent = { name: 'test' };
+
+      dal.initialize({ data: globalDataMock, plugins: [plugin] });
+      dal.broadcast(expectedEvent.name, expectedEvent.data);
+
+      return dal.whenReady().then(() => {
+        expect(plugin.events[expectedEvent.name]).not.toBeDefined();
       });
     });
   });

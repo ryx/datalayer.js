@@ -30,7 +30,7 @@ export default class SomePlugin extends Plugin {
     /* eslint-enable */
   }
 
-  shouldActivate(page) {
+  shouldReceiveEvent(page) {
     return page.type === 'checkout-confirmation';
   }
 
