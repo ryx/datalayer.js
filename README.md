@@ -1,20 +1,9 @@
-           __      __        __                          _
-      ____/ /___ _/ /_____ _/ /___ ___  _____  _____    (_)____
-     / __  / __ `/ __/ __ `/ / __ `/ / / / _ \/ ___/   / / ___/
-    / /_/ / /_/ / /_/ /_/ / / /_/ / /_/ /  __/ /  _   / (__  )
-    \__,_/\__,_/\__/\__,_/_/\__,_/\__, /\___/_/  (_)_/ /____/
-                                 /____/           /___/
-
 # datalayer.js
 
 Datalayer.js is a datalayer, tagmanager, and *"frontend middleware"*. It follows a "developer first" philosophy, is open-source and fully test-driven. It acts as a data proxy between the client and any third parties, which are embedded by plugins. Datalayer.js is based on a [customizable data model with a virtual type system](#models) and aimed at standardizing and simplifying the process of 3rd party integration into today's websites.
 
-## What is this exactly?
-A *developer-first, in-sourced tag management system* without external GUI. A very mature set of *conventions and virtual types to ensure a deterministic data flow* between backend and frontend. An *event system and plugin loader* to pass data from the client space to 3rd parties. A fully *test-driven environment* to handle and *quality-test your marketing attribution*. A blessing if you ever intend to switch to another web analytics tool.
+> NOTE: this is still a very early version and likely contains documentation issues :boom:
 
-Based on years of technical evolution and real-world problems we encountered and solved at Galeria Kaufhof and HBC Europe. Built mainly with scalability, testing and clear conventions in mind. Rewritten from the ground up to integrate with modern single-page applications as well as classical websites.
-
-Why don't we use an external tag management system? We did. And we soon learned the danger behind marketing claims like "tag managers are great, because you don't need to change your software when you want to add new 'tags'". Phrases like this lead to the false assumption that this is all safe and painless. I strongly believe that adding random scripts into a production environment should be called "changing the software" either way. Call me old-fashioned, but adding Javascript code (because that is what said "pixels" and "tags" are!) into a live website is a "production deployment" per definition to me. You insert new code into your production environment. Directly. Without CI testing. In most cases it is untested, unknown, "blackbox" code, written by some unknown third party. That's one of the major reasons behind the idea of insourcing the whole tag management.
 
 ## How does it work?
 The Datalayer "collects" data from the website (i.e. it gets passed from different parts of your application) and aggregates it to one data object. Then the plugin loader starts loading it's plugins based on a given rule configuration (e.g. analytics scripts on each page, conversion pixels only on order confirmation, etc. ). Plugins then receive events which contain specific data. One such event is the "pageload" event, that passes the previously aggregated data object to the plugin. Plugins can then provide data to third parties as desired. That's the big picture.
