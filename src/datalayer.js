@@ -18,9 +18,6 @@ import { extend } from './lib/utils';
 import cookie from './lib/cookie';
 import EventQueue from './lib/queue';
 
-// define window global
-// const { window } = global;
-
 // debugging helper
 /* eslint-disable func-names, no-console, prefer-spread, prefer-rest-params */
 const DEBUG = typeof process.env.DTLR_DEBUG !== 'undefined';
