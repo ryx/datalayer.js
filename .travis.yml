@@ -2,3 +2,9 @@ language: node_js
 node_js:
   - "stable"
   - "8"
+deploy:
+  provider: npm
+  email: $NPM_DEPLOY_USER
+  api_key: $NPM_AUTH_TOKEN
+  on:
+    tags: true
