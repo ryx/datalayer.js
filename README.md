@@ -167,7 +167,7 @@ The `types` property in the model contains schema definitions of the available d
 ```
 
 ## Pages
-The `pages` property in the model describes which data is expected for the individual pagetypes. A *pagetype* can be described as a generic, "single purpose" type of page like a *homepage*, a *productlist* or a *productdetail*. As a rule of thumb you could say that if there is a dedicated template for a certain kind of page, then it should get it's own pagetype in the datalayer, too. On bigger websites this can easily become a list of tenth (or even hundreds) of different pagetypes. At Galeria Kaufhof we have a combination of webshop, corporate website, external websites and many more. We ended up having around a hundred different page types and even more events.
+The `pages` property in the model describes which data is expected for the individual pagetypes. A *pagetype* can be described as a generic, "single purpose" type of page like a *homepage*, a *productlist* or a *productdetail*. As a rule of thumb you could say: if there is a dedicated template for a certain kind of page, then it should get it's own pagetype in the datalayer, too. On bigger websites this can easily become a list of tenth (or even hundreds) of different pagetypes. At Galeria Kaufhof we have a combination of webshop, corporate website, external websites and many more. We ended up having around a hundred different page types and even more events.
 
 The pagetype definition uses the datatypes declared via the `types` property. There is one special pagetype called `*`. It stands for "any page throughout the entire website". Usually it is used to provide common information like page or site specifics.
 

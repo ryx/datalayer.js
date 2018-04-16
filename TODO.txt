@@ -1,13 +1,12 @@
 TODO:
 -----
-- properly implement lifecycle methods:
-  - broadcast should call handleActivate and only broadcast to interested plugins
+- properly implement remaining lifecycle methods:
   - handleInit should be called on first activation
-  -
+  - ...
+- implement handling of view events in annotations extensions
 - rules option needs to be handled by datalayer.initialize
 - datalayer should have no issues with being (re-)initialized as often as necessary (update tests after that)
 - reimplement meta-based config (maybe as extension?)
 - `data-datalayer-config` needs to be available to support extensions together with methodQueue-style import
-- implement handling of view events in annotations extensions
 - add timestamp to events in `Datalayer.addPlugin` so plugins can decide to ignore old events
--
+- ...
