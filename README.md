@@ -230,7 +230,7 @@ datalayer.broadcast('my-cool-event', { foo: 'bar' })
 ## getData(): Object
 Returns the global data as one big object. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling it from outside a plugin's lifecycle.
 
-## getPluginById(id:string): Object
+## getPluginByID(id:string): Object
 Get plugin with the given id and return it. If the plugin is unknown, the function returns null. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling it from outside a plugin's lifecycle.
 
 ## scanElement(element:HTMLElement): void

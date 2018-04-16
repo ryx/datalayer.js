@@ -111,12 +111,12 @@ export class Datalayer {
 
   /**
    * Returns a plugin instance by the id that was assigned via config.
-   * @param  {String}  pluginId     the id of the requested plugin
+   * @param  {String}  pluginID     the id of the requested plugin
    */
-  getPluginById(pluginId) {
+  getPluginByID(pluginID) {
     if (this.initialized) {
       for (let i = 0; i < this.plugins.length; i += 1) {
-        if (this.plugins[i].constructor.getID() === pluginId) {
+        if (this.plugins[i].constructor.getID() === pluginID) {
           return this.plugins[i];
         }
       }

@@ -62,36 +62,36 @@ describe('datalayer', () => {
     });
 
     it('should add single plugin when passing a function to the `plugins` option', () => {
-      const dal = new module.Datalayer();
+      const d7r = new module.Datalayer();
 
-      dal.initialize({
+      d7r.initialize({
         data: globalDataMock,
         plugins: [new MockPlugin()],
       });
 
-      return dal.whenReady().then(() => {
-        expect(dal.getPluginById('test/mockPlugin')).toBeDefined();
+      return d7r.whenReady().then(() => {
+        expect(d7r.getPluginByID('test/mockPlugin')).toBeDefined();
       });
     });
 
     it('should add multiple plugins when passing an array to the `plugins` option', () => {
-      const dal = new module.Datalayer();
+      const d7r = new module.Datalayer();
 
-      dal.initialize({
+      d7r.initialize({
         data: globalDataMock,
         plugins: [new MockPlugin(), new MockPlugin()],
       });
 
-      return dal.whenReady().then(() => {
-        expect(dal.getPluginById('test/mockPlugin')).toBeDefined();
+      return d7r.whenReady().then(() => {
+        expect(d7r.getPluginByID('test/mockPlugin')).toBeDefined();
       });
     });
 
     /*
     it('should create a method queue handler in window', () => {
-      const dal = new module.Datalayer();
+      const d7r = new module.Datalayer();
 
-      dal.initialize({ data: globalDataMock });
+      d7r.initialize({ data: globalDataMock });
 
       assert.isDefined(window._dtlrq);
     });
@@ -102,11 +102,11 @@ describe('datalayer', () => {
     describe('enable/disable', () => {
       it('should activate testmode if URL contains __dtlrtest__=1', () => {
         jsdom.reconfigure({ url: 'http://example.com?__dtlrtest__=1' });
-        const dal = new module.Datalayer();
+        const d7r = new module.Datalayer();
 
-        dal.initialize({ data: globalDataMock });
+        d7r.initialize({ data: globalDataMock });
 
-        expect(dal.inTestMode()).toBe(true);
+        expect(d7r.inTestMode()).toBe(true);
       });
 
       it('should still BE in testmode, even after fake reload', () => {
@@ -122,11 +122,11 @@ describe('datalayer', () => {
 
       it('should disable testmode if URL contains __dtlrtest__=0', () => {
         jsdom.reconfigure({ url: 'http://example.com?__dtlrtest__=0' });
-        const dal = new module.Datalayer();
+        const d7r = new module.Datalayer();
 
-        dal.initialize({ data: globalDataMock });
+        d7r.initialize({ data: globalDataMock });
 
-        expect(dal.inTestMode()).toBe(false);
+        expect(d7r.inTestMode()).toBe(false);
       });
 
       it('should still NOT BE in testmode, even after fake reload', () => {
@@ -144,16 +144,16 @@ describe('datalayer', () => {
     // @FIXME: I _think_ this is a false positive
     it('should load a specified plugin, if testmode is active, the mode evaluates to "test" and the rule evaluates to "true"', () => {
       jsdom.reconfigure({ url: 'http://example.com?__dtlrtest__=1' });
-      const dal = new module.Datalayer();
+      const d7r = new module.Datalayer();
       const myPlugin = new MockPlugin();
 
-      dal.initialize({
+      d7r.initialize({
         data: globalDataMock,
         plugins: [myPlugin],
       });
 
-      return dal.whenReady().then(() => {
-        expect(dal.getPluginById('test/mockPlugin')).toEqual(myPlugin);
+      return d7r.whenReady().then(() => {
+        expect(d7r.getPluginByID('test/mockPlugin')).toEqual(myPlugin);
       });
     });
 
@@ -161,15 +161,15 @@ describe('datalayer', () => {
     // @FIXME: doesn't work
     it('should NOT load a specified plugin, if testmode is inactive, the mode evaluates to "test" and the rule evaluates to "true"', (st) => {
       dom.reconfigure({ url: 'http://example.com?__dtlrtest__=0' });
-      const dal = new module.Datalayer();
-      dal.initialize({
+      const d7r = new module.Datalayer();
+      d7r.initialize({
         data: globalDataMock,
         plugins: [
           { type: MockPlugin, rule: () => true, test: true },
         ],
       });
-      return dal.whenReady().then(() => {
-        assert.equal(dal.getPluginById('test/mockPlugin', null));
+      return d7r.whenReady().then(() => {
+        assert.equal(d7r.getPluginByID('test/mockPlugin', null));
       });
     });
     */
@@ -177,88 +177,88 @@ describe('datalayer', () => {
 
   describe('whenReady', () => {
     it('should resolve when called BEFORE initialize', () => {
-      const dal = new module.Datalayer();
+      const d7r = new module.Datalayer();
 
-      const promise = dal.whenReady().then(() => expect(dal.isReady()).toBe(true));
-      dal.initialize({ data: globalDataMock });
+      const promise = d7r.whenReady().then(() => expect(d7r.isReady()).toBe(true));
+      d7r.initialize({ data: globalDataMock });
 
       return promise;
     });
 
     it('should resolve when called AFTER initialize', () => {
-      const dal = new module.Datalayer();
+      const d7r = new module.Datalayer();
 
-      dal.initialize({ data: globalDataMock });
+      d7r.initialize({ data: globalDataMock });
 
-      return dal.whenReady().then(() => expect(dal.isReady()).toBe(true));
+      return d7r.whenReady().then(() => expect(d7r.isReady()).toBe(true));
     });
   });
 
   describe('addPlugin', () => {
     it('should add a plugin using addPlugin', () => {
-      const dal = new module.Datalayer();
-      dal.initialize({ data: globalDataMock });
+      const d7r = new module.Datalayer();
+      d7r.initialize({ data: globalDataMock });
 
-      dal.addPlugin(new MockPlugin());
+      d7r.addPlugin(new MockPlugin());
 
-      return dal.whenReady().then(() => {
-        expect(dal.getPluginById('test/mockPlugin')).toBeDefined();
+      return d7r.whenReady().then(() => {
+        expect(d7r.getPluginByID('test/mockPlugin')).toBeDefined();
       });
     });
   });
 
   describe('broadcast', () => {
     it('should broadcast an event to all available and interested plugins', () => {
-      const dal = new module.Datalayer();
+      const d7r = new module.Datalayer();
       const plugin1 = new MockPlugin();
       const plugin2 = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
-      dal.initialize({ data: globalDataMock, plugins: [plugin1, plugin2] });
+      d7r.initialize({ data: globalDataMock, plugins: [plugin1, plugin2] });
 
-      return dal.whenReady().then(() => {
-        dal.broadcast(expectedEvent.name, expectedEvent.data);
+      return d7r.whenReady().then(() => {
+        d7r.broadcast(expectedEvent.name, expectedEvent.data);
         expect(plugin1.events[expectedEvent.name]).toEqual(expectedEvent.data);
         expect(plugin2.events[expectedEvent.name]).toEqual(expectedEvent.data);
       });
     });
 
     it('should broadcast an event that was sent BEFORE calling initialize', () => {
-      const dal = new module.Datalayer();
+      const d7r = new module.Datalayer();
       const plugin = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
-      dal.broadcast(expectedEvent.name, expectedEvent.data);
-      dal.initialize({ data: globalDataMock, plugins: [plugin] });
+      d7r.broadcast(expectedEvent.name, expectedEvent.data);
+      d7r.initialize({ data: globalDataMock, plugins: [plugin] });
 
-      dal.whenReady().then(() => {
+      d7r.whenReady().then(() => {
         expect(plugin.events[expectedEvent.name]).toEqual(expectedEvent.data);
       });
     });
 
     it('should broadcast an event that was sent AFTER calling initialize but BEFORE being ready', () => {
-      const dal = new module.Datalayer();
+      const d7r = new module.Datalayer();
       const plugin = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
-      dal.initialize({ data: globalDataMock, plugins: [plugin] });
-      dal.broadcast(expectedEvent.name, expectedEvent.data);
+      d7r.initialize({ data: globalDataMock, plugins: [plugin] });
+      d7r.broadcast(expectedEvent.name, expectedEvent.data);
 
-      return dal.whenReady().then(() => {
+      return d7r.whenReady().then(() => {
         expect(plugin.events[expectedEvent.name]).toEqual(expectedEvent.data);
       });
     });
 
     it('should NOT broadcast event to plugins that are not interested (shouldReceiveEvent() === false)', () => {
-      const dal = new module.Datalayer();
+      const d7r = new module.Datalayer();
       const plugin = new MockPlugin();
       plugin.shouldReceiveEvent = () => false;
       const expectedEvent = { name: 'test' };
 
-      dal.initialize({ data: globalDataMock, plugins: [plugin] });
-      dal.broadcast(expectedEvent.name, expectedEvent.data);
+      d7r.initialize({ data: globalDataMock, plugins: [plugin] });
+      d7r.broadcast(expectedEvent.name, expectedEvent.data);
 
-      return dal.whenReady().then(() => {
+      return d7r.whenReady().then(() => {
         expect(plugin.events[expectedEvent.name]).not.toBeDefined();
       });
     });
@@ -283,69 +283,69 @@ describe('datalayer', () => {
 
     describe('use', () => {
       it('should load an extension when calling use', () => {
-        const dal = new module.Datalayer();
+        const d7r = new module.Datalayer();
 
-        dal.use(dummyExtension({ test: '123' }));
+        d7r.use(dummyExtension({ test: '123' }));
 
-        expect(dal.extensions.length === 1).toBe(true);
+        expect(d7r.extensions.length === 1).toBe(true);
       });
 
       it('should pass the configuration to the extension', () => {
-        const dal = new module.Datalayer();
+        const d7r = new module.Datalayer();
         const cfg = { test: '123' };
 
-        dal.use(dummyExtension(cfg));
+        d7r.use(dummyExtension(cfg));
 
-        expect(dal.extensions[0].config === cfg).toBe(true);
+        expect(d7r.extensions[0].config === cfg).toBe(true);
       });
 
       it('should return the datalayer instance', () => {
-        const dal = new module.Datalayer();
+        const d7r = new module.Datalayer();
 
-        expect(dal.use(dummyExtension())).toEqual(dal);
+        expect(d7r.use(dummyExtension())).toEqual(d7r);
       });
     });
 
     describe('triggerExtensionHook', () => {
       it('should trigger a given extension hook', () => {
-        const dal = new module.Datalayer();
+        const d7r = new module.Datalayer();
 
         // create extension, then inject our spy, then trigger hooks
-        dal.use(dummyExtension());
+        d7r.use(dummyExtension());
         dummyExtensionInstance.myTestingHook = jest.fn();
-        dal.triggerExtensionHook('myTestingHook');
+        d7r.triggerExtensionHook('myTestingHook');
 
         expect(dummyExtensionInstance.myTestingHook).toHaveBeenCalled();
       });
 
       it('should trigger a given extension hook with the provided arguments', () => {
-        const dal = new module.Datalayer();
+        const d7r = new module.Datalayer();
 
         // create extension, then inject our spy, then trigger hooks
-        dal.use(dummyExtension());
+        d7r.use(dummyExtension());
         dummyExtensionInstance.myTestingHook = jest.fn();
-        dal.triggerExtensionHook('myTestingHook', { bar: 'foo' });
+        d7r.triggerExtensionHook('myTestingHook', { bar: 'foo' });
 
         expect(dummyExtensionInstance.myTestingHook).toHaveBeenCalledWith({ bar: 'foo' });
       });
 
       it('should trigger a given extension hook and return the individual hook results inside an array', () => {
-        const dal = new module.Datalayer();
+        const d7r = new module.Datalayer();
 
         // create extension, then trigger hooks and check returned value
-        dal.use(dummyExtension());
-        const ret = dal.triggerExtensionHook('myTestingHook', { bar: 'foo' });
+        d7r.use(dummyExtension());
+        const ret = d7r.triggerExtensionHook('myTestingHook', { bar: 'foo' });
 
         expect(ret).toEqual([{ bar: 'foo' }]);
       });
 
       it('should trigger an extension hook and pass the expected arguments to the hook function', () => {
-        const dal = new module.Datalayer();
+        const d7r = new module.Datalayer();
 
         // create extension, then inject our spy, then trigger hooks
-        dal.use(dummyExtension());
+        d7r.use(dummyExtension());
         dummyExtensionInstance.myTestingHook = jest.fn();
-        dal.triggerExtensionHook('myTestingHook', 'foo', 'bar', 123, { foo: 'bar' });
+        d7r.triggerExtensionHook('myTestingHook', 'foo', 'bar', 123, { foo: 'bar' });
 
         expect(dummyExtensionInstance.myTestingHook).toHaveBeenCalledWith('foo', 'bar', 123, { foo: 'bar' });
       });
