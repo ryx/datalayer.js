@@ -102,7 +102,7 @@ export class Datalayer {
    * Returns the global data that came from one of the following sources:
    * a) it was passed to `.initialize` via configuration
    * b) it was collected and aggregated from the entire page by `.initialize`
-   * c) it was manually passed as data to the last "pageload" event
+   * c) it was manually passed as data to the last "page-loaded" event
    * @returns {Object} object with global data
    */
   getData() {
@@ -265,46 +265,6 @@ export class Datalayer {
     }
     return false;
   }
-}
-
-/**
- * Baseclass for all datalayer.js plugins.
- *
- * TESTING!!!
- */
-export class Plugin {
-  constructor(id, config = {}) {
-    this.id = id;
-    this.config = config;
-  }
-
-  getId() {
-    return this.id;
-  }
-
-  /**
-   * Initialize any DOM resources for this plugin. Called exactly once, when
-   * the plugin is activated for the first time.
-   */
-  handleInit() {}
-
-  /**
-   * Decides whether this plugin will receive data within the current context.
-   * The decision about load handling is done by the plugin to keep the config
-   * short and clean. However, the datalayer configuration can overrule the
-   * plugin's default and prohibit data access whenever necessary.
-   * @param {DatalayerPageData} data  the current data object for the current page context
-   */
-  handleActivate(data) {
-    return true;
-  }
-
-  /**
-   * Main event handling callback.
-   * @param {string} name of event to be handled
-   * @param {any} data event data, type and structure depend on event type
-   */
-  handleEvent(name, data) {}
 }
 
 // create new datalayer singleton instance
