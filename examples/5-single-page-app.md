@@ -1,66 +1,44 @@
 # Example 5: Using datalayer.js in a single page app (SPA)
-This example shows a possible approach to use datalayer.js in a single page app (SPA). SPAs provide a very special environment because - as the name implies - there is only a single page load right at the beginning. Therefore the usual approach to pass data from the backend to the datalayer using meta tags doesn't really work throughout an application's lifecycle.
+(WORK IN PROGRESS)
 
-A simple example that might be an approach when using React (Note: there is no datalayerjs-react module yet). Additionally we would need some smart component around our Page that triggers `datalayer.initialize` with the correct configuration and/or re-scans the HTML for annotations and special markup.
+This example discusses a few possible approaches to use datalayer.js in a single page application (SPA). SPAs are a rather special environment for tag management and analytics because - as the name implies - there is only a single page load right at the beginning. Therefore the usual technique of passing data from the backend to the datalayer via `<meta>` tags doesn't work within an SPA's lifecycle.
+
+## General approach
+So what can we do? The solution is to manually broadcast `page-loaded` events from within the SPA's lifecycle, likely after receiving the required data for a newly loaded page (maybe through some async request from an API). From a technical perspective that's pretty simple to do:
 
 ```javascript
-// Possible React example
-import datalayer from 'datalayerjs';
-import { DatalayerProvider, DatalayerData } from 'datalayerjs-react';
+datalayer.whenReady().then(d7r => {
+  d7r.broadcast('page-loaded', {
+    page: {
+      type: 'homepage',
+      name: 'My Test Website'
+    },
+    site: { id: 'MySite' },
+    user: {},
+  });
+});
+```
 
-class Page extends React.Component {
+When the datalayer becomes available we manually broadcast our `page-loaded` event and pass an object of type `D7rGlobalData` as parameter. This code could be executed anywhere in your application, e.g. inside a global state management (e.g. Redux middleware) or routing controller. The next section gives a more detailed example on that.
+
+## Using the React Context API
+A more React-specific solution could be based on the new [Context API in React 16.3](https://reactjs.org/docs/context.html). In that case we would need a Provider component around our Page that triggers `datalayer.initialize` with the correct configuration and/or re-scans the HTML for annotations and special markup.
+
+```javascript
+import datalayer from 'datalayerjs';
+import { Datalayer, DatalayerData } from 'datalayerjs-react';
+
+class App extends React.Component {
   render() {
-    const { props } = this;
     return (
-      <DatalayerProvider datalayer={datalayer}>
-        <DatalayerData data={myTrackingData} />
-        <div>Your page content ...</div>
-      </DatalayerProvider>
+      <Datalayer.Provider datalayer={datalayer}>
+        <div>Your app content ...</div>
+      </Datalayer.Provider>
     );
   }
 }
 ```
 
-So what else could we do? One solution could be to manually execute "load" events and add some way to disable the automatic `pageload` generation.
+## Using a Redux Middleware
+When using Redux as state-handling framework it makes sense to create a dedicated middleware that takes datalayer metadata passed in via Redux actions. We'll approach that idea in a later example.
 
-```javascript
-import datalayer from '../src/datalayer';
-import ExamplePlugin from './examplePlugin';
-
-// This code and logic might be somewhere within your frameworks routing handling or Page
-// component (in case of React). It likely follows this logic:
-// 1) receive the required data for the current page (maybe through some async request from an API)
-// 2) wait for datalayer to be ready
-// 3) create the expected data object and broadcast it as a 'pageload' event
-datalayer.whenReady().then((dtlr) => {
-  // when the datalayer is available we manually broadcast the global "load" event,
-  // passing an object of type DALGlobalData
-  dtlr.broadcast('pageload', {
-    page: { type: 'homepage', name: 'My Test Website' },
-    site: { id: 'MySite' },
-    user: {},
-  });
-});
-
-// Initializing the global datalayer instance ist the same as in any other situation, but
-// you only initialize the datalayer once throughout your entire application cycle (well,
-// until the user hits reload of course).
-datalayer
-  .initialize({
-    // disable automatic broadcasting of pageload events (we do this manually, since we only
-    // have one pageload anyway in a common SPA)
-    broadcastPageload: false,
-    // provide plugins to be loaded, together with display rules and private configuration
-    // (you can use the same plugin multiple times, with variying configuration)
-    plugins: [
-      new ExamplePlugin({ testProp: 'myplugin-private-number-1' }),
-    ],
-  })
-  .then((dtlr) => {
-    dtlr.broadcast('pageload', {
-      page: { type: 'homepage', name: 'My Test Website' },
-      site: { id: 'MySite' },
-      user: {},
-    });
-  });
-```
