@@ -33,20 +33,20 @@ describe('metadata', () => {
   });
 
   describe('extension factory', () => {
-    it('should collect, aggregate and return "dtlr:data" metatags when calling "beforeInitialize"', () => {
+    it('should collect, aggregate and return "d7r:data" metatags when calling "beforeInitialize"', () => {
       const ExtensionClass = metadata.default();
       const data = { data: { foo: 'bar', numberProp2: 42 } };
-      window.document.querySelector('body').innerHTML = `<meta name="dtlr:data" content='${JSON.stringify(data)}' />`;
+      window.document.querySelector('body').innerHTML = `<meta name="d7r:data" content='${JSON.stringify(data)}' />`;
 
       const extension = new ExtensionClass(datalayerMock);
 
       expect(extension.beforeInitialize()).toEqual(data);
     });
 
-    it('should broadcast events found in "dtlr:event" metatags when calling "beforeParseDOMNode"', () => {
+    it('should broadcast events found in "d7r:event" metatags when calling "beforeParseDOMNode"', () => {
       const ExtensionClass = metadata.default();
       const eventData = { name: 'my-event', data: { foo: 'bar', numberProp2: 42 } };
-      window.document.querySelector('body').innerHTML = `<meta name="dtlr:event" content='${JSON.stringify(eventData)}' />`;
+      window.document.querySelector('body').innerHTML = `<meta name="d7r:event" content='${JSON.stringify(eventData)}' />`;
       const extension = new ExtensionClass(datalayerMock);
 
       extension.beforeParseDOMNode(window.document);

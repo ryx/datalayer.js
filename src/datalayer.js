@@ -248,16 +248,16 @@ export class Datalayer {
    */
   isTestModeActive() {
     // debug(window.location.search);
-    if (cookie.get('__dtlrtest__')) {
+    if (cookie.get('__d7rtest__')) {
       debug('Datalayer.isTestModeActive: cookie found');
-      if (window.location.search.match(/__dtlrtest__=0/gi)) {
+      if (window.location.search.match(/__d7rtest__=0/gi)) {
         debug('Datalayer.isTestModeActive: removing cookie');
-        cookie.remove('__dtlrtest__', { path: '/' });
+        cookie.remove('__d7rtest__', { path: '/' });
         return false;
       }
       return true;
-    } else if (window.location.search.match(/__dtlrtest__=1/gi)) {
-      cookie.set('__dtlrtest__', '1', { path: '/', maxAge: 3600 * 24 * 7 });
+    } else if (window.location.search.match(/__d7rtest__=1/gi)) {
+      cookie.set('__d7rtest__', '1', { path: '/', maxAge: 3600 * 24 * 7 });
       return true;
     }
     return false;

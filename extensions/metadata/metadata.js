@@ -68,7 +68,7 @@ export function collectMetadata(name, callback, context = null, data = {}) {
   return data;
 }
 
-export default (config = { metaPrefix: 'dtlr:' }) => class Metadata {
+export default (config = { metaPrefix: 'd7r:' }) => class Metadata {
   constructor(datalayer) {
     this.datalayer = datalayer;
     this.globalData = {};
@@ -86,8 +86,8 @@ export default (config = { metaPrefix: 'dtlr:' }) => class Metadata {
         console.error(err);
         return;
       }
-      if (!_element.hasAttribute('data-dtlr-handled-event')) {
-        _element.setAttribute('data-dtlr-handled-event', 1);
+      if (!_element.hasAttribute('data-d7r-handled-event')) {
+        _element.setAttribute('data-d7r-handled-event', 1);
         this.datalayer.broadcast(obj.name, obj.data);
       }
     }, element);

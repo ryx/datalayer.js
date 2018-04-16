@@ -48,8 +48,8 @@ The method queue pattern (MQP) integration is available through the [methodQueue
   data-datalayer-config='{"extensions":["methodQueue"]}'
 ></script>
 <script>
-_dtlrq = window._dtlrq || [];
-_dtlrq.push('initialize', {});
+_d7rq = window._d7rq || [];
+_d7rq.push('initialize', {});
 </script>
 ```
 
@@ -213,9 +213,9 @@ datalayer.initialize({
 This is the main entry point if you want to use any datalayer.js functionality outside of plugins. It is resolved when the `initialize` call is finished and all configured plugins are loaded based on the provided ruleset. You can bind to the returned Promise at any time during the app lifecycle to access the API. The global datalayer.js instance is passed as only argument to the `resolve` callback (you could also use the global instance as well but local variables are better practice).
 
 ```javascript
-datalayer.whenReady().then((dtlr) => {
+datalayer.whenReady().then((d7r) => {
   // access data in datalayer (data is fully aggregated and available at this point)
-  console.log(dtlr.getData());
+  console.log(d7r.getData());
 })
 ```
 

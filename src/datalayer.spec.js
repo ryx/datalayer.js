@@ -93,15 +93,15 @@ describe('datalayer', () => {
 
       d7r.initialize({ data: globalDataMock });
 
-      assert.isDefined(window._dtlrq);
+      assert.isDefined(window._d7rq);
     });
     */
   });
 
   describe('testMode', () => {
     describe('enable/disable', () => {
-      it('should activate testmode if URL contains __dtlrtest__=1', () => {
-        jsdom.reconfigure({ url: 'http://example.com?__dtlrtest__=1' });
+      it('should activate testmode if URL contains __d7rtest__=1', () => {
+        jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=1' });
         const d7r = new module.Datalayer();
 
         d7r.initialize({ data: globalDataMock });
@@ -110,7 +110,7 @@ describe('datalayer', () => {
       });
 
       it('should still BE in testmode, even after fake reload', () => {
-        jsdom.reconfigure({ url: 'http://example.com?__dtlrtest__=1' });
+        jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=1' });
         new module.Datalayer();
 
         jsdom.reconfigure({ url: 'http://example.com' });
@@ -120,8 +120,8 @@ describe('datalayer', () => {
         expect(dal2.inTestMode()).toBe(true);
       });
 
-      it('should disable testmode if URL contains __dtlrtest__=0', () => {
-        jsdom.reconfigure({ url: 'http://example.com?__dtlrtest__=0' });
+      it('should disable testmode if URL contains __d7rtest__=0', () => {
+        jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=0' });
         const d7r = new module.Datalayer();
 
         d7r.initialize({ data: globalDataMock });
@@ -130,7 +130,7 @@ describe('datalayer', () => {
       });
 
       it('should still NOT BE in testmode, even after fake reload', () => {
-        jsdom.reconfigure({ url: 'http://example.com?__dtlrtest__=0' });
+        jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=0' });
         new module.Datalayer();
 
         jsdom.reconfigure({ url: 'http://example.com' });
@@ -143,7 +143,7 @@ describe('datalayer', () => {
 
     // @FIXME: I _think_ this is a false positive
     it('should load a specified plugin, if testmode is active, the mode evaluates to "test" and the rule evaluates to "true"', () => {
-      jsdom.reconfigure({ url: 'http://example.com?__dtlrtest__=1' });
+      jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=1' });
       const d7r = new module.Datalayer();
       const myPlugin = new MockPlugin();
 
@@ -160,7 +160,7 @@ describe('datalayer', () => {
     /*
     // @FIXME: doesn't work
     it('should NOT load a specified plugin, if testmode is inactive, the mode evaluates to "test" and the rule evaluates to "true"', (st) => {
-      dom.reconfigure({ url: 'http://example.com?__dtlrtest__=0' });
+      dom.reconfigure({ url: 'http://example.com?__d7rtest__=0' });
       const d7r = new module.Datalayer();
       d7r.initialize({
         data: globalDataMock,
@@ -268,8 +268,8 @@ describe('datalayer', () => {
     // dummy extension for testing
     let dummyExtensionInstance = null;
     const dummyExtension = config => class DummyExtension {
-      constructor(dtlr) {
-        this.datalayer = dtlr;
+      constructor(d7r) {
+        this.datalayer = d7r;
         this.config = config;
         dummyExtensionInstance = this;
       }

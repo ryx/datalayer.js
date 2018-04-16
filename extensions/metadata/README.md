@@ -15,9 +15,9 @@ datalayer.use(metadata());
 
 ### Rendertime markup
 ```xml
-<meta name="dtlr:data" content='{"page":{"type":"homepage","name":"My homepage"}}' />
+<meta name="d7r:data" content='{"page":{"type":"homepage","name":"My homepage"}}' />
 ```
 
 ## Options
 Available configuration options for this extension are:
-- metaPrefix: use to customize the `dtlr:` part of the metatags used to pass the metadata
+- metaPrefix: use to customize the `d7r:` part of the metatags used to pass the metadata

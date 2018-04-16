@@ -36,7 +36,7 @@ describe('methodQueue', () => {
 
       new ExtensionClass(datalayerMock);
 
-      expect(window._dtlrq).toBeInstanceOf(Array);
+      expect(window._d7rq).toBeInstanceOf(Array);
     });
 
     it('should install a global method queue with a custom name if provided in config', () => {

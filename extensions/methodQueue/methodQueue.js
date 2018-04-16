@@ -43,7 +43,7 @@ export const createMethodQueueHandler = (context, queueName, api = {}) => {
   };
 };
 
-export default (config = { queueName: '_dtlrq' }) => class MethodQueue {
+export default (config = { queueName: '_d7rq' }) => class MethodQueue {
   constructor(datalayer) {
     this.datalayer = datalayer;
     createMethodQueueHandler(window, config.queueName, datalayer);
