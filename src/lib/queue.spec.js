@@ -79,5 +79,15 @@ describe('EventQueue', () => {
       expect(subscriber.caughtEvents.length).toEqual(1);
       expect(subscriber.caughtEvents[0]).toEqual(['test', { foo: 123 }]);
     });
+
+    it('should NOT broadcast events to uninterested subscribers (i.e. callback returns false)', () => {
+      const queue = new EventQueue();
+      const subscriber = new EventSubscriber();
+
+      queue.subscribe(subscriber);
+      queue.broadcastEvent('test', { foo: 123 }, () => false);
+
+      expect(subscriber.caughtEvents.length).toEqual(0);
+    });
   });
 });
