@@ -4,14 +4,14 @@ import { debug } from '../../src/datalayer';
  * Offical datalayer.js core extension that works on any given call to
  * datalayer.beforeParseDOMNode and parses the provided node for existing
  * event annotations. The annotations follow a simple syntax and can be
- * provided via a `data-dtlr-event-*` attribute.
+ * provided via a `data-d7r-event-*` attribute.
  *
  * Copyright (c) 2016 - present, Rico Pfaus
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-export default (config = { attributePrefix: 'dtlr' }) => class Annotations {
+export default (config = { attributePrefix: 'd7r' }) => class Annotations {
   constructor(datalayer) {
     this.datalayer = datalayer;
     // init prerequisites
@@ -27,7 +27,7 @@ export default (config = { attributePrefix: 'dtlr' }) => class Annotations {
       const o = JSON.parse(jsonString);
       this.datalayer.broadcast(o.name, o.data);
     } catch (e) {
-      console.error('Error: invalid JSON provided for broadcast', jsonString, e);
+      debug('Error: invalid JSON provided for broadcast', jsonString, e);
     }
   }
 

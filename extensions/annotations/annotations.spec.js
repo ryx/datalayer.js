@@ -1,4 +1,7 @@
 /* eslint-disable max-len, no-new */
+import { debug } from '../../src/datalayer';
+
+jest.mock('../../src/datalayer');
 
 // properly define implicit globals
 const {
@@ -15,6 +18,7 @@ describe('annotations', () => {
     datalayerMock = {
       broadcast: jest.fn(),
     };
+    debug.mockClear();
     return import('./annotations.js').then((m) => {
       annotations = m;
     });
@@ -31,7 +35,7 @@ describe('annotations', () => {
       const ExtensionClass = annotations.default();
       const data = { name: 'click-test', data: { foo: 'bar' } };
       window.document.body.innerHTML = `
-        <div id="test-click" data-dtlr-event-click='${JSON.stringify(data)}' />Click event</div>
+        <div id="test-click" data-d7r-event-click='${JSON.stringify(data)}'>Click event</div>
       `;
 
       const extension = new ExtensionClass(datalayerMock);
@@ -45,13 +49,24 @@ describe('annotations', () => {
       const ExtensionClass = annotations.default();
       const data = { name: 'view-test', data: { foo: 'bar' } };
       window.document.body.innerHTML = `
-        <div id="test-view" data-dtlr-event-view='${JSON.stringify(data)}' />Immediately visible</div>
+        <div id="test-view" data-d7r-event-view='${JSON.stringify(data)}'>Immediately visible</div>
       `;
 
       const extension = new ExtensionClass(datalayerMock);
       extension.beforeParseDOMNode(window.document.body);
 
       expect(datalayerMock.broadcast).toHaveBeenCalledWith('view-test', { foo: 'bar' });
+    });
+
+    it('should NOT throw (but log error instead) when encountering invalid JSON', () => {
+      const ExtensionClass = annotations.default();
+      window.document.body.innerHTML = '<div data-d7r-event-click="ka-boom ...">I will explode</div>';
+
+      const extension = new ExtensionClass(datalayerMock);
+      extension.beforeParseDOMNode(window.document.body);
+
+      expect(datalayerMock.broadcast).not.toThrow();
+      expect(debug).toHaveBeenCalledWith(expect.stringMatching('invalid JSON'), 'ka-boom ...', expect.anything());
     });
   });
 });
