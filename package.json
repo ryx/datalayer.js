@@ -1,7 +1,7 @@
 {
   "name": "datalayerjs",
-  "version": "0.0.1",
-  "description": "An open-source datalayer, tagmanager and frontend middleware, sitting between the client and any third parties",
+  "version": "0.0.2",
+  "description": "An open-source datalayer, tagmanager and frontend middleware",
   "main": "dist/datalayer.cjs.js",
   "module": "dist/datalayer.esm.js",
   "scripts": {
