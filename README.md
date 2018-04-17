@@ -9,80 +9,42 @@ Datalayer.js is a datalayer, tagmanager, and *"frontend middleware"*. It follows
 
 
 ## How does it work?
-The Datalayer "collects" data from the website (i.e. it gets passed from different parts of your application) and aggregates it to one data object. Then the plugin loader starts loading it's plugins based on a given rule configuration (e.g. analytics scripts on each page, conversion pixels only on order confirmation, etc. ). Plugins then receive events which contain specific data. One such event is the "pageload" event, that passes the previously aggregated data object to the plugin. Plugins can then provide data to third parties as desired. That's the big picture.
+The Datalayer "collects" data from the website (i.e. it gets passed from different parts of your application) and aggregates it to one data object. Then the plugin loader starts loading it's plugins based on a given rule configuration (e.g. analytics scripts on each page, conversion pixels only on order confirmation, etc. ). Plugins then receive events which contain specific data, one such event is the "page-loaded" event that passes the previously aggregated data object to the plugin. Plugins can take that data and offer it to third parties as desired. That's the big picture. (TODO: add link to details)
 
 # Usage
-The usage can be divided into three different parts - [Integration](#integration), [Configuration](#configuration) and [Runtime](#passing-data) (with focus on passing data and events to datalayer and plugins). The following paragraphs give a short introduction to these three topics. For more detailed information, check the dedicated sections for each topic.
-
-## Integration
-Datalayer.js comes as [UMD module](https://github.com/umdjs/umd), check the examples to [learn more about the various available import styles](examples/2-integration-styles.md). The most state-of-the-art notation is likely to use ES6's `import`, though you might also use traditional `require` syntax instead.
+The basic usage is pretty simple. The first thing to do is importing the datalayer.js module. Even though the most common notation is likely to use ES6's `import` statement, datalayer.js comes as [UMD module](https://github.com/umdjs/umd) and supports [a variety of different import styles](examples/2-integration-styles.md). This example also assumes that we want to import some dummy plugins from another module.
 
 ```javascript
 import datalayer from 'datalayerjs';
-
-datalayer.initialize({});
-```
-
-## Configuration
-After including the datalayer.js module you have to call the `initialize` method on the global instance to perform basic setup and tell datalayer.js which plugins to load. Options are provided using a configuration object that is passed to the initialize method. You can read more about the available options in the [documentation for the initialize method](#).
-
-### Loading Plugins via the `plugins` Option
-The `plugins` option is the easiest and straightforward way to load plugins. You simply pass a list of plugins to be loaded and initialize them using their constructor. This should work for most common usecases. ONe thing to keep in mind is that this _leaves the entire decision about what data the plugin receives to the plugin itself_, as the plugins take data from your website according to their own preferences.
-
-```javascript
 import {
   SomeAnalyticsPlugin,
-  SomeSocialMediaPlugin,
-  SomeBidManagementPlugin,
   SomeConversionPlugin,
-  SomeOtherConversionPlugin,
 } from './myCustomPlugins';
+```
 
+After including the datalayer.js module you have to call the `initialize` method on the global instance to perform basic setup and tell datalayer.js which plugins to load. The `plugins` option is the recommended way to load plugins. You simply pass a list of plugins to be loaded and initialize them right away, using their constructor. This should work for most common usecases. One thing to keep in mind is that this _leaves the entire decision about what data the plugin receives to the plugin itself_, as the plugins take data from your website according to their own preferences.
+
+```javascript
 datalayer.initialize({
   // load plugins according to their own ruleset
   plugins: [
     new SomeAnalyticsPlugin({ myTrackServer: '//test/foo' }),
-    new SomeSocialMediaPlugin(),
-    new SomeBidManagementPlugin(),
     new SomeConversionPlugin({ mySpecialAttr: 'foo-123' }),
-    new SomeOtherConversionPlugin({ someAccountId: 'askfjh89uasd' }),
   ],
 });
 ```
 
-### Loading Plugins using Custom Rules
-The other (more flexible but also slightly more complex) way is the `rules` option, which expects one or multiple function(s) in an array. Each function is expected to return an array with plugin instances. These functions are called during initialization, receive the global data as argument and then decide under which conditions a plugin will be created and receives events. Simply put - when a rule returns a plugin this plugin will receive events, otherwise it will be ignored during [broadcast](#). Read more about that under [Rule Configuration](#).
-
-```javascript
-import {
-  ProductSearchConversionPlugin,
-} from './myCustomPlugins';
-
-datalayer.initialize({
-  // provide deciated loading rules and override plugin's own ruleset
-  rules: [
-    // loaded when page.type is checkout-confirmation and campaign matches some specific advertiser
-    (data) => {
-      if (data.page.type === 'checkout-confirmation' && channelCampaign.match(/aff\/(.*)someAdvertiser\//)) {
-        return [ new ProductSearchConversionPlugin({ mySpecialAttr: 'foo-123' })) ];
-      }
-    }
-  ]
-});
-```
-
-### Testmode
-TODO: explain testmode and its activation via URL
-
-## Passing Data
-The default way of communicating with datalayer.js relies on a small [Javascript API](#javascript-api). You [include it in your code](#integration) and use it as you would do with any other library. Additionally, there are more (extremely powerful) ways of interaction using extensions. Check [/src/extensions](#) for additional information.
-
-### Sending An Event to the Datalayer
-The usual way of sending events to the datalayer uses the [`broadcast`](#broadcast-name-string-data-any-void) method.
+The default way of communicating with datalayer.js relies on a small [Javascript API](#javascript-api). You [include it in your code](#integration) and use it as you would do with any other library. Sending events to the datalayer is as easy as calling the [`broadcast`](#broadcast-name-string-data-any-void) method.
 
 ```javascript
 datalayer.broadcast('pageload', {"page":{"type":"homepage","name":"My homepage"}});
 ```
+
+There are more, extremely powerful, ways of interacting with the datalayer by using extensions. Check [the extensions folder](src/extensions) for additional information on available extensions.
+
+## Testmode
+TODO: explain testmode and its activation via URL
+
 
 ## Building and Bundling
 After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the framework and tool landscape of your application or website. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
