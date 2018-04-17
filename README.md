@@ -22,7 +22,7 @@ import {
 } from './myCustomPlugins';
 ```
 
-After including the datalayer.js module you have to call the `initialize` method on the global instance to perform basic setup and tell datalayer.js which plugins to load. The `plugins` option is the recommended way to load plugins. You simply pass a list of plugins to be loaded and initialize them right away, using their constructor. This should work for most common usecases. One thing to keep in mind is that this _leaves the entire decision about what data the plugin receives to the plugin itself_, as the plugins take data from your website according to their own preferences.
+After including the datalayer.js module you have to call the [`initialize`](#initializeoptionsobject-void) method on the global instance to perform basic setup and tell datalayer.js which plugins to load. The `plugins` option is the recommended way to load plugins. You simply pass a list of plugins to be loaded and initialize them right away, using their constructor. This should work for most common usecases. One thing to keep in mind is that this _leaves the entire decision about what data the plugin receives to the plugin itself_, as the plugins take data from your website according to their own preferences.
 
 ```javascript
 datalayer.initialize({
@@ -34,13 +34,13 @@ datalayer.initialize({
 });
 ```
 
-The default way of communicating with datalayer.js relies on a small [Javascript API](#javascript-api). You [include it in your code](#integration) and use it as you would do with any other library. Sending events to the datalayer is as easy as calling the [`broadcast`](#broadcast-name-string-data-any-void) method.
+The default way of communicating with datalayer.js relies on a small [Javascript API](#javascript-api). You [include it in your code](#integration) and use it as you would do with any other library. Sending events to the datalayer is as easy as calling the [`broadcast`](#broadcastnamestring-dataany-void) method from somewhere within your code.
 
 ```javascript
-datalayer.broadcast('pageload', {"page":{"type":"homepage","name":"My homepage"}});
+datalayer.broadcast('page-loaded', {"page":{"type":"homepage","name":"My homepage"}});
 ```
 
-There are more, extremely powerful, ways of interacting with the datalayer by using extensions. Check [the extensions folder](src/extensions) for additional information on available extensions.
+There are also more, extremely powerful, ways of interacting with the datalayer by using extensions. Check [the extensions folder](src/extensions) for additional information on available extensions.
 
 ## Testmode
 TODO: explain testmode and its activation via URL
@@ -48,6 +48,54 @@ TODO: explain testmode and its activation via URL
 
 ## Building and Bundling
 After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the framework and tool landscape of your application or website. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
+
+# Javascript API
+Communication with datalayer.js happens through the Javascript API. The module itself contains exactly one object with the name `datalayer`. The object contains the following public methods (NOTE: with the [methodQueue extension](extensions/methodQueue) you can access all of the described public API methods via the method queue pattern):
+
+## initialize(options:Object): void
+Initialize the current datalayer instance with the given options. It is mandatory to call this once before the datalayer can be used. It sets up the data, scans for metatags/annotations and loads the requested plugins. It accepts the following options:
+
+### data: Object
+An object with globally available data used to initialize the datalayer. The provided data will be available for all plugins throughout the current application lifecycle.
+
+### plugins: &lt;Array:datalayer.Plugin&gt;
+An array with plugin instances to be used by the datalayer.
+
+```javascript
+datalayer.initialize({
+  plugins: [{
+    new AnalyticsPlugin({ accountId: 12345 }),
+  }]
+});
+```
+
+## whenReady(): Promise
+This is the main entry point if you want to use any datalayer.js functionality outside of plugins. It is resolved when the `initialize` call is finished and all configured plugins are loaded based on the provided ruleset. You can bind to the returned Promise at any time during the app lifecycle to access the API. The global datalayer.js instance is passed as only argument to the `resolve` callback (you could also use the global instance as well but local variables are better practice).
+
+```javascript
+datalayer.whenReady().then((d7r) => {
+  // access data in datalayer (data is fully aggregated and available at this point)
+  console.log(d7r.getData());
+})
+```
+
+## broadcast(name:string, [data:any]): void
+Broadcast the given event with the name defined by `name` and the optional `data` object to all plugins. **Important:** Plugins that are not yet loaded (or get loaded somewhen in the future) will *receive all events* once they are loaded. This is an intentional design decision to ensure that no data is lost. The plugin's handleEvent method recieves a timestamp so the plugin can decide whether to react to events happening in the past (@TODO!).
+
+```javascript
+// broadcast event to all loaded plugins
+datalayer.broadcast('my-cool-event', { foo: 'bar' })
+```
+
+## getData(): Object
+Returns the global data as one big object. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling it from outside a plugin's lifecycle.
+
+## getPluginByID(id:string): Object
+Get plugin with the given id and return it. If the plugin is unknown, the function returns null. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling it from outside a plugin's lifecycle.
+
+## parseDOMNode(element:HTMLElement): void
+Parse the given DOM node and it's children and hand them over to the extensions for further logic and processing. **Important:** If you asynchronously add markup to your page (e.g. after AJAX calls, lazy loading, etc.) and that markup may contain any datalayer.js-relevant data, then you HAVE TO call `parseDOMNode` and pass it the newly added element - *after adding it to the DOM*! Otherwise the contained information won't be processed.
+
 
 # Models
 What are Models? The data expected by datalayer.js is defined by a set of conventions. These are based on a simple yet flexible, [virtual type system](#types), called a _model_. Simply put, such a model just defines what data is expected on which page. A page with a type of `category` for example might expect an object of type `CategoryData` holding information about the category. Models are a fundamental part of any datalayer.js-driven website. They are the foundation for implementing and validating your data, without being mandatory from a technical perspective. They are, however, a very important cornerstone for collaboration between developers, business departments and digital analysts.
@@ -127,45 +175,6 @@ The `events` property in the model holds a description of all events available o
   }
 }
 ```
-
-# Javascript API
-The Javascript API is the common way to interact with datalayer.js. The module itself contains exactly one object with the name `datalayer`. Import it either using ES6 `import` or CommonJS `require` syntax. The object contains the following public methods (NOTE: with the methodQueue extension you can access all of the described public API methods via the method queue pattern):
-
-## initialize(options:Object): void
-Initialize the current datalayer instance with the given options (see section [Configuration](#configuration) for details). It is mandatory to call this once before the datalayer can be used. It sets up the data, scans for metatags/annotations and loads the requested plugins.
-
-```javascript
-datalayer.initialize({
-  // options go here ...
-});
-```
-
-## whenReady(): Promise
-This is the main entry point if you want to use any datalayer.js functionality outside of plugins. It is resolved when the `initialize` call is finished and all configured plugins are loaded based on the provided ruleset. You can bind to the returned Promise at any time during the app lifecycle to access the API. The global datalayer.js instance is passed as only argument to the `resolve` callback (you could also use the global instance as well but local variables are better practice).
-
-```javascript
-datalayer.whenReady().then((d7r) => {
-  // access data in datalayer (data is fully aggregated and available at this point)
-  console.log(d7r.getData());
-})
-```
-
-## broadcast(name:string, [data:any]): void
-Broadcast the given event with the name defined by `name` and the optional `data` object to all plugins. **Important:** Plugins that are not yet loaded (or get loaded somewhen in the future) will *receive all events* once they are loaded. This is an intentional design decision to ensure that no data is lost. The plugin's handleEvent method recieves a timestamp so the plugin can decide whether to react to events happening in the past (@TODO!).
-
-```javascript
-// broadcast event to all loaded plugins
-datalayer.broadcast('my-cool-event', { foo: 'bar' })
-```
-
-## getData(): Object
-Returns the global data as one big object. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling it from outside a plugin's lifecycle.
-
-## getPluginByID(id:string): Object
-Get plugin with the given id and return it. If the plugin is unknown, the function returns null. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling it from outside a plugin's lifecycle.
-
-## scanElement(element:HTMLElement): void
-Scans a given HTML element and its children for [rendertime data](#using-rendertime-markup) (e.g. `dl:data` or `dl:event` metatags) and [event annotations](#using-event-annotations) (e.g. `data-dl-event-*` attributes on HTML elements). If anything is found it gets either `broadcast`'ed to the plugins or - in case of event annotation - hooked up with the necessary event handling mechanism. **Important:** If you asynchronously add markup to your page (e.g. after AJAX calls, lazy loading, etc.) and that markup may contain any datalayer.js metatags or annotations, then you HAVE TO call `scanElement` and pass it the newly added element - *after adding it to the DOM*! Otherwise the metadata or annotations won't be processed.
 
 
 # Plugins
