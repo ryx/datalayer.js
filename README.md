@@ -11,47 +11,16 @@ Datalayer.js is a datalayer, tagmanager, and *"frontend middleware"*. It follows
 ## How does it work?
 The Datalayer "collects" data from the website (i.e. it gets passed from different parts of your application) and aggregates it to one data object. Then the plugin loader starts loading it's plugins based on a given rule configuration (e.g. analytics scripts on each page, conversion pixels only on order confirmation, etc. ). Plugins then receive events which contain specific data. One such event is the "pageload" event, that passes the previously aggregated data object to the plugin. Plugins can then provide data to third parties as desired. That's the big picture.
 
-How do [Models](#models) fit in there? The data expected by datalayer.js is defined by a set of conventions. These are based on a simple yet flexible, [virtual type system](#types). Such a model defines what data is expected on which page. E.g. a page with a type of `category` for example might expect an object of type `CategoryData` holding information about the category. Check the section [Models](#) for more information about how this is connected.
-
-
 # Usage
 The usage can be divided into three different parts - [Integration](#integration), [Configuration](#configuration) and [Runtime](#passing-data) (with focus on passing data and events to datalayer and plugins). The following paragraphs give a short introduction to these three topics. For more detailed information, check the dedicated sections for each topic.
 
 ## Integration
-Datalayer.js comes as [UMD module](https://github.com/umdjs/umd) which means you can use it either directly via a `<script>` tag, by using an AMD loader (e.g. [requirejs](http://requirejs.org/)) or as [commonJS module](http://wiki.commonjs.org/wiki/Modules/1.1) (e.g. nodejs's `require`). These brief examples illustrate the different styles:
+Datalayer.js comes as [UMD module](https://github.com/umdjs/umd), check the examples to [learn more about the various available import styles](examples/2-integration-styles.md). The most state-of-the-art notation is likely to use ES6's `import`, though you might also use traditional `require` syntax instead.
 
-### Using ES6-style imports
-The most common way might be to use the ES6 import notation (though you might also use traditional `require` syntax instead).
 ```javascript
 import datalayer from 'datalayerjs';
 
 datalayer.initialize({});
-```
-
-### Using AMD-style includes
-AMD-style includes are available, too. This example also show loading one of the core extensions as module dependency.
-```javascript
-require(['datalayerjs', 'datalayerjs/extensions/annotations'], (datalayer, annotations) => {
-  datalayer
-    .use(annotations())
-    .initialize({});
-});
-```
-
-### Using the Method Queue Pattern
-The method queue pattern (MQP) integration is available through the [methodQueue extension](#). It offers a very simple, asynchronous, non-blocking script include that should work in almost any environment under any circumstances. It might feel a little old fashioned, but works reliably like nothing else. Important: when using this integration you need to pass in the extensions to be loaded via the `data-datalayer-config` attribute. Otherwise the method queue won't be available.
-
-```html
-<script
-  type="text/javascript"
-  src="/path/to/datalayer.js"
-  async
-  data-datalayer-config='{"extensions":["methodQueue"]}'
-></script>
-<script>
-_d7rq = window._d7rq || [];
-_d7rq.push('initialize', {});
-</script>
 ```
 
 ## Configuration
@@ -118,9 +87,8 @@ datalayer.broadcast('pageload', {"page":{"type":"homepage","name":"My homepage"}
 ## Building and Bundling
 After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the framework and tool landscape of your application or website. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
 
-
 # Models
-Models are a fundamental part of any datalayer.js-driven website. They are the foundation for implementing and validating your data, without being mandatory from a technical perspective. They are, however, a very important cornerstone for collaboration between developers, business departments and digital analysts.
+What are Models? The data expected by datalayer.js is defined by a set of conventions. These are based on a simple yet flexible, [virtual type system](#types), called a _model_. Simply put, such a model just defines what data is expected on which page. A page with a type of `category` for example might expect an object of type `CategoryData` holding information about the category. Models are a fundamental part of any datalayer.js-driven website. They are the foundation for implementing and validating your data, without being mandatory from a technical perspective. They are, however, a very important cornerstone for collaboration between developers, business departments and digital analysts.
 
 > A "model" in terms of datalayer.js is a single JSON document that defines at least two things: all available page types for a website and all virtual type definitions that are used by those page types. Types are defined using [Apache Avro](https://avro.apache.org/docs/current/).
 
