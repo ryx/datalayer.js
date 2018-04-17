@@ -12,7 +12,11 @@ Datalayer.js is a datalayer, tagmanager, and *"frontend middleware"*. It follows
 The Datalayer "collects" data from the website (i.e. it gets passed from different parts of your application) and aggregates it to one data object. Then the plugin loader starts loading it's plugins based on a given rule configuration (e.g. analytics scripts on each page, conversion pixels only on order confirmation, etc. ). Plugins then receive events which contain specific data, one such event is the "page-loaded" event that passes the previously aggregated data object to the plugin. Plugins can take that data and offer it to third parties as desired. That's the big picture. (TODO: add link to details)
 
 # Usage
-The basic usage is pretty simple. The first thing to do is importing the datalayer.js module. Even though the most common notation is likely to use ES6's `import` statement, datalayer.js comes as [UMD module](https://github.com/umdjs/umd) and supports [a variety of different import styles](examples/2-integration-styles.md). This example also assumes that we want to import some dummy plugins from another module.
+The basic usage is pretty simple. The first thing to do is to install datalayer.js from [npm](https://www.npmjs.com).
+
+    npm install datalayerjs
+
+Next thing is to import the datalayer.js module. Even though the most common notation is likely to use ES6's `import` statement, datalayer.js comes as [UMD module](https://github.com/umdjs/umd) and supports [a variety of different import styles](examples/2-integration-styles.md). This example also assumes that we want to import some dummy plugins from another module. In a real-world scenario you might install some official plugins instead.
 
 ```javascript
 import datalayer from 'datalayerjs';
@@ -34,13 +38,25 @@ datalayer.initialize({
 });
 ```
 
-The default way of communicating with datalayer.js relies on a small [Javascript API](#javascript-api). You [include it in your code](#integration) and use it as you would do with any other library. Sending events to the datalayer is as easy as calling the [`broadcast`](#broadcastnamestring-dataany-void) method from somewhere within your code.
+### Communicaton
+The default way of communicating with datalayer.js relies on a small [Javascript API](#javascript-api). Sending events to the datalayer is as easy as calling the [`broadcast`](#broadcastnamestring-dataany-void) method from somewhere within your code.
 
 ```javascript
 datalayer.broadcast('page-loaded', {"page":{"type":"homepage","name":"My homepage"}});
 ```
 
-There are also more, extremely powerful, ways of interacting with the datalayer by using extensions. Check [the extensions folder](src/extensions) for additional information on available extensions.
+### Extensions
+In a real application you'll likely want to use extensions since they provide more, really powerful, ways of interacting with the datalayer. One common usecase is the [metadata extension](extensions/metadata) which aggregates data from the markup and passes it to the datalayer. This can be done with:
+
+```javascript
+import metadata from 'datalayerjs/extensions/metadata';
+
+datalayer
+  .use(metadata({}))
+  .initialize(...);
+```
+
+Check [the extensions folder](extensions) for additional information on available extensions.
 
 ## Testmode
 TODO: explain testmode and its activation via URL
