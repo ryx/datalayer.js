@@ -1,0 +1,13 @@
+coverage
+examples
+extensions
+node_modules
+src
+test
+.babelrc
+.eslintignore
+.eslintrc
+.gitignore
+.travis.yml
+rollup.config.js
+TODO.txt
