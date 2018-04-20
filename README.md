@@ -46,7 +46,7 @@ datalayer.broadcast('page-loaded', {"page":{"type":"homepage","name":"My homepag
 ```
 
 ### Extensions
-In a real application you'll likely want to use extensions since they provide more, really powerful, ways of interacting with the datalayer. One common usecase is the [metadata extension](extensions/metadata) which aggregates data from the markup and passes it to the datalayer. This can be done with:
+In a real application you'll likely want to use extensions since they provide more, really powerful, ways of interacting with the datalayer. One common usecase is the [metadata extension](src/extensions/metadata) which aggregates data from the markup and passes it to the datalayer. This can be done with:
 
 ```javascript
 import metadata from 'datalayerjs/extensions/metadata';
@@ -56,7 +56,7 @@ datalayer
   .initialize(...);
 ```
 
-Check [the extensions folder](extensions) for additional information on available extensions.
+Check [the extensions folder](src/extensions) for additional information on available extensions.
 
 ## Testmode
 TODO: explain testmode and its activation via URL
@@ -66,7 +66,7 @@ TODO: explain testmode and its activation via URL
 After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the framework and tool landscape of your application or website. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
 
 # Javascript API
-Communication with datalayer.js happens through the Javascript API. The module itself contains exactly one object with the name `datalayer`. The object contains the following public methods (NOTE: with the [methodQueue extension](extensions/methodQueue) you can access all of the described public API methods via the method queue pattern):
+Communication with datalayer.js happens through the Javascript API. The module itself contains exactly one object with the name `datalayer`. The object contains the following public methods (NOTE: with the [methodQueue extension](src/extensions/methodQueue) you can access all of the described public API methods via the method queue pattern):
 
 ## initialize(options:Object): void
 Initialize the current datalayer instance with the given options. It is mandatory to call this once before the datalayer can be used. It sets up the data, scans for metatags/annotations and loads the requested plugins. It accepts the following options:
