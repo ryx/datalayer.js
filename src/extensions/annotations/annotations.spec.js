@@ -1,5 +1,5 @@
 /* eslint-disable max-len, no-new */
-import { debug } from '../../src/datalayer';
+import { debug } from '../../datalayer';
 
 jest.mock('../../src/datalayer');
 

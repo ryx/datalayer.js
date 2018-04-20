@@ -1,4 +1,4 @@
-import { debug } from '../../src/datalayer';
+import { debug } from '../../datalayer';
 
 /**
  * Offical datalayer.js core extension that works on any given call to
