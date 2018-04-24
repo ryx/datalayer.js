@@ -1,7 +1,7 @@
 /* eslint-disable max-len, no-new */
 import { debug } from '../../datalayer';
 
-jest.mock('../../src/datalayer');
+jest.mock('../../datalayer');
 
 // properly define implicit globals
 const {
