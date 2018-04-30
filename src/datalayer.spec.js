@@ -87,15 +87,11 @@ describe('datalayer', () => {
       });
     });
 
-    /*
-    it('should create a method queue handler in window', () => {
-      const d7r = new module.Datalayer();
+    it('should provide a global variable "_d7r" in window', () => {
+      new module.Datalayer();
 
-      d7r.initialize({ data: globalDataMock });
-
-      assert.isDefined(window._d7rq);
+      expect(window._d7r).toBeDefined();
     });
-    */
   });
 
   describe('testMode', () => {

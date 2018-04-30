@@ -268,6 +268,6 @@ export class Datalayer {
 const datalayer = new Datalayer();
 
 // XXX: store datalayer reference in window (currently needed for functionally testing plugins)
-window._datalayer = datalayer;
+window._d7r = datalayer;
 
 export default datalayer;
