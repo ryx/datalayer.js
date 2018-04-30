@@ -1,12 +1,20 @@
 TODO:
 -----
 - properly implement remaining lifecycle methods:
-  - handleInit should be called on first activation
+  - handleInit has to be called on first activation
   - ...
 - implement handling of view events in annotations extensions
+- properly handle debug in browser (process.env should be the excpetion)
 - rules option needs to be handled by datalayer.initialize
 - datalayer should have no issues with being (re-)initialized as often as necessary (update tests after that)
-- reimplement meta-based config (maybe as extension?)
 - `data-datalayer-config` needs to be available to support extensions together with methodQueue-style import
+- reimplement meta-based configuration (maybe as extension?)
 - add timestamp to events in `Datalayer.addPlugin` so plugins can decide to ignore old events
+- create "attribution" extension based on attribution.js library
+- (use github issues for TODO handling ;) ..
+- ...
+
+IDEAS:
+------
+- create "monitoring" extension that measures execution times of datalayer and plugins
 - ...
