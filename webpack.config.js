@@ -8,6 +8,7 @@ module.exports = {
     library: 'datalayerjs',
     libraryTarget: 'umd',
   },
+  devtool: 'source-map',
   module: {
     rules: [
       {
