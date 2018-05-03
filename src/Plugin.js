@@ -4,9 +4,17 @@
  * Baseclass for datalayer.js plugins.
  */
 export default class Plugin {
-  constructor(id, config = {}) {
+  /**
+   * Create a new Plugin instance. Child classes have to explicitly set the id
+   * and pass through any additional arguments to the superconstructor.
+   * @param {String} id unique identifier
+   * @param {?Object} config configuration object
+   * @param {?Function} rules optional rules callback, see documentation for more info
+   */
+  constructor(id, config = {}, rulesCallback = null) {
     this.id = id;
     this.config = config;
+    this.rulesCallback = rulesCallback;
   }
 
   /**
@@ -33,7 +41,7 @@ export default class Plugin {
    * @param {Object} data  the current data object for the current page context (should comply with data model)
    */
   shouldReceiveEvent(data) {
-    return true;
+    return typeof this.rulesCallback === 'function' ? this.rulesCallback(data) : true;
   }
 
   /**
@@ -42,4 +50,6 @@ export default class Plugin {
    * @param {any} data event data, type and structure depend on event type
    */
   handleEvent(name, data) {}
+
+  // @TODO: add utility methods from old pixelHelper ...
 }

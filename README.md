@@ -3,13 +3,13 @@
 [![Build Status](https://travis-ci.org/ryx/datalayerjs.svg?branch=master)](https://travis-ci.org/ryx/datalayerjs)
 [![npm version](https://badge.fury.io/js/datalayerjs.svg)](https://badge.fury.io/js/datalayerjs)
 
-Datalayer.js is a datalayer, tagmanager, and *"frontend middleware"*. It follows a "developer first" philosophy, is open-source and fully test-driven. It acts as a data proxy between the client and any third parties, which are embedded by plugins. Datalayer.js is based on a [customizable data model with a virtual type system](#models) and aimed at standardizing and simplifying the process of 3rd party integration into today's websites.
+Datalayer.js is an open-source datalayer, tagmanager, and *"frontend middleware"*. It is based on a [customizable data model with a virtual type system](#models) and aims at standardizing and simplifying the process of 3rd party integration into modern websites. It follows a "developer first" philosophy, is fully test-driven and acts as a thin data proxy between the client and any third parties, which are provided by plugins.
 
-> NOTE: this is still a **very early version** that likely contains bugs and documentation issues :boom:
+> NOTE: this is still a **pre-release version**, we are actively working on our the first stable relase .. :boom:
 
 
 ## How does it work?
-The Datalayer "collects" data from the website (i.e. it gets passed from different parts of your application) and aggregates it to one data object. Then the plugin loader starts loading it's plugins based on a given rule configuration (e.g. analytics scripts on each page, conversion pixels only on order confirmation, etc. ). Plugins then receive events which contain specific data, one such event is the "page-loaded" event that passes the previously aggregated data object to the plugin. Plugins can take that data and offer it to third parties as desired. That's the big picture. (TODO: add link to details)
+The Datalayer "collects" data from the website (i.e. it gets passed from different parts of your application) and aggregates it to one data object. Then the plugin loader starts loading the plugins based on a given rule configuration. Plugins will receive events which contain specific data and can take that data and offer it to third parties as desired. One example is the "page-loaded" event that passes the previously aggregated data object to the plugin. That's the big picture. (TODO: add link to details)
 
 # Usage
 The basic usage is pretty simple. The first thing to do is to install datalayer.js from [npm](https://www.npmjs.com).
@@ -26,7 +26,7 @@ import {
 } from './myCustomPlugins';
 ```
 
-After including the datalayer.js module you have to call the [`initialize`](#initializeoptionsobject-void) method on the global instance to perform basic setup and tell datalayer.js which plugins to load. The `plugins` option is the recommended way to load plugins. You simply pass a list of plugins to be loaded and initialize them right away, using their constructor. This should work for most common usecases. One thing to keep in mind is that this _leaves the entire decision about what data the plugin receives to the plugin itself_, as the plugins take data from your website according to their own preferences.
+After including the datalayer.js module you have to call the [`initialize`](#initializeoptionsobject-void) method on the global instance to perform basic setup and tell datalayer.js which plugins to load. The `plugins` option is the recommended way to load plugins. You simply pass a list of plugins to be loaded and initialize them right away, using their constructor. This should cover the most common usecases, for more details check out the [Plugins Documentation section](). One thing to keep in mind is that this _leaves the entire decision about what data the plugin receives to the plugin itself_, as the plugins take data from your website according to their own preferences.
 
 ```javascript
 datalayer.initialize({
@@ -114,16 +114,16 @@ Parse the given DOM node and it's children and hand them over to the extensions 
 
 
 # Models
-What are Models? The data expected by datalayer.js is defined by a set of conventions. These are based on a simple yet flexible, [virtual type system](#types), called a _model_. Simply put, such a model just defines what data is expected on which page. A page with a type of `category` for example might expect an object of type `CategoryData` holding information about the category. Models are a fundamental part of any datalayer.js-driven website. They are the foundation for implementing and validating your data, without being mandatory from a technical perspective. They are, however, a very important cornerstone for collaboration between developers, business departments and digital analysts.
+What are Models? Models are a fundamental part of any datalayer.js-driven website. They are the foundation for implementing and validating your data, without being mandatory from a technical perspective. They are, however, a very important cornerstone for collaboration between developers, business departments and digital analysts. Simply put, such a model just defines what data is expected on which page.
 
 > A "model" in terms of datalayer.js is a single JSON document that defines at least two things: all available page types for a website and all virtual type definitions that are used by those page types. Types are defined using [Apache Avro](https://avro.apache.org/docs/current/).
-
-The model definition provides the schema that defines data and event patterns for your entire website. It ultimately defines which data ends up in your datalayer and what you can provide to third parties. Although, first and foremost, it is nothing more than a convention that guides other people (developers, analysts, marketers, product management, etc.) in understanding what data to expect (or provide) where. You can think of it as the single source of truth regarding the data provided to datalayer.js.
 
 Technically seen the model is nothing more than a big JSON object with a few different properties, as described in the next sections. You are also not limited to the available data types. Instead you are *completely free* (and even encouraged) to use your own type definitions instead of the default ones. But be warned - even if it has no real technical relevance it is maybe *the most important part of your entire datalayer structure*. If you get things wrong here, you'll miss something later. Of course you are free to extend the model at any time. But it will cause developer effort and discussion, so plan well ;) ..
 
 ## Types
-The `types` property in the model contains schema definitions of the available data types that can be used throughout the rest of the model (namely the *pages* and *events* definitions). It is using [Apache Avro](https://avro.apache.org/docs/current/) to describe types so it can be parsed and processed, e.g. to automatically validate consistency of provided data on a website (we will eventually provide a validator for that purpose). Type definitions can become quite huge JSON structures
+The data expected by datalayer.js is defined by a set of conventions. These are based on a simple yet flexible, virtual type system, called a _model_. A page with a type of `category` for example might expect an object of type `CategoryData` holding information about the category. The model definition provides the schema that defines data and event patterns for your entire website. It ultimately defines which data ends up in your datalayer and what you can provide to third parties. Although, first and foremost, it is nothing more than a convention that guides other people (developers, analysts, marketers, product management, etc.) in understanding what data to expect (or provide) where. You can think of it as the single source of truth regarding the data provided to datalayer.js.
+
+The `types` property in the model file contains schema definitions of the available data types that can be used throughout the rest of the model (namely the *pages* and *events* definitions). It is using [Apache Avro](https://avro.apache.org/docs/current/) to describe types so it can be parsed and processed, e.g. to automatically validate consistency of provided data on a website (we will eventually provide a validator for that purpose). Type definitions can become quite huge JSON structures
 
 ```json
 {
@@ -194,7 +194,23 @@ The `events` property in the model holds a description of all events available o
 
 
 # Plugins
-Datalayer.js provides a modular architecture where logic is encapsulated in plugins. These may access the global data aggregated by the datalayer and also send and receive events.
+Datalayer.js provides a modular architecture where logic is encapsulated in plugins. Plugins provide a set of predefined lifecycle methods and can access the global data that is aggregated by the datalayer. They can also send their own events, although that is a rather uncommon case.
+
+## Loading and Configuring Plugins
+Plugins are defined by creating a new instance of their class. Most plugins are configured be passing a configuration object to their constructor on instantiation.
+
+```javascript
+const plugin = new ExamplePlugin({ key: 'value' });
+```
+
+If you want to define custom loading rules you can additionally pass an optional callback function as second argument. That way the usual `shouldReceiveEvent` mechanism is ignored. This is particularly useful for loading plugins depending on certain runtime conditions (e.g. the availability of a given marketing channel's cookie, specific URL parameters and so on).
+
+```javascript
+const plugin = new ExamplePlugin(
+  { key: 'value' },
+  (data) => data.page.type === 'checkout-completed',
+);
+```
 
 ## API
  Plugins are very simple Javascript objects, providing a `handleEvent` method as only convention. In fact they don't actually need to be classes at all, you could use a simple object literal as well. However, it is strongly recommended to use classes to better separate construction logic and event handling. The following example illustrates the basic structure of a plugin.
