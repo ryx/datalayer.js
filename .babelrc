@@ -4,5 +4,6 @@
   ],
   "plugins": [
     "dynamic-import-node"
-  ]
+  ],
+  "retainLines": true
 }
