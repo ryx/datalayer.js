@@ -166,7 +166,7 @@ export class Datalayer {
    * Main initialization code. Sets up datalayer, loads plugins, handles execution.
    * @param  {Object}  options  configuration object, see documentation for details
    */
-  initialize(options) {
+  initialize(options = {}) {
     if (this.initialized) {
       // @XXX: remove and allow multi-init (should simply have no negative impact!)
       console.warn('already initialized');
@@ -204,8 +204,12 @@ export class Datalayer {
     const plugins = options.plugins || [];
     if (plugins) {
       plugins.forEach(plugin => this.addPlugin(plugin));
+      debug('Datalayer.initialize: plugins loaded', plugins);
+
+      // @FIXME: wait with initialize until some dedicated event happened?
+      plugins.forEach(plugin => typeof plugin.initialize === 'function' && plugin.initialize());
+      debug('Datalayer.initialize: plugins initialized', plugins);
     }
-    debug('Datalayer.initialize: plugins loaded', this.plugins);
 
     /*
     // instantiate plugins based on config and provided ruleset (wrap single function in array first)
@@ -245,6 +249,7 @@ export class Datalayer {
 
   /**
    * Handle and (un-/)persist test mode for plugin delivery.
+   * @TODO: port and use persistentURLParam from DAL
    */
   isTestModeActive() {
     // debug(window.location.search);
