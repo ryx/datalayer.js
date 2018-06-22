@@ -27,7 +27,6 @@ describe('attribution', () => {
       const instance = new ExtensionContructor();
 
       const data = instance.beforeInitialize();
-      debugger;
 
       expect(data.attribution).toEqual({
         channel: {
@@ -39,4 +38,6 @@ describe('attribution', () => {
       });
     });
   });
+
+  // TODO: test if attribution objects are properly set based on config
 });
