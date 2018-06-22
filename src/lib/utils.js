@@ -9,7 +9,7 @@ export function extend(target, source) {
   for (let i = 0; i < keys.length; i += 1) {
     const val = source[keys[i]];
     let src;
-    if (['string', 'number', 'boolean'].indexOf(typeof val) === -1 && typeof val.length === 'undefined') {
+    if (val !== null && ['string', 'number', 'boolean'].indexOf(typeof val) === -1 && typeof val.length === 'undefined') {
       src = extend(target[keys[i]] || {}, val);
     } else {
       src = val;
