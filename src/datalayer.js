@@ -13,17 +13,16 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-// import window from './lib/window';
 import { extend } from './lib/utils';
 import cookie from './lib/cookie';
 import EventQueue from './lib/queue';
 
 // debugging helper
 /* eslint-disable func-names, no-console, prefer-spread, prefer-rest-params */
-const DEBUG = typeof process.env.DTLR_DEBUG !== 'undefined';
+const DEBUG = true || typeof process.env.DTLR_DEBUG !== 'undefined';
 export function debug() {
   if (DEBUG) {
-    console.log.apply(console, ['[debug]:'].concat(Array.prototype.slice.call(arguments)));
+    console.log.apply(console, ['[d7r]:'].concat(Array.prototype.slice.call(arguments)));
   }
 }
 /* eslint-enable func-names, no-console, prefer-spread, prefer-rest-params */
@@ -181,11 +180,13 @@ export class Datalayer {
 
     // collect global data from options and extensions
     this.globalData = extend({}, data);
+    debug('Datalayer.initialize: global data is', this.globalData);
     const initializeHookResult = this.triggerExtensionHook('beforeInitialize');
     initializeHookResult.forEach(r => extend(this.globalData, typeof r !== 'undefined' ? r : {}));
     if (!this.globalData) {
       throw new Error('Supplied DALGlobalData is invalid or missing');
     }
+    debug('Datalayer.initialize: extension hooks complete');
 
     // validate mandatory data (@TODO: we might use a model-based validation here somewhen)
     const gd = this.globalData;
@@ -195,13 +196,11 @@ export class Datalayer {
     if (!gd.site || !gd.site.id) {
       throw new Error('Supplied DALSiteData is invalid or missing');
     }
-    if (!gd.user) {
-      throw new Error('Supplied DALUserData is invalid or missing');
-    }
     debug('Datalayer.initialize: collected data', this.globalData);
 
     // add provided plugins
     const plugins = options.plugins || [];
+    debug('Datalayer.initialize: loading plugins', plugins);
     if (plugins) {
       plugins.forEach(plugin => this.addPlugin(plugin));
       debug('Datalayer.initialize: plugins loaded', plugins);

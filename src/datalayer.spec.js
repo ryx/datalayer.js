@@ -49,6 +49,7 @@ describe('datalayer', () => {
   });
 
   describe('initialize', () => {
+    // @FIXME: all this should happen based on the datamodel instead
     it('should properly recognize invalid and/or missing data', () => {
       expect(() => datalayer.initialize({ data: { page: { } } }))
         .toThrow(/DALPageData is invalid or missing/gi);
@@ -57,8 +58,8 @@ describe('datalayer', () => {
         .toThrow(/DALSiteData is invalid or missing/gi);
 
       // TODO: invalid site data
-      expect(() => datalayer.initialize({ data: { page: globalDataMock.page, site: globalDataMock.site } }))
-        .toThrow(/DALUserData is invalid or missing/gi);
+      // expect(() => datalayer.initialize({ data: { page: globalDataMock.page, site: globalDataMock.site } }))
+      //  .toThrow(/DALUserData is invalid or missing/gi);
     });
 
     it('should add single plugin when passing a function to the `plugins` option', () => {
