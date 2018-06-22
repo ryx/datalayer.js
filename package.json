@@ -20,7 +20,7 @@
     "build:umd": "webpack --mode=production",
     "build": "npm run build:umd",
     "dev": "DTLR_DEBUG=1 babel-node test/plugin.js",
-    "prepublish": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
