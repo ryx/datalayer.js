@@ -1,13 +1,13 @@
+.vscode
 coverage
 examples
-extensions
 node_modules
-src
+*.spec.js
 test
 .babelrc
 .eslintignore
 .eslintrc
 .gitignore
 .travis.yml
-rollup.config.js
+webpack.config.js
 TODO.txt
