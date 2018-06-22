@@ -19,7 +19,7 @@ import EventQueue from './lib/queue';
 
 // debugging helper
 /* eslint-disable func-names, no-console, prefer-spread, prefer-rest-params */
-const DEBUG = true || typeof process.env.DTLR_DEBUG !== 'undefined';
+const DEBUG = typeof process.env.DTLR_DEBUG !== 'undefined';
 export function debug() {
   if (DEBUG) {
     console.log.apply(console, ['[d7r]:'].concat(Array.prototype.slice.call(arguments)));
@@ -115,7 +115,7 @@ export class Datalayer {
   getPluginByID(pluginID) {
     if (this.initialized) {
       for (let i = 0; i < this.plugins.length; i += 1) {
-        if (this.plugins[i].constructor.getID() === pluginID) {
+        if (this.plugins[i].getID() === pluginID) {
           return this.plugins[i];
         }
       }

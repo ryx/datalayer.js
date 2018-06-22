@@ -1,4 +1,6 @@
 /* eslint-disable max-len, no-new */
+import Plugin from './Plugin';
+
 // properly define implicit globals
 const {
   describe,
@@ -12,14 +14,11 @@ const {
  * Mock plugin to test plugin specific stuff (event retrieval,
  * config overrides, ...).
  */
-class MockPlugin {
-  constructor(datalayer, data, config) {
+class MockPlugin extends Plugin {
+  constructor(config, rules) {
+    super('mockPlugin', config, rules);
     this.config = config;
     this.events = {};
-  }
-
-  static getID() {
-    return 'test/mockPlugin';
   }
 
   handleEvent(eventName, eventData) {
@@ -71,7 +70,7 @@ describe('datalayer', () => {
       });
 
       return d7r.whenReady().then(() => {
-        expect(d7r.getPluginByID('test/mockPlugin')).toBeDefined();
+        expect(d7r.getPluginByID('mockPlugin')).toBeInstanceOf(MockPlugin);
       });
     });
 
@@ -84,7 +83,7 @@ describe('datalayer', () => {
       });
 
       return d7r.whenReady().then(() => {
-        expect(d7r.getPluginByID('test/mockPlugin')).toBeDefined();
+        expect(d7r.getPluginByID('mockPlugin')).toBeInstanceOf(MockPlugin);
       });
     });
 
@@ -150,7 +149,7 @@ describe('datalayer', () => {
       });
 
       return d7r.whenReady().then(() => {
-        expect(d7r.getPluginByID('test/mockPlugin')).toEqual(myPlugin);
+        expect(d7r.getPluginByID('mockPlugin')).toBeInstanceOf(MockPlugin);
       });
     });
 
@@ -166,7 +165,7 @@ describe('datalayer', () => {
         ],
       });
       return d7r.whenReady().then(() => {
-        assert.equal(d7r.getPluginByID('test/mockPlugin', null));
+        expect(d7r.getPluginByID('mockPlugin')).toBeInstanceOf(MockPlugin);
       });
     });
     */
@@ -199,7 +198,7 @@ describe('datalayer', () => {
       d7r.addPlugin(new MockPlugin());
 
       return d7r.whenReady().then(() => {
-        expect(d7r.getPluginByID('test/mockPlugin')).toBeDefined();
+        expect(d7r.getPluginByID('mockPlugin')).toBeInstanceOf(MockPlugin);
       });
     });
   });
