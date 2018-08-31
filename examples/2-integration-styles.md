@@ -22,7 +22,7 @@ require(['datalayerjs', 'datalayerjs/extensions/annotations'], (datalayer, annot
 ```
 
 ### Using the Method Queue Pattern
-The method queue pattern (MQP) integration is available through the [methodQueue extension](#). It offers a very simple, asynchronous, non-blocking script include that should work in almost any environment under any circumstances. It might feel a little old fashioned, but works reliably like nothing else. Important: when using this integration you need to pass in the extensions to be loaded via the `data-datalayer-config` attribute. Otherwise the method queue won't be available.
+The method queue pattern (MQP) integration is available through the [methodQueue extension](../src/extensions/methodQueue). It offers a very simple, asynchronous, non-blocking script include that should work in almost any environment under any circumstances. It might feel a little old fashioned, but works reliably like nothing else. Important: when using this integration you need to pass in the extensions to be loaded via the `data-datalayer-config` attribute. Otherwise the method queue won't be available.
 
 ```html
 <script
@@ -33,6 +33,6 @@ The method queue pattern (MQP) integration is available through the [methodQueue
 ></script>
 <script>
 _d7rq = window._d7rq || [];
-_d7rq.push('initialize', {});
+_d7rq.push(['initialize']);
 </script>
 ```

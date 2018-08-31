@@ -14,11 +14,11 @@ import datalayer, { Plugin } from 'datalayerjs';
  */
 export default class SomePlugin extends Plugin {
   constructor(config) {
-    super(config, 'some-plugin');
+    super('somePlugin', config);
   }
 
-  handleInit() {
-    // perform 3rd party setup here and inject our config values
+  // perform 3rd party setup here
+  onInitialized() {
     window._thirdParty = window._thirdParty || [];
     window._thirdParty.push(['init', config.someAccountId]);
 
@@ -30,28 +30,35 @@ export default class SomePlugin extends Plugin {
     /* eslint-enable */
   }
 
-  shouldReceiveEvent(page) {
-    return page.type === 'checkout-confirmation';
+  // handle page-loaded event
+  onPageLoaded(name, data) {
+    switch(data.page.type) {
+      case 'checkout-confirmation':
+        // pass a fictional "product view" event to some third party
+        window._thirdParty.push('productViewEvent', {
+          sku: data.product.sku,
+          price: data.product.priceData.total,
+        });
+        break;
+      default:
+    }
   }
 
-  /* eslint-disable class-methods-use-this */
+  // optional: restrict plugin execution to relevant context
+  shouldReceiveEvent(data) {
+    return data.page.type === 'checkout-confirmation';
+  }
+
+  // central event handling method
   handleEvent(name, data) {
     switch (name) {
-      case 'initialize':
+      case 'initialized':
+        this.onInitialized();
         break;
-      case 'pageload':
-        switch (data.page.type) {
-          case 'checkout-confirmation':
-            // pass a fictional "product view" event to some third party
-            window._thirdParty.push('productViewEvent', {
-              sku: data.product.sku,
-              price: data.product.priceData.total,
-            });
-            break;
-          default:
-        }
+      case 'page-loaded':
+        this.onPageLoaded(name, data);
         break;
-      // maybe handle more events here (e.g. "addtocart", etc.)
+      // handle more events here (e.g. "cart-item-added", etc.)
       default:
     }
   }

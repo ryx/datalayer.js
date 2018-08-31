@@ -17,3 +17,5 @@ datalayer.initialize({
   ]
 });
 ```
+
+Also check out the [attribution extension](../src/extensions/attribution) for examples on how to load plugins based on a given marketing attribution and/or campaign data.
