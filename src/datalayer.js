@@ -208,7 +208,7 @@ export class Datalayer {
 
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
     this.initialized = true;
-    
+
     if (plugins) {
       // @FIXME: wait with initialize until some dedicated event happened?
       // plugins.forEach(plugin => typeof plugin.initialize === 'function' && plugin.initialize());
