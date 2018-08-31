@@ -1,9 +1,9 @@
 # datalayer.js
 
-[![Build Status](https://travis-ci.org/ryx/datalayerjs.svg?branch=master)](https://travis-ci.org/ryx/datalayerjs)
+[![Build Status](https://travis-ci.org/ryx/datalayer.js.svg?branch=master)](https://travis-ci.org/ryx/datalayer.js)
 [![npm version](https://badge.fury.io/js/datalayerjs.svg)](https://badge.fury.io/js/datalayerjs)
 
-Datalayer.js is an open-source datalayer, tagmanager, and *"frontend middleware"*. It is based on a [customizable data model with a virtual type system](#models) and aims at standardizing and simplifying the process of 3rd party integration into modern websites. It follows a "developer first" philosophy, is fully test-driven and acts as a thin data proxy between the client and any third parties, which are provided by plugins.
+Datalayer.js is an open-source datalayer, tagmanager, and *"frontend middleware"*. It is based on a [customizable data model with a virtual type system](#models) and aims at standardizing and simplifying the process of 3rd party integration into modern websites. It follows a "developer first" philosophy, is fully test-driven and acts as a thin data proxy between the frontend space in the browser and any third parties, which are provided by plugins.
 
 > NOTE: this is still a **pre-release version**, we are actively working on our the first stable relase .. :boom:
 
