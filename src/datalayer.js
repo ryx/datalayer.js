@@ -204,31 +204,18 @@ export class Datalayer {
     if (plugins) {
       plugins.forEach(plugin => this.addPlugin(plugin));
       debug('Datalayer.initialize: plugins loaded', plugins);
-
-      // @FIXME: wait with initialize until some dedicated event happened?
-      plugins.forEach(plugin => typeof plugin.initialize === 'function' && plugin.initialize());
-      debug('Datalayer.initialize: plugins initialized', plugins);
     }
-
-    /*
-    // instantiate plugins based on config and provided ruleset (wrap single function in array first)
-    let rules = options.rules || [];
-    if (typeof rules === 'function') {
-      rules = [rules];
-    }
-    if (rules.length) {
-      rules.forEach((callback) => {
-        const pluginList = callback(this.globalData);
-        if (pluginList) {
-          pluginList.forEach(p => this.addPlugin(p));
-        }
-      });
-    }
-    debug('Datalayer.initialize: plugins (after rules):', this.plugins);
-    */
 
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
     this.initialized = true;
+    
+    if (plugins) {
+      // @FIXME: wait with initialize until some dedicated event happened?
+      // plugins.forEach(plugin => typeof plugin.initialize === 'function' && plugin.initialize());
+      this.broadcast('initialized');
+      debug('Datalayer.initialize: plugins initialized', plugins);
+    }
+
     this.readyPromiseResolver();
 
     // parse DOM and trigger extensions hooks
