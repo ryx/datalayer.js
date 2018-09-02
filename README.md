@@ -12,11 +12,11 @@ Datalayer.js is an open-source datalayer, tagmanager, and *"frontend middleware"
 The Datalayer "collects" data from the website (i.e. it gets passed from different parts of your application) and aggregates it to one data object. Then the plugin loader starts loading the plugins based on a given rule configuration. Plugins will receive events which contain specific data and can take that data and offer it to third parties as desired. One example is the "page-loaded" event that passes the previously aggregated data object to the plugin. That's the big picture. (TODO: add link to details)
 
 # Usage
-The basic usage is pretty simple. The first thing to do is to install datalayer.js from [npm](https://www.npmjs.com).
+The basic usage is pretty simple. The first step is installing datalayer.js from [npm](https://www.npmjs.com).
 
     npm install datalayerjs
 
-Next thing is to import the datalayer.js module. Even though the most common notation is likely to use ES6's `import` statement, datalayer.js comes as [UMD module](https://github.com/umdjs/umd) and supports [a variety of different import styles](examples/2-integration-styles.md). This example also assumes that we want to import some dummy plugins from another module. In a real-world scenario you might install some official plugins instead.
+Then it's time to import the module into your codebase. Datalayer.js comes as [UMD module](https://github.com/umdjs/umd) and supports [a variety of different import styles](examples/2-integration-styles.md). But nowadays the most common scenario should likely be to use ES6's `import` statement. This example also assumes that we want to import some dummy plugins from another module. In a real-world scenario you might install some official plugins instead.
 
 ```javascript
 import datalayer from 'datalayerjs';
@@ -26,7 +26,7 @@ import {
 } from './myCustomPlugins';
 ```
 
-After including the datalayer.js module you have to call the [`initialize`](#initializeoptionsobject-void) method on the global instance to perform basic setup and tell datalayer.js which plugins to load. The `plugins` option is the recommended way to load plugins. You simply pass a list of plugins to be loaded and initialize them right away, using their constructor. This should cover the most common usecases, for more details check out the [Plugins Documentation section](). One thing to keep in mind is that this _leaves the entire decision about what data the plugin receives to the plugin itself_, as the plugins take data from your website according to their own preferences.
+After including the datalayer.js module you have to call the [`initialize`](#initializeoptionsobject-void) method on the global instance to perform the basic setup and tell datalayer.js which plugins to load. The `plugins` option is the recommended way to load plugins. You simply pass a list of plugins to be loaded and initialize them right away, using their constructor. This should cover the most common usecases, for more details check out the [Plugins Documentation section](). One thing to keep in mind is that this _leaves the entire decision about what data the plugin receives to the plugin itself_. The plugins take data from your datalayer according to their own preferences.
 
 ```javascript
 datalayer.initialize({
@@ -46,7 +46,7 @@ datalayer.broadcast('page-loaded', {"page":{"type":"homepage","name":"My homepag
 ```
 
 ### Extensions
-In a real application you'll likely want to use extensions since they provide more, really powerful, ways of interacting with the datalayer. One common usecase is the [metadata extension](src/extensions/metadata) which aggregates data from the markup and passes it to the datalayer. This can be done with:
+In a real application you'll likely want to use extensions. Extensions provide more, really powerful ways of interacting with the datalayer. One common usecase is the [metadata extension](src/extensions/metadata) which aggregates data from the markup and passes it to the datalayer. This can be done with:
 
 ```javascript
 import metadata from 'datalayerjs/extensions/metadata';
@@ -56,7 +56,7 @@ datalayer
   .initialize(...);
 ```
 
-Check [the extensions folder](src/extensions) for additional information on available extensions.
+> Be sure to check [the extensions folder](src/extensions) for additional information on available extensions!
 
 ## Testmode
 TODO: explain testmode and its activation via URL
@@ -66,7 +66,7 @@ TODO: explain testmode and its activation via URL
 After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the framework and tool landscape of your application or website. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
 
 # Javascript API
-Communication with datalayer.js happens through the Javascript API. The module itself contains exactly one object with the name `datalayer`. The object contains the following public methods (NOTE: with the [methodQueue extension](src/extensions/methodQueue) you can access all of the described public API methods via the method queue pattern):
+Communication with datalayer.js happens through it's Javascript API. The module itself contains one default export with the name `datalayer`. That object contains the following public methods (NOTE: with the [methodQueue extension](src/extensions/methodQueue) you can access all of the described public API methods via the method queue pattern):
 
 ## initialize(options:Object): void
 Initialize the current datalayer instance with the given options. It is mandatory to call this once before the datalayer can be used. It sets up the data, scans for metatags/annotations and loads the requested plugins. It accepts the following options:
