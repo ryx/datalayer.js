@@ -14,10 +14,10 @@ A datalayer is all about moving information and data (e.g. about pages, categori
 Most datalayer implementations just take such data and then other parts of code can access and use it.
 
 ### What is Wrong with Existing Datalayers and Tagmanagers?
-All tagmanagers have one major goal: they take code control away from the developer and grant it to some marketing department or external agency. In most companies the developers are even happy about such a move, because they heavily underestimate the potential negative impact on their product:
+All external tagmanagers have one major problem: they take code control away from the developer and grant it to some marketing department or external agency. In most companies the developers are even happy about such a move, because they don't like to mess around with online marketing and analytics topics. But they heavily underestimate the potential negative impact on their product:
 
 #### No Q/A Process
-Most tagmanagers entirely lack a solid Q/A or review process, which allows "blackboxed" third party code to be silently deployed into production environments. This can only be avoided by strong discipline, clear processes and very mature developers in your marketing agency. Unfortunately, this setup is pretty rare in reality. Most of the time such tasks are done by unexperienced junior devs, because the whole topic is rather unpopular among senior developers.
+Most tagmanagers entirely lack a solid Q/A or review process, which leads to some kind of "legal code injection". Why? Because that is the definition of allowing unknown third parties to silently inject "blackboxed" code into a production environment. This problem can only be avoided by strong discipline, clear processes and very mature developers in your marketing agency. Unfortunately, this setup is pretty rare in reality. Most of the time such tasks are done by unexperienced junior devs, because the whole topic is rather unpopular among senior developers in general.
 
 #### Synchronous (or too dominant) Integration
 Tagmanagers, as most other vendor scripts, still treat themselves as "first class citizens" (whereas your product should be the only first class citizen). That's why they need to be integrated synchronously, or at least in the pages' head area. Which greatly increases the risk of performance drawbacks or critical Javascript errors, that may even halt the entire execution of your website.
