@@ -1,6 +1,6 @@
 {
   "name": "datalayerjs",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "An open-source datalayer, tagmanager, and frontend middleware",
   "author": "Rico Pfaus",
   "license": "MIT",
@@ -9,7 +9,13 @@
     "tagmanager",
     "datalayer",
     "affiliate",
-    "attribution"
+    "attribution",
+    "analytics",
+    "tag",
+    "manager",
+    "gtm",
+    "dtm",
+    "launch"
   ],
   "main": "dist/datalayer.umd.js",
   "module": "src/index.js",
@@ -19,12 +25,11 @@
     "test": "npm run test:lint && npm run test:spec",
     "build:umd": "webpack --mode=production",
     "build": "npm run build:umd",
-    "dev": "DTLR_DEBUG=1 babel-node test/plugin.js",
     "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ryx/datalayerjs.git"
+    "url": "https://github.com/ryx/datalayer.js.git"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.3",
