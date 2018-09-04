@@ -6,5 +6,6 @@ deploy:
   provider: npm
   email: $NPM_DEPLOY_USER
   api_key: $NPM_AUTH_TOKEN
+  skip_cleanup: true
   on:
     tags: true
