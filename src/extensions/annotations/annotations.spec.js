@@ -31,39 +31,59 @@ describe('annotations', () => {
   });
 
   describe('extension factory', () => {
-    it('should collect "click" event annotations and hook up the associated callbacks in "beforeParseDOMNode"', () => {
+    it('should collect "load" event annotations and immediately fire their callbacks in "beforeParseDOMNode"', () => {
       const ExtensionClass = annotations.default();
-      const data = { name: 'click-test', data: { foo: 'bar' } };
+      const event = { name: 'load-test', data: { foo: 'bar' } };
       window.document.body.innerHTML = `
-        <div id="test-click" data-d7r-event-click='${JSON.stringify(data)}'>Click event</div>
+        <div data-d7r-event-load='${JSON.stringify(event)}'>Immediately executed</div>
       `;
 
       const extension = new ExtensionClass(datalayerMock);
+      expect(datalayerMock.broadcast).not.toHaveBeenCalledWith(event.name, event.data);
       extension.beforeParseDOMNode(window.document.body);
-      window.document.querySelector('#test-click').click();
 
-      expect(datalayerMock.broadcast).toHaveBeenCalledWith('click-test', { foo: 'bar' });
+      // @XXX: should be fired as soon as annotation is parsed
+      expect(datalayerMock.broadcast).toHaveBeenCalledWith(event.name, event.data);
     });
 
-    it('should collect "view" event annotations and hook up the associated callbacks in "beforeParseDOMNode"', () => {
+    it('should collect "click" event annotations and hook up the associated callbacks in "beforeParseDOMNode"', () => {
       const ExtensionClass = annotations.default();
-      const data = { name: 'view-test', data: { foo: 'bar' } };
+      const event = { name: 'click-test', data: { foo: 'bar' } };
       window.document.body.innerHTML = `
-        <div id="test-view" data-d7r-event-view='${JSON.stringify(data)}'>Immediately visible</div>
+        <div id="test-click" data-d7r-event-click='${JSON.stringify(event)}'>Click event</div>
+      `;
+
+      const extension = new ExtensionClass(datalayerMock);
+      extension.beforeParseDOMNode(window.document.body);
+      expect(datalayerMock.broadcast).not.toHaveBeenCalledWith(event.name, event.data);
+      window.document.querySelector('#test-click').click();
+
+      // @XXX: should be fired as when element is clicked
+      expect(datalayerMock.broadcast).toHaveBeenCalledWith(event.name, event.data);
+    });
+
+    // @FIXME disabled until view tracking is properly implemented
+    it.skip('should collect "view" event annotations and hook up the associated callbacks in "beforeParseDOMNode"', () => {
+      const ExtensionClass = annotations.default();
+      const event = { name: 'view-test', data: { foo: 'bar' } };
+      window.document.body.innerHTML = `
+        <div id="test-view" data-d7r-event-view='${JSON.stringify(event)}'>Immediately visible</div>
       `;
 
       const extension = new ExtensionClass(datalayerMock);
       extension.beforeParseDOMNode(window.document.body);
 
-      expect(datalayerMock.broadcast).toHaveBeenCalledWith('view-test', { foo: 'bar' });
+      // @XXX: should be fired as soon as element becomes visible
+      expect(datalayerMock.broadcast).toHaveBeenCalledWith(event.name, event.data);
     });
 
     it('should NOT throw (but log error instead) when encountering invalid JSON', () => {
       const ExtensionClass = annotations.default();
-      window.document.body.innerHTML = '<div data-d7r-event-click="ka-boom ...">I will explode</div>';
+      window.document.body.innerHTML = '<div id="test-click" data-d7r-event-click="ka-boom ...">I will explode</div>';
 
       const extension = new ExtensionClass(datalayerMock);
       extension.beforeParseDOMNode(window.document.body);
+      window.document.querySelector('#test-click').click();
 
       expect(datalayerMock.broadcast).not.toThrow();
       expect(debug).toHaveBeenCalledWith(expect.stringMatching('invalid JSON'), 'ka-boom ...', expect.anything());

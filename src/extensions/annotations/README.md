@@ -13,6 +13,13 @@ import annotations from 'datalayerjs/extensions/annotations';
 datalayer.use(annotations());
 ```
 
+### Load events
+Load events are the most basic form of annotations. They directly broadcast a datalayer event, as soon as they are recognized in the DOM. The following example shows a simple load event annotation. When the `<div>` is recognized in the DOM (i.e. when datalayer.parseDOMNode ist trigered) it causes an event with the name `my-annotated-event` and the data `{foo: 'bar'}` to be broadcasted by datalayer.js.
+
+```html
+<div data-d7r-event-load='{"name":"my-annotated-event","data":{"foo":"bar"}}'></div>
+```
+
 ### Click events
 The following example shows a simple event annotation used to bind a click-Handler to an element. When the `<a>` tag is clicked it causes an event with the name `my-annotated-event` and the data `{foo: 'bar'}` to be broadcasted by datalayer.js. It has the same effect as manually adding an `onclick` handler on the element and executing `dal.broadcast('my-annotated-event', {"foo":"bar"})` in its callback.
 

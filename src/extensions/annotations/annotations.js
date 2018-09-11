@@ -16,6 +16,7 @@ export default (config = { attributePrefix: 'd7r' }) => class Annotations {
     this.datalayer = datalayer;
     // init prerequisites
     // ...
+    // @TODO init view tracking ...
   }
 
   /**
@@ -43,14 +44,26 @@ export default (config = { attributePrefix: 'd7r' }) => class Annotations {
     if (elements) {
       // @XXX use `for` because `elements` is NO real Array in IE, so forEach might break
       for (let i = 0; i < elements.length; i += 1) {
-        callback(elements[i]);
+        if (type === 'load') {
+          callback(elements[i]);
+        } else if (['focus', 'click'].indexOf(type) > -1) {
+          element.addEventListener(type, () => callback(elements[i]));
+        } else if (type === 'view') {
+          console.error('view handling not yet implemented in d7r.annotations');
+        }
       }
     }
   }
 
-  // handle element scan (called before/after scanElementFor*)
+  // handle element scan
   beforeParseDOMNode(element) {
     debug('Annotations.beforeParseDOMNode');
+    Annotations.initializeAnnotationCallback(element, 'load', (el) => {
+      const eventData = el ? el.getAttribute(`data-${config.attributePrefix}-event-load`) : null;
+      if (eventData) {
+        this.parseAndBroadcastJSON(eventData);
+      }
+    });
     Annotations.initializeAnnotationCallback(element, 'click', (el) => {
       const eventData = el ? el.getAttribute(`data-${config.attributePrefix}-event-click`) : null;
       if (eventData) {
