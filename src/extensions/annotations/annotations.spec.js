@@ -81,10 +81,27 @@ describe('annotations', () => {
       });
     });
 
-    // @FIXME view event tracking can only be done in a functional testing setup
-    // because JSDOM doesn't do any rendering
-    /*
-    describe.skip('eventType: view', () => {
+    describe('eventType: view', () => {
+      it('should NOT initialize view event tracking if not explictly enabled', () => {
+        window.IntersectionObserver = jest.fn();
+        const ExtensionClass = annotations.default();
+
+        new ExtensionClass();
+
+        expect(window.IntersectionObserver).not.toHaveBeenCalled();
+      });
+
+      it('should initialiize view event tracking if explictly enabled', () => {
+        window.IntersectionObserver = jest.fn();
+        const ExtensionClass = annotations.default({ enableViewEvents: true });
+
+        new ExtensionClass();
+
+        expect(window.IntersectionObserver).toHaveBeenCalled();
+      });
+      // @FIXME view event tracking can only be done in a functional testing setup
+      // because JSDOM doesn't do any rendering
+      /*
       it('should immediately fire events for an already visible element', () => {
         const ExtensionClass = annotations.default();
         const event = { name: 'already-in-view-test', data: { foo: 'bar' } };
@@ -112,8 +129,8 @@ describe('annotations', () => {
         // @XXX: should be fired as soon as element becomes visible
         expect(datalayerMock.broadcast).not.toHaveBeenCalledWith(event.name, event.data);
       });
+      */
     });
-    */
 
     it('should throw an error when encountering an invalid event type', () => {
       const ExtensionClass = annotations.default();

@@ -18,17 +18,22 @@ import { debug } from '../../datalayer';
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-export default (config = { attributePrefix: 'd7r' }) => class Annotations {
+export default (config = {
+  attributePrefix: 'd7r', // prefix used in attribute names (e.g. `data-d7r-event-*`)
+  enableViewEvents: false, // set to `true` to enable view event tracking
+}) => class Annotations {
   constructor(datalayer) {
     this.datalayer = datalayer;
     // init observer for element visibility tracking
-    this.observer = new window.IntersectionObserver(
-      entries => this.onIntersection(entries),
-      {
-        root: null,
-        threshold: [1],
-      }
-    );
+    if (config.enableViewEvents) {
+      this.observer = new window.IntersectionObserver(
+        entries => this.onIntersection(entries),
+        {
+          root: null,
+          threshold: [1],
+        }
+      );
+    }
   }
 
   /**
@@ -39,7 +44,9 @@ export default (config = { attributePrefix: 'd7r' }) => class Annotations {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
         debug('[Annotations] element in the view', entry.target);
-        this.observer.unobserve(entry.target);
+        if (config.enableViewEvents) {
+          this.observer.unobserve(entry.target);
+        }
       }
     });
   }
@@ -76,7 +83,11 @@ export default (config = { attributePrefix: 'd7r' }) => class Annotations {
         } else if (['focus', 'click'].indexOf(eventType) > -1) {
           currentElement.addEventListener(eventType, () => callback(currentElement));
         } else if (eventType === 'view') {
-          this.observer.observe(currentElement);
+          if (config.enableViewEvents) {
+            this.observer.observe(currentElement);
+          } else {
+            console.error('view events have to be enabled via config.enableViewEvents flag');
+          }
         } else {
           throw new Error(`Error: event type "${eventType}" is invalid`);
         }

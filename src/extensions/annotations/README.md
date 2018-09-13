@@ -37,9 +37,14 @@ Automatically broadcast a focus event when a given element is focused. Same patt
 Broadcast a datalayer event when an element becomes visible. View events are very common in webtracking, e.g. for cases where you want to track analytics information based on the visibility of certain page components (teaser, promotions, etc.). Usually it is rather complicated and involves a lot of custom code and/or third party libs to track those events. With datalayer.js the view tracking is designed to be as painless as possible to use, hiding all the associated logic behind the scenes.
 
 ```xml
-<div data-d7r-event-view='{"name":"container-visible", "data":"my/container/123"}'>Put content here (e.g. a teaser) ..</div>
+<div data-d7r-event-view='{"name":"container-visible", "data":"my/container/123"}'>
+    Put content here (e.g. a teaser) ..
+</div>
 ```
+
+> Important: handling of view events has to be explicitly enabled via the `enableViewEvents` configuration flag.
 
 ## Options
 Available configuration options for this extension are:
-- attributePrefix: use to customize the `d7r` part of the `data-d7r-event-*` attribute
+- **attributePrefix**: use to customize the `d7r` part of the `data-d7r-event-*` attribute
+- **enableViewEvents**: set to `true` to enable the view events feature (disabled by default)
