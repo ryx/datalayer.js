@@ -50,6 +50,7 @@
     "webpack-cli": "^2.0.14"
   },
   "dependencies": {
+    "intersection-observer": "^0.5.0",
     "promise": "^8.0.1"
   },
   "jest": {

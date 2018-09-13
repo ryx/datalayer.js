@@ -1,3 +1,4 @@
+import 'intersection-observer';
 import { debug } from '../../datalayer';
 
 /**
@@ -5,6 +6,12 @@ import { debug } from '../../datalayer';
  * datalayer.beforeParseDOMNode and parses the provided node for existing
  * event annotations. The annotations follow a simple syntax and can be
  * provided via a `data-d7r-event-*` attribute.
+ *
+ * Available events are:
+ * - 'load': element was loaded and is available in the DOM
+ * - 'click': element was clicked by the user
+ * - 'focus': element received the input focus (i.e. onblur)
+ * - 'view': element became fully visible
  *
  * Copyright (c) 2018 - present, Rico Pfaus
  *
@@ -14,9 +21,27 @@ import { debug } from '../../datalayer';
 export default (config = { attributePrefix: 'd7r' }) => class Annotations {
   constructor(datalayer) {
     this.datalayer = datalayer;
-    // init prerequisites
-    // ...
-    // @TODO init view tracking ...
+    // init observer for element visibility tracking
+    this.observer = new window.IntersectionObserver(
+      entries => this.onIntersection(entries),
+      {
+        root: null,
+        threshold: [1],
+      }
+    );
+  }
+
+  /**
+   * Handle intersection of observed elements within the viewport.
+   * @param {Array<IntersectionObserverEntry>} entries list with intersecting elements
+   */
+  onIntersection(entries) {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        debug('[Annotations] element in the view', entry.target);
+        this.observer.unobserve(entry.target);
+      }
+    });
   }
 
   /**
@@ -33,49 +58,45 @@ export default (config = { attributePrefix: 'd7r' }) => class Annotations {
   }
 
   /**
-   *
+   * Initialize the correct event handling on targetElement for the given event type. Hooks
+   * up the required logic so that callback
    * @param {HTMLElement} element  HTML element to initialize the callback for
    * @param {String} type event type
    * @param {Function} callback function to be called when event is fired
    */
-  static initializeAnnotationCallback(targetElement, type, callback) {
-    const elements = targetElement.querySelectorAll(`[data-${config.attributePrefix}-event-${type}]`);
-    debug(`Annotations.initializeAnnotationCallback: looking for type "${type}"`, elements);
+  initializeAnnotationCallback(targetElement, eventType, callback) {
+    const elements = targetElement.querySelectorAll(`[data-${config.attributePrefix}-event-${eventType}]`);
+    debug(`Annotations.initializeAnnotationCallback: looking for type "${eventType}"`, elements);
     if (elements) {
       // @XXX use `for` because `elements` is NO real Array in IE, so forEach might break
       for (let i = 0; i < elements.length; i += 1) {
         const currentElement = elements[i];
-        if (type === 'load') {
+        if (eventType === 'load') {
           callback(currentElement);
-        } else if (['focus', 'click'].indexOf(type) > -1) {
-          currentElement.addEventListener(type, () => callback(currentElement));
-        } else if (type === 'view') {
-          console.error('view tracking not yet implemented in d7r.annotations');
+        } else if (['focus', 'click'].indexOf(eventType) > -1) {
+          currentElement.addEventListener(eventType, () => callback(currentElement));
+        } else if (eventType === 'view') {
+          this.observer.observe(currentElement);
+        } else {
+          throw new Error(`Error: event type "${eventType}" is invalid`);
         }
       }
     }
   }
 
-  // handle element scan (@FIXME: d.r.y!)
+  /**
+   * Called when datalayer.js parses a newly recognized DOM node (e.g. after parseDOMNode is called).
+   */
   beforeParseDOMNode(element) {
     debug('Annotations.beforeParseDOMNode');
-    Annotations.initializeAnnotationCallback(element, 'load', (el) => {
-      const eventData = el ? el.getAttribute(`data-${config.attributePrefix}-event-load`) : null;
-      if (eventData) {
-        this.parseAndBroadcastJSON(eventData);
-      }
-    });
-    Annotations.initializeAnnotationCallback(element, 'click', (el) => {
-      const eventData = el ? el.getAttribute(`data-${config.attributePrefix}-event-click`) : null;
-      if (eventData) {
-        this.parseAndBroadcastJSON(eventData);
-      }
-    });
-    Annotations.initializeAnnotationCallback(element, 'view', (el) => {
-      const eventData = el ? el.getAttribute(`data-${config.attributePrefix}-event-view`) : null;
-      if (eventData) {
-        this.parseAndBroadcastJSON(eventData);
-      }
+    // @FIXME this is not the ideal solution from a performance perspective
+    ['load', 'focus', 'view', 'click'].forEach((type) => {
+      this.initializeAnnotationCallback(element, type, (el) => {
+        const eventData = el ? el.getAttribute(`data-${config.attributePrefix}-event-${type}`) : null;
+        if (eventData) {
+          this.parseAndBroadcastJSON(eventData);
+        }
+      });
     });
   }
 };
