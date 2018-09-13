@@ -6,7 +6,7 @@ import { debug } from '../../datalayer';
  * event annotations. The annotations follow a simple syntax and can be
  * provided via a `data-d7r-event-*` attribute.
  *
- * Copyright (c) 2016 - present, Rico Pfaus
+ * Copyright (c) 2018 - present, Rico Pfaus
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -38,24 +38,25 @@ export default (config = { attributePrefix: 'd7r' }) => class Annotations {
    * @param {String} type event type
    * @param {Function} callback function to be called when event is fired
    */
-  static initializeAnnotationCallback(element, type, callback) {
-    const elements = element.querySelectorAll(`[data-${config.attributePrefix}-event-${type}]`);
+  static initializeAnnotationCallback(targetElement, type, callback) {
+    const elements = targetElement.querySelectorAll(`[data-${config.attributePrefix}-event-${type}]`);
     debug(`Annotations.initializeAnnotationCallback: looking for type "${type}"`, elements);
     if (elements) {
       // @XXX use `for` because `elements` is NO real Array in IE, so forEach might break
       for (let i = 0; i < elements.length; i += 1) {
+        const currentElement = elements[i];
         if (type === 'load') {
-          callback(elements[i]);
+          callback(currentElement);
         } else if (['focus', 'click'].indexOf(type) > -1) {
-          element.addEventListener(type, () => callback(elements[i]));
+          currentElement.addEventListener(type, () => callback(currentElement));
         } else if (type === 'view') {
-          console.error('view handling not yet implemented in d7r.annotations');
+          console.error('view tracking not yet implemented in d7r.annotations');
         }
       }
     }
   }
 
-  // handle element scan
+  // handle element scan (@FIXME: d.r.y!)
   beforeParseDOMNode(element) {
     debug('Annotations.beforeParseDOMNode');
     Annotations.initializeAnnotationCallback(element, 'load', (el) => {

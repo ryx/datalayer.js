@@ -58,8 +58,23 @@ describe('annotations', () => {
       expect(datalayerMock.broadcast).not.toHaveBeenCalledWith(event.name, event.data);
       window.document.querySelector('#test-click').click();
 
-      // @XXX: should be fired as when element is clicked
+      // @XXX: should be fired when element is clicked
       expect(datalayerMock.broadcast).toHaveBeenCalledWith(event.name, event.data);
+    });
+
+    it('should NOT add the "click" handling to the parent element', () => {
+      const ExtensionClass = annotations.default();
+      const event = { name: 'click-test', data: { foo: 'bar' } };
+      window.document.body.innerHTML = `
+        <div id="test-click" data-d7r-event-click='${JSON.stringify(event)}'>Click event</div>
+      `;
+
+      const extension = new ExtensionClass(datalayerMock);
+      extension.beforeParseDOMNode(window.document.body);
+      window.document.querySelector('#test-click').parentNode.click();
+
+      // @XXX: should be fired when element is clicked
+      expect(datalayerMock.broadcast).not.toHaveBeenCalledWith(event.name, event.data);
     });
 
     // @FIXME disabled until view tracking is properly implemented
