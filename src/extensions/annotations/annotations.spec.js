@@ -81,13 +81,15 @@ describe('annotations', () => {
       });
     });
 
+    // @FIXME view event tracking can only be done in a functional testing setup
+    // because JSDOM doesn't do any rendering
+    /*
     describe.skip('eventType: view', () => {
-      // @FIXME disabled until view tracking is properly implemented
-      it('should collect "view" event annotations and hook up the associated callbacks in "beforeParseDOMNode"', () => {
+      it('should immediately fire events for an already visible element', () => {
         const ExtensionClass = annotations.default();
-        const event = { name: 'view-test', data: { foo: 'bar' } };
+        const event = { name: 'already-in-view-test', data: { foo: 'bar' } };
         window.document.body.innerHTML = `
-          <div id="test-view" data-d7r-event-view='${JSON.stringify(event)}'>Immediately visible</div>
+          <div data-d7r-event-view='${JSON.stringify(event)}'>Immediately visible</div>
         `;
 
         const extension = new ExtensionClass(datalayerMock);
@@ -96,14 +98,29 @@ describe('annotations', () => {
         // @XXX: should be fired as soon as element becomes visible
         expect(datalayerMock.broadcast).toHaveBeenCalledWith(event.name, event.data);
       });
+
+      it('should NOT immedietaly fire events for a non-visible element', () => {
+        const ExtensionClass = annotations.default();
+        const event = { name: 'cmoing-into-view-test', data: { foo: 'bar' } };
+        window.document.body.innerHTML = `
+          <div style="margin-top:10000px" data-d7r-event-view='${JSON.stringify(event)}'>Not visible</div>
+        `;
+
+        const extension = new ExtensionClass(datalayerMock);
+        extension.beforeParseDOMNode(window.document.body);
+
+        // @XXX: should be fired as soon as element becomes visible
+        expect(datalayerMock.broadcast).not.toHaveBeenCalledWith(event.name, event.data);
+      });
     });
+    */
 
     it('should throw an error when encountering an invalid event type', () => {
       const ExtensionClass = annotations.default();
       const extension = new ExtensionClass(datalayerMock);
 
       extension.initializeAnnotationCallback(window.document.body, 'foo', () => {});
-      
+
       expect(extension.initializeAnnotationCallback).toThrow();
     });
 
