@@ -146,6 +146,7 @@ export class Datalayer {
    * @param {HTMLElement} node the DOM node to be parsed
    */
   parseDOMNode(node) {
+    debug('Datalayer.parseDOMNode: parsing node', node);
     this.triggerExtensionHook('beforeParseDOMNode', node);
   }
 
