@@ -3,7 +3,9 @@ node_js:
   - "stable"
   - "8"
 
-install: npm
+install: 
+  - npm install
+
 script:
   - npm run test
 
