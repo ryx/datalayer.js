@@ -1,4 +1,5 @@
 .vscode
+.github
 coverage
 examples
 node_modules
