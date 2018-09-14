@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this */
 /**
  *        __      __        __                          _
  *   ____/ /___ _/ /_____ _/ /___ ___  _____  _____    (_)____
@@ -28,11 +27,13 @@ export class Datalayer {
     this.initialized = false; // "ready" flag (true, if all plugins are loaded)
     this.globalData = {}; // data storage
     this.globalConfig = {}; // configuration object (passed via odl:config)
-    this.testModeActive = this.isTestModeActive();
     this.plugins = []; // array with loaded plugins
     this.extensions = []; // array with loaded extensions
     this.queue = new EventQueue();
     this.logger = { log: () => {} }; // default logger stub
+
+    // @FIXME see github issue #8
+    this.testModeActive = this.isTestModeActive();
 
     // create Promise reflecting readiness
     this.readyPromiseResolver = null;
@@ -166,7 +167,7 @@ export class Datalayer {
   initialize(options = {}) {
     if (this.initialized) {
       // @XXX: remove and allow multi-init (should simply have no negative impact!)
-      console.warn('already initialized');
+      this.log('WARNING: already initialized');
       return false;
     }
 
