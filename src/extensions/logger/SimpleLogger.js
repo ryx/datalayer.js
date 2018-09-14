@@ -10,6 +10,7 @@
 export default class SimpleLogger {
   constructor(prefix = '') {
     this.prefixStr = `${prefix}`;
+    SimpleLogger.prototype.ENABLED = window.localStorage.getItem('d7r:logger:enable') === '1';
   }
 
   log(...args) {
@@ -27,5 +28,3 @@ export default class SimpleLogger {
     }
   }
 }
-
-SimpleLogger.prototype.ENABLED = window.localStorage.getItem('d7r:logger:enable') === '1';
