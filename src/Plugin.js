@@ -1,4 +1,5 @@
 /* eslint-disable class-methods-use-this, no-unused-vars */
+import datalayer from './datalayer';
 
 /**
  * Baseclass for datalayer.js plugins.
@@ -50,6 +51,15 @@ export default class Plugin {
    * @param {any} data event data, type and structure depend on event type
    */
   handleEvent(name, data) {}
+
+  /**
+   * Logging helper, using datalayer.js internal logging which can be easily toggled via
+   * localStorage item.
+   * @param  {...any} args send any given args to current log output
+   */
+  log(...args) {
+    datalayer.log(`[${this.id}]`, ...args);
+  }
 
   // @TODO: add utility methods from old pixelHelper ...
 }

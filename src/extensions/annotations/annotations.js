@@ -1,5 +1,4 @@
 import 'intersection-observer';
-import { debug } from '../../datalayer';
 
 /**
  * Offical datalayer.js core extension that works on any given call to
@@ -43,7 +42,7 @@ export default (config = {
   onIntersection(entries) {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
-        debug('[Annotations] element in the view', entry.target);
+        this.datalayer.log('[Annotations] element in the view', entry.target);
         entry.target.callback(entry.target);
         this.observer.unobserve(entry.target);
       }
@@ -54,12 +53,12 @@ export default (config = {
    * Helper that calls datalayer.broadcast with a given JSON string (parsed to object first).
    */
   parseAndBroadcastJSON(jsonString) {
-    debug('Annotations.parseAndBroadcastJSON:', jsonString);
+    this.datalayer.log('[Annotations.parseAndBroadcastJSON]', jsonString);
     try {
       const o = JSON.parse(jsonString);
       this.datalayer.broadcast(o.name, o.data);
     } catch (e) {
-      debug('Error: invalid JSON provided for broadcast', jsonString, e);
+      this.datalayer.log('Error: invalid JSON provided for broadcast', jsonString, e);
     }
   }
 
@@ -72,7 +71,7 @@ export default (config = {
    */
   initializeAnnotationCallback(targetElement, eventType, callback) {
     const elements = targetElement.querySelectorAll(`[data-${config.attributePrefix}-event-${eventType}]`);
-    debug(`Annotations.initializeAnnotationCallback: looking for type "${eventType}"`, elements);
+    this.datalayer.log(`[Annotations.initializeAnnotationCallback] looking for type "${eventType}"`, elements);
     if (elements) {
       // @XXX use `for` because `elements` is NO real Array in IE, so forEach might break
       for (let i = 0; i < elements.length; i += 1) {
@@ -100,7 +99,7 @@ export default (config = {
    * Called when datalayer.js parses a newly recognized DOM node (e.g. after parseDOMNode is called).
    */
   beforeParseDOMNode(element) {
-    debug('Annotations.beforeParseDOMNode');
+    this.datalayer.log('[Annotations.beforeParseDOMNode]');
     // @FIXME this is not the ideal solution from a performance perspective
     ['load', 'focus', 'view', 'click'].forEach((type) => {
       this.initializeAnnotationCallback(element, type, (el) => {
