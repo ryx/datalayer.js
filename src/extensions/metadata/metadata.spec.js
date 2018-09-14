@@ -20,6 +20,7 @@ describe('metadata', () => {
 
     datalayerMock = {
       broadcast: jest.fn(),
+      log: jest.fn(),
     };
     return import('./metadata.js').then((m) => {
       metadata = m;
