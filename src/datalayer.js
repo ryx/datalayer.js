@@ -16,7 +16,6 @@
 import { extend } from './lib/utils';
 import cookie from './lib/cookie';
 import EventQueue from './lib/queue';
-import Logger from './lib/Logger';
 
 /**
  * The global Datalayer class, gets instantiated as singleton.
@@ -33,9 +32,7 @@ export class Datalayer {
     this.plugins = []; // array with loaded plugins
     this.extensions = []; // array with loaded extensions
     this.queue = new EventQueue();
-
-    this.logger = new Logger('[d7r]');
-    this.log('debugging enabled');
+    this.logger = { log: () => {} }; // default logger stub
 
     // create Promise reflecting readiness
     this.readyPromiseResolver = null;
@@ -66,6 +63,10 @@ export class Datalayer {
     return this;
   }
 
+  /**
+   * Log a dynamic number of arguments using the internal logging helper.
+   * @param  {...any} args dynamic number of arguments to be logged
+   */
   log(...args) {
     this.logger.log(...args);
   }
