@@ -44,9 +44,8 @@ export default (config = {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
         debug('[Annotations] element in the view', entry.target);
-        if (config.enableViewEvents) {
-          this.observer.unobserve(entry.target);
-        }
+        entry.target.callback(entry.target);
+        this.observer.unobserve(entry.target);
       }
     });
   }
@@ -84,6 +83,8 @@ export default (config = {
           currentElement.addEventListener(eventType, () => callback(currentElement));
         } else if (eventType === 'view') {
           if (config.enableViewEvents) {
+            // @HACK store callback reference in element
+            currentElement.callback = callback;
             this.observer.observe(currentElement);
           } else {
             console.error('view events have to be enabled via config.enableViewEvents flag');
