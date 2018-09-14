@@ -1,5 +1,4 @@
 /* eslint-disable max-len, no-new */
-import { debug } from '../../datalayer';
 
 jest.mock('../../datalayer');
 
@@ -17,8 +16,8 @@ describe('annotations', () => {
   beforeEach(() => {
     datalayerMock = {
       broadcast: jest.fn(),
+      log: jest.fn(),
     };
-    debug.mockClear();
     return import('./annotations.js').then((m) => {
       annotations = m;
     });
@@ -150,7 +149,7 @@ describe('annotations', () => {
       window.document.querySelector('#test-click').click();
 
       expect(datalayerMock.broadcast).not.toThrow();
-      expect(debug).toHaveBeenCalledWith(expect.stringMatching('invalid JSON'), 'ka-boom ...', expect.anything());
+      expect(datalayerMock.log).toHaveBeenCalledWith(expect.stringMatching('invalid JSON'), 'ka-boom ...', expect.anything());
     });
   });
 });

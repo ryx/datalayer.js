@@ -7,7 +7,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import { debug } from '../../datalayer';
 import { collectMetadata } from '../../lib/utils';
 
 export default (config = { metaPrefix: 'd7r:' }) => class Metadata {
@@ -18,7 +17,7 @@ export default (config = { metaPrefix: 'd7r:' }) => class Metadata {
 
   beforeInitialize(element = window.document) {
     const md = collectMetadata(`${config.metaPrefix}data`, () => {}, element, this.globalData);
-    debug(`Metadata.beforeInitialize: selector is "${config.metaPrefix}data"`, md);
+    this.datalayer.log(`[Metadata.beforeInitialize] selector is "${config.metaPrefix}data"`, md);
     return md;
   }
 

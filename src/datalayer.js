@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this */
 /**
  *        __      __        __                          _
  *   ____/ /___ _/ /_____ _/ /___ ___  _____  _____    (_)____
@@ -17,18 +16,6 @@ import { extend } from './lib/utils';
 import cookie from './lib/cookie';
 import EventQueue from './lib/queue';
 
-// debugging helper
-/* eslint-disable func-names, no-console, prefer-spread, prefer-rest-params */
-const DEBUG = typeof process.env.DTLR_DEBUG !== 'undefined';
-export function debug() {
-  if (DEBUG) {
-    console.log.apply(console, ['[d7r]:'].concat(Array.prototype.slice.call(arguments)));
-  }
-}
-/* eslint-enable func-names, no-console, prefer-spread, prefer-rest-params */
-
-debug('debugging enabled');
-
 /**
  * The global Datalayer class, gets instantiated as singleton.
  * The datalayer is responsible for aggregating, providing and loading
@@ -40,10 +27,13 @@ export class Datalayer {
     this.initialized = false; // "ready" flag (true, if all plugins are loaded)
     this.globalData = {}; // data storage
     this.globalConfig = {}; // configuration object (passed via odl:config)
-    this.testModeActive = this.isTestModeActive();
     this.plugins = []; // array with loaded plugins
     this.extensions = []; // array with loaded extensions
     this.queue = new EventQueue();
+    this.logger = { log: () => {} }; // default logger stub
+
+    // @FIXME see github issue #8
+    this.testModeActive = this.isTestModeActive();
 
     // create Promise reflecting readiness
     this.readyPromiseResolver = null;
@@ -75,6 +65,14 @@ export class Datalayer {
   }
 
   /**
+   * Log a dynamic number of arguments using the internal logging helper.
+   * @param  {...any} args dynamic number of arguments to be logged
+   */
+  log(...args) {
+    this.logger.log(...args);
+  }
+
+  /**
    * Trigger an extension hook with the given name and the given arguments. Causes all extensions
    * to receive the given hook and addtional parameters.
    * @param {String} name name of hook to be executed
@@ -82,7 +80,7 @@ export class Datalayer {
    * @returns {Array} array with return values of all extension hook calls
    */
   triggerExtensionHook(name, ...rest) {
-    debug(`Datalayer.triggerExtensionHook: triggering extension hook "${name}"`);
+    this.log(`triggerExtensionHook: triggering extension hook "${name}"`);
     const result = [];
     for (let i = 0; i < this.extensions.length; i += 1) {
       const extension = this.extensions[i];
@@ -90,7 +88,7 @@ export class Datalayer {
         result.push(extension[name](...rest));
       }
     }
-    debug('Datalayer.triggerExtensionHook result:', result);
+    this.log('triggerExtensionHook result:', result);
     return result;
   }
 
@@ -130,7 +128,7 @@ export class Datalayer {
    * @param  {Object}  data  the event data to pass along with the event, may be of any type
    */
   broadcast(name, data) {
-    debug(`Datalayer.broadcast: broadcasting event "${name}"`, data);
+    this.log(`broadcasting event "${name}"`, data);
     this.queue.broadcastEvent(name, data, (subscriber) => {
       if (typeof subscriber.shouldReceiveEvent === 'function') {
         return subscriber.shouldReceiveEvent(this.globalData);
@@ -146,7 +144,7 @@ export class Datalayer {
    * @param {HTMLElement} node the DOM node to be parsed
    */
   parseDOMNode(node) {
-    debug('Datalayer.parseDOMNode: parsing node', node);
+    this.log('parseDOMNode: parsing node', node);
     this.triggerExtensionHook('beforeParseDOMNode', node);
   }
 
@@ -169,7 +167,7 @@ export class Datalayer {
   initialize(options = {}) {
     if (this.initialized) {
       // @XXX: remove and allow multi-init (should simply have no negative impact!)
-      console.warn('already initialized');
+      this.log('WARNING: already initialized');
       return false;
     }
 
@@ -181,13 +179,13 @@ export class Datalayer {
 
     // collect global data from options and extensions
     this.globalData = extend({}, data);
-    debug('Datalayer.initialize: global data is', this.globalData);
+    this.log('initialize: global data is', this.globalData);
     const initializeHookResult = this.triggerExtensionHook('beforeInitialize');
     initializeHookResult.forEach(r => extend(this.globalData, typeof r !== 'undefined' ? r : {}));
     if (!this.globalData) {
       throw new Error('Supplied DALGlobalData is invalid or missing');
     }
-    debug('Datalayer.initialize: extension hooks complete');
+    this.log('initialize: extension hooks complete');
 
     // validate mandatory data (@TODO: we might use a model-based validation here somewhen)
     const gd = this.globalData;
@@ -197,14 +195,14 @@ export class Datalayer {
     if (!gd.site || !gd.site.id) {
       throw new Error('Supplied DALSiteData is invalid or missing');
     }
-    debug('Datalayer.initialize: collected data', this.globalData);
+    this.log('initialize: collected data', this.globalData);
 
     // add provided plugins
     const plugins = options.plugins || [];
-    debug('Datalayer.initialize: loading plugins', plugins);
+    this.log('initialize: loading plugins', plugins);
     if (plugins) {
       plugins.forEach(plugin => this.addPlugin(plugin));
-      debug('Datalayer.initialize: plugins loaded', plugins);
+      this.log('initialize: plugins loaded', plugins);
     }
 
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
@@ -214,13 +212,13 @@ export class Datalayer {
       // @FIXME: wait with initialize until some dedicated event happened?
       // plugins.forEach(plugin => typeof plugin.initialize === 'function' && plugin.initialize());
       this.broadcast('initialized');
-      debug('Datalayer.initialize: plugins initialized', plugins);
+      this.log('initialize: plugins initialized', plugins);
     }
 
     this.readyPromiseResolver();
 
     // parse DOM and trigger extensions hooks
-    debug('Datalayer.initialize: scanning DOM');
+    this.log('initialize: scanning DOM');
     this.parseDOMNode(window.document);
 
     return this;
@@ -239,11 +237,11 @@ export class Datalayer {
    * @TODO: port and use persistentURLParam from DAL
    */
   isTestModeActive() {
-    // debug(window.location.search);
+    // this.log(window.location.search);
     if (cookie.get('__d7rtest__')) {
-      debug('Datalayer.isTestModeActive: cookie found');
+      this.log('isTestModeActive: cookie found');
       if (window.location.search.match(/__d7rtest__=0/gi)) {
-        debug('Datalayer.isTestModeActive: removing cookie');
+        this.log('isTestModeActive: removing cookie');
         cookie.remove('__d7rtest__', { path: '/' });
         return false;
       }
