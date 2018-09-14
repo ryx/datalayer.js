@@ -23,9 +23,9 @@ export default class SimpleLogger {
   static enable(persist = true) {
     SimpleLogger.prototype.ENABLED = true;
     if (persist) {
-      localStorage.setItem('d7r:logger:enable', '1');
+      window.localStorage.setItem('d7r:logger:enable', '1');
     }
   }
 }
 
-SimpleLogger.prototype.ENABLED = localStorage.getItem('d7r:logger:enable') === '1';
+SimpleLogger.prototype.ENABLED = window.localStorage.getItem('d7r:logger:enable') === '1';
