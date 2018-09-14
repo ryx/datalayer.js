@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/ryx/datalayer.js.svg?branch=master)](https://travis-ci.org/ryx/datalayer.js)
 [![npm version](https://badge.fury.io/js/datalayerjs.svg)](https://badge.fury.io/js/datalayerjs)
 
-Datalayer.js is an open-source datalayer, tagmanager, and *"frontend middleware"* - originally created for [GaleriaKaufhof](https://github.com/Galeria-kaufhof). It follows a "developer first" philosophy, is fully test-driven and acts as a thin data proxy between the frontend space in the browser and any third parties, which can be provided as plugins. It is based on a [customizable data model with a virtual type system](#models) and aims at standardizing and simplifying the process of 3rd party integration into modern websites. 
+Datalayer.js is an open-source datalayer, tagmanager, and *"frontend middleware"* - originally created for [GaleriaKaufhof](https://github.com/Galeria-kaufhof). It follows a "developer first" philosophy, is fully test-driven and acts as a thin data proxy between the frontend space in the browser and any third parties, which can be provided as plugins. It is based on a [customizable data model with a virtual type system](#models) and aims at standardizing and simplifying the process of 3rd party integration into modern websites.
 
 > NOTE: this is still a **pre-release version**, we are actively working on the first stable relase (which is planned for Q4/2018)
 
@@ -26,7 +26,7 @@ import {
 } from './myCustomPlugins';
 ```
 
-After including the datalayer.js module, we perform the basic setup and tell datalayer.js which plugins to load. This happens by calling the [`initialize`](#initializeoptionsobject-void) method on the global instance. 
+After including the datalayer.js module, we perform the basic setup and tell datalayer.js which plugins to load. This happens by calling the [`initialize`](#initializeoptionsobject-void) method on the global instance.
 
 ```javascript
 datalayer.initialize({
@@ -115,6 +115,9 @@ Get plugin with the given id and return it. If the plugin is unknown, the functi
 
 ## parseDOMNode(element:HTMLElement): void
 Parse the given DOM node and it's children and hand them over to the extensions for further logic and processing. **Important:** If you asynchronously add markup to your page (e.g. after AJAX calls, lazy loading, etc.) and that markup may contain any datalayer.js-relevant data, then you HAVE TO call `parseDOMNode` and pass it the newly added element - *after adding it to the DOM*! Otherwise the contained information won't be processed.
+
+## log(...args): void
+Convenience function that uses the currently active logger to generate log output. The same function is equally available inside the `Plugin` class, which uses the same logger behind the scenes. (@FIXME add logger extension that allows replacing the default logger with a custom one)
 
 
 # Models
