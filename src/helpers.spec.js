@@ -29,11 +29,11 @@ describe('helpers', () => {
       expect(script.async).toBe(true);
     });
 
-    it('should NOT set the appended script tag to async if called with false as second argument', () => {
+    it('should NOT set the appended script tag to async if second argument is falsy', () => {
       addScript('myTestURL.js', false);
 
       const script = window.document.querySelector('script[src="myTestURL.js"]');
-      expect(script.async).toBe(undefined);
+      expect(script.async).toBeFalsy();
     });
 
     /*
