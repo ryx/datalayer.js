@@ -1,5 +1,10 @@
 /* eslint-disable class-methods-use-this, no-unused-vars */
 import datalayer from './datalayer';
+import {
+  addScript,
+  addHTML,
+  addImage,
+} from './helpers';
 
 /**
  * Baseclass for datalayer.js plugins.
@@ -12,10 +17,10 @@ export default class Plugin {
    * @param {?Object} config configuration object
    * @param {?Function} rules optional rules callback, see documentation for more info
    */
-  constructor(id, config = {}, rulesCallback = null) {
+  constructor(id, config = {}, _rulesCallback = null) {
     this.id = id;
     this.config = config;
-    this.rulesCallback = rulesCallback;
+    this._rulesCallback = _rulesCallback;
   }
 
   /**
@@ -29,12 +34,6 @@ export default class Plugin {
   }
 
   /**
-   * Initialize any DOM resources for this plugin. Called exactly once, when
-   * the plugin is activated for the first time.
-   */
-  handleInit() {}
-
-  /**
    * Decides whether this plugin will receive events within the current execution context.
    * The decision about load handling is done by the plugin to keep the config short and
    * clean. However, the datalayer configuration can overrule the plugin's default and
@@ -42,13 +41,13 @@ export default class Plugin {
    * @param {Object} data  the current data object for the current page context (should comply with data model)
    */
   shouldReceiveEvent(data) {
-    return typeof this.rulesCallback === 'function' ? this.rulesCallback(data) : true;
+    return typeof this._rulesCallback === 'function' ? this._rulesCallback(data) : true;
   }
 
   /**
    * Main event handling callback.
    * @param {string} name of event to be handled
-   * @param {any} data event data, type and structure depend on event type
+   * @param {any} data event data (type and structure depend on event type)
    */
   handleEvent(name, data) {}
 
@@ -59,6 +58,10 @@ export default class Plugin {
    */
   log(...args) {
     datalayer.log(`[${this.id}]`, ...args);
+  }
+
+  addScript(src, async, onLoad) {
+    addScript(src, async, onLoad);
   }
 
   // @TODO: add utility methods from old pixelHelper ...

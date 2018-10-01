@@ -2,13 +2,7 @@
 import Plugin from './Plugin';
 
 // properly define implicit globals
-const {
-  describe,
-  it,
-  beforeEach,
-  expect,
-  jsdom,
-} = global;
+const { jsdom } = global;
 
 /**
  * Mock plugin to test plugin specific stuff (event retrieval,

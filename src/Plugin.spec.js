@@ -1,12 +1,6 @@
 /* eslint-disable max-len */
 import Plugin from './Plugin';
 
-const {
-  describe,
-  it,
-  expect,
-} = global;
-
 describe('Plugin', () => {
   it('should create a new Plugin instance with the expected id', () => {
     const expectedId = 'foo-123';
@@ -37,7 +31,7 @@ describe('Plugin', () => {
 
     const plugin = new Plugin('foo', {}, expectedRulesCb);
 
-    expect(plugin.rulesCallback).toEqual(expectedRulesCb);
+    expect(plugin._rulesCallback).toEqual(expectedRulesCb);
   });
 
   it('should return true when shouldReceiveEvent is called without custom rulesCallback', () => {

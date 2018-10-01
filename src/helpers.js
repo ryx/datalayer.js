@@ -47,3 +47,9 @@ export function addHTML(element, html, position = 'beforeend') {
 export function addImage(src, width = 1, height = 1) {
   return addHTML('body', `<img src="${src}" width="${width}" height="${height}" />`);
 }
+
+export default {
+  addScript,
+  addHTML,
+  addImage,
+};

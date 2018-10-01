@@ -1,23 +1,11 @@
 /* eslint-disable max-len */
-import { JSDOM } from 'jsdom';
-
-const {
-  describe,
-  it,
-  beforeEach,
-  expect,
-} = global;
-
-// stub dependencies
-const dom = new JSDOM('<!DOCTYPE html>');
-global.window = dom.window;
-global.document = window.document;
+import {
+  extend,
+  collectMetadata,
+  createMethodQueueHandler,
+} from './utils';
 
 describe('utils', () => {
-  let [utils] = [];
-
-  beforeEach(() => import('./utils').then((m) => { utils = m.default; }));
-
   describe('method queue:', () => {
     const setupMQP = () => {
       const contextObj = { _testq: [] };
@@ -32,7 +20,7 @@ describe('utils', () => {
       const { contextObj, apiObj } = setupMQP();
 
       delete contextObj._testq;
-      utils.createMethodQueueHandler(contextObj, '_testq', apiObj);
+      createMethodQueueHandler(contextObj, '_testq', apiObj);
 
       expect(contextObj._testq).toBeDefined();
       expect(typeof contextObj._testq.push).toBe('function');
@@ -41,7 +29,7 @@ describe('utils', () => {
     it('should use an existing method queue within the given context', () => {
       const { contextObj, apiObj } = setupMQP();
 
-      utils.createMethodQueueHandler(contextObj, '_testq', apiObj);
+      createMethodQueueHandler(contextObj, '_testq', apiObj);
 
       expect(contextObj._testq).toBeDefined();
       expect(typeof contextObj._testq.push).toBe('function');
@@ -52,7 +40,7 @@ describe('utils', () => {
       contextObj._testq.push(['method1', 123, 'foo']);
       contextObj._testq.push(['method2', { data: 'test' }]);
 
-      utils.createMethodQueueHandler(contextObj, '_testq', apiObj);
+      createMethodQueueHandler(contextObj, '_testq', apiObj);
 
       expect(apiObj.method1).toHaveBeenCalledWith(123, 'foo');
       expect(apiObj.method2).toHaveBeenCalledWith({ data: 'test' });
@@ -60,7 +48,7 @@ describe('utils', () => {
 
     it('should recognize and execute methods that have been added AFTER initialization', () => {
       const { contextObj, apiObj } = setupMQP();
-      utils.createMethodQueueHandler(contextObj, '_testq', apiObj);
+      createMethodQueueHandler(contextObj, '_testq', apiObj);
 
       contextObj._testq.push(['method1', 123, 'foo']);
       contextObj._testq.push(['method2', { data: 'test' }]);
@@ -73,7 +61,7 @@ describe('utils', () => {
       const { contextObj, apiObj } = setupMQP();
 
       expect(() => {
-        utils.createMethodQueueHandler(contextObj, '_testq', apiObj);
+        createMethodQueueHandler(contextObj, '_testq', apiObj);
         contextObj._testq.push(['kaboom', 'bazinga!']);
       }).toThrow(/method "kaboom" not found/gi);
     });
@@ -84,7 +72,7 @@ describe('utils', () => {
       const data = { stringProp: 'hello', numberProp: 42, numberProp2: 76.54 };
       window.document.querySelector('body').innerHTML = `<meta name="dal:data" content='${JSON.stringify(data)}' />`;
 
-      expect(utils.collectMetadata('dal:data', () => {})).toEqual(data);
+      expect(collectMetadata('dal:data', () => {})).toEqual(data);
     });
 
     it('should accept a different parent context as argument and collect metatags only within that element', () => {
@@ -94,11 +82,11 @@ describe('utils', () => {
         `<meta name="dal:data" content='${JSON.stringify(data)}' />` +
         `<div id="data-container"><meta name="dal:data" content='${JSON.stringify(innerData)}' /></div>`;
 
-      expect(utils.collectMetadata('dal:data', () => {}, '#data-container')).toEqual(innerData);
+      expect(collectMetadata('dal:data', () => {}, '#data-container')).toEqual(innerData);
     });
 
     it('should return false if context cannot be found', () => {
-      expect(utils.collectMetadata('dal:data', () => {}, '#non-existent')).toBe(false);
+      expect(collectMetadata('dal:data', () => {}, '#non-existent')).toBe(false);
     });
 
     it('should fire a callback for each collected metatag and pass element and JSON.parse\'d content', () => {
@@ -108,7 +96,7 @@ describe('utils', () => {
         '<meta name="dal:data" content=\'{"foo":"bar"}\' />' +
         '<meta name="dal:data" content=\'{"foo":"bar"}\' />';
 
-      utils.collectMetadata('dal:data', (err, element, content) => collectedData.push(content));
+      collectMetadata('dal:data', (err, element, content) => collectedData.push(content));
 
       expect(collectedData).toEqual([{ foo: 'bar' }, { foo: 'bar' }, { foo: 'bar' }]);
     });
@@ -119,7 +107,7 @@ describe('utils', () => {
         '<meta name="dal:data" content=\'{"string2":"foo","number2":76}\' />' +
         '<meta name="dal:data" content=\'{"string3":"bar","number3":777}\' />';
 
-      expect(utils.collectMetadata('dal:data', () => {})).toEqual({
+      expect(collectMetadata('dal:data', () => {})).toEqual({
         string1: 'hello',
         number1: 42,
         number2: 76,
@@ -132,7 +120,7 @@ describe('utils', () => {
 
   describe('extend:', () => {
     it('should extend a given flat object with another flat object, overriding existing props', () => {
-      const result = utils.extend({
+      const result = extend({
         prop1: 'val1',
         prop2: 42,
         prop3: true,
@@ -156,7 +144,7 @@ describe('utils', () => {
     });
 
     it('should deep-extend a given flat object with a nested object', () => {
-      const result = utils.extend({
+      const result = extend({
         prop1: 'val1',
         prop2: 42,
         prop3: true,
@@ -196,7 +184,7 @@ describe('utils', () => {
     });
 
     it('should deep-extend a given nested object with another nested object and deep-overwrite members', () => {
-      const result = utils.extend({
+      const result = extend({
         prop1: 'val1',
         prop2: {
           propDeep1: 'deepVal1',
