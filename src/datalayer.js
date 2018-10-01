@@ -211,7 +211,7 @@ export class Datalayer {
     if (plugins) {
       // @FIXME: wait with initialize until some dedicated event happened?
       // plugins.forEach(plugin => typeof plugin.initialize === 'function' && plugin.initialize());
-      this.broadcast('initialized');
+      this.broadcast('initialized', this.globalData);
       this.log('initialize: plugins initialized', plugins);
     }
 

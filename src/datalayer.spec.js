@@ -19,10 +19,7 @@ class MockPlugin extends Plugin {
     super('mockPlugin', config, rules);
     this.config = config;
     this.events = {};
-  }
-
-  handleEvent(eventName, eventData) {
-    this.events[eventName] = eventData;
+    this.handleEvent = jest.fn();
   }
 }
 
@@ -91,6 +88,20 @@ describe('datalayer', () => {
       new module.Datalayer();
 
       expect(window._d7r).toBeDefined();
+    });
+
+    it('should send an "initialized" event and pass the global data after plugins are loaded', () => {
+      const d7r = new module.Datalayer();
+      const myMockPlugin = new MockPlugin();
+
+      d7r.initialize({
+        data: globalDataMock,
+        plugins: [myMockPlugin],
+      });
+
+      return d7r.whenReady().then(() => {
+        expect(myMockPlugin.handleEvent).toHaveBeenCalledWith('initialized', globalDataMock);
+      });
     });
   });
 
@@ -214,8 +225,8 @@ describe('datalayer', () => {
 
       return d7r.whenReady().then(() => {
         d7r.broadcast(expectedEvent.name, expectedEvent.data);
-        expect(plugin1.events[expectedEvent.name]).toEqual(expectedEvent.data);
-        expect(plugin2.events[expectedEvent.name]).toEqual(expectedEvent.data);
+        expect(plugin1.handleEvent).toHaveBeenCalledWith(expectedEvent.name, expectedEvent.data);
+        expect(plugin2.handleEvent).toHaveBeenCalledWith(expectedEvent.name, expectedEvent.data);
       });
     });
 
@@ -228,7 +239,7 @@ describe('datalayer', () => {
       d7r.initialize({ data: globalDataMock, plugins: [plugin] });
 
       d7r.whenReady().then(() => {
-        expect(plugin.events[expectedEvent.name]).toEqual(expectedEvent.data);
+        expect(plugin.handleEvent).toHaveBeenCalledWith(expectedEvent.name, expectedEvent.data);
       });
     });
 
@@ -241,7 +252,7 @@ describe('datalayer', () => {
       d7r.broadcast(expectedEvent.name, expectedEvent.data);
 
       return d7r.whenReady().then(() => {
-        expect(plugin.events[expectedEvent.name]).toEqual(expectedEvent.data);
+        expect(plugin.handleEvent).toHaveBeenCalledWith(expectedEvent.name, expectedEvent.data);
       });
     });
 
@@ -255,7 +266,7 @@ describe('datalayer', () => {
       d7r.broadcast(expectedEvent.name, expectedEvent.data);
 
       return d7r.whenReady().then(() => {
-        expect(plugin.events[expectedEvent.name]).not.toBeDefined();
+        expect(plugin.handleEvent).not.toHaveBeenCalledWith(expectedEvent.name, expectedEvent.data);
       });
     });
   });
