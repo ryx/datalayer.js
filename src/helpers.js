@@ -5,11 +5,16 @@
  * @param  src   {String} URL of script to be added
  * @param  async {Boolean} set async attribute (yes/no)
  */
-export function addScript(src, async = true) {
+export function addScript(src, async = true, onLoad = null) {
   const scriptEl = window.document.createElement('script');
   scriptEl.type = 'text/javascript';
-  scriptEl.async = async;
+  if (async) {
+    scriptEl.async = true;
+  }
   scriptEl.src = src;
+  if (typeof onLoad === 'function') {
+    scriptEl.onload = onLoad;
+  }
   const headEl = window.document.getElementsByTagName('HEAD')[0];
   headEl.appendChild(scriptEl);
   return scriptEl;

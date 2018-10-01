@@ -42,7 +42,9 @@ describe('helpers', () => {
         done();
       };
 
-      addScript('myTestURL.js', true, myCallback);
+      const scriptEL = addScript('myTestURL.js', true, myCallback);
+
+      scriptEl.onLoad
     });
     */
   });
