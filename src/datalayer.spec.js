@@ -265,6 +265,26 @@ describe('datalayer', () => {
     });
   });
 
+  describe('parseDOMNode', () => {
+    it('should trigger the appropriate extension hook and pass the expected node', () => {
+      const d7r = new module.Datalayer();
+      const triggerExtensionHookSpy = jest.spyOn(d7r, 'triggerExtensionHook');
+
+      d7r.parseDOMNode(window.document.body);
+
+      expect(triggerExtensionHookSpy).toHaveBeenCalledWith('beforeParseDOMNode', window.document.body);
+    });
+
+    it('should receive the window as default node', () => {
+      const d7r = new module.Datalayer();
+      const triggerExtensionHookSpy = jest.spyOn(d7r, 'triggerExtensionHook');
+
+      d7r.parseDOMNode();
+
+      expect(triggerExtensionHookSpy).toHaveBeenCalledWith('beforeParseDOMNode', window.document);
+    });
+  });
+
   describe('extensions', () => {
     // dummy extension for testing
     let dummyExtensionInstance = null;

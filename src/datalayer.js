@@ -143,7 +143,7 @@ export class Datalayer {
    * the node for metadata or other information.
    * @param {HTMLElement} node the DOM node to be parsed
    */
-  parseDOMNode(node) {
+  parseDOMNode(node = window.document) {
     this.log('parseDOMNode: parsing node', node);
     this.triggerExtensionHook('beforeParseDOMNode', node);
   }
