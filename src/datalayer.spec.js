@@ -39,8 +39,29 @@ describe('datalayer', () => {
   });
 
   describe('initialize', () => {
-    // @FIXME: all this should happen based on the datamodel instead
-    it('should properly recognize invalid and/or missing data', () => {
+    it('should execute a user-provided validation callback and pass the global data', () => {
+      const d7r = new module.Datalayer();
+      const expectedData = { foo: 'bar' };
+      const validationCallback = jest.fn();
+
+      d7r.initialize({
+        data: expectedData,
+        validateData: validationCallback,
+      });
+
+      expect(validationCallback).toHaveBeenCalledWith(expectedData);
+    });
+
+    it('should reject the whenReady Promise when validation callback throws an error', () => {
+      const d7r = new module.Datalayer();
+      const expectedError = new Error('ouch');
+      const validationCallback = () => { throw expectedError; };
+
+      d7r.initialize({ validateData: validationCallback });
+
+      return expect(d7r.whenReady()).rejects.toEqual(expectedError);
+
+      /* @TODO: move tests of business logic into webchannel-tracking
       expect(() => datalayer.initialize({ data: { page: { } } }))
         .toThrow(/DALPageData is invalid or missing/gi);
 
@@ -50,6 +71,7 @@ describe('datalayer', () => {
       // TODO: invalid site data
       // expect(() => datalayer.initialize({ data: { page: globalDataMock.page, site: globalDataMock.site } }))
       //  .toThrow(/DALUserData is invalid or missing/gi);
+      */
     });
 
     it('should add single plugin when passing a function to the `plugins` option', () => {
@@ -95,6 +117,23 @@ describe('datalayer', () => {
 
       return d7r.whenReady().then(() => {
         expect(myMockPlugin.handleEvent).toHaveBeenCalledWith('initialized', globalDataMock);
+      });
+    });
+
+    it('should send an "initialize-failed" event when validation calllback throws an error', () => {
+      const d7r = new module.Datalayer();
+      const myMockPlugin = new MockPlugin();
+      const expectedError = new Error('ouch');
+      const validationCallback = () => { throw expectedError; };
+
+      d7r.initialize({
+        data: globalDataMock,
+        plugins: [myMockPlugin],
+        validateData: validationCallback,
+      });
+
+      return d7r.whenReady().catch(() => {
+        expect(myMockPlugin.handleEvent).toHaveBeenCalledWith('initialize-failed', expectedError);
       });
     });
   });
