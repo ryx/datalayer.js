@@ -40,7 +40,7 @@ datalayer.initialize({
 
 The `plugins` option is the recommended way to load plugins. You simply pass a list of plugins to be loaded and initialize them right away, using their constructor. This should cover the most common usecases, for more details check out the [Plugins Documentation section]().
 
-### Communicaton
+### Communication
 The default way of communicating with datalayer.js relies on a small [Javascript API](#javascript-api). Sending events to the datalayer is as easy as calling the [`broadcast`](#broadcastnamestring-dataany-void) method from somewhere within your code.
 
 ```javascript
@@ -76,7 +76,7 @@ Communication with datalayer.js happens through it's Javascript API. The module 
 Initialize the current datalayer instance with the given options. It is mandatory to call this once before the datalayer can be used. It sets up the data, scans for metatags/annotations and loads the requested plugins. It accepts the following options:
 
 ### data: Object
-An object with globally available data used to initialize the datalayer. The provided data will be available for all plugins throughout the current application lifecycle.
+An object with globally available data used to initialize the datalayer. The provided data will be available for all plugins throughout the current application lifecycle by calling the [`getData`](#getdata-object) method on the global datalayer instance. To validate the data you can use the [validateData](#validatedata-functiondata-object) option.
 
 ### plugins: &lt;Array:datalayer.Plugin&gt;
 An array with plugin instances to be used by the datalayer.
@@ -86,6 +86,21 @@ datalayer.initialize({
   plugins: [{
     new AnalyticsPlugin({ accountId: 12345 }),
   }]
+});
+```
+
+### validateData: Function(data: Object)
+A function that can be used to validate the global data after plugins are loaded but before the `initialized` event is sent. The function receives the global
+data as only argument and is expected to throw an `Error` when the data is invalid. In such case the `Error` has to contain the error description as string. When the function throws, it causes the `initialized` event to be omitted and instead an `initialize-failed` event to be sent. Also the [`whenReady`](#whenready-promise) Promise gets rejected with the thrown Error.
+
+```javascript
+datalayer.initialize({
+  plugins: [new TestPlugin()],
+  validateData: (data) => {
+    if (!data.page || !data.site) {
+      throw new Error('Mandatory global data is missing');
+    }
+  }
 });
 ```
 
@@ -111,7 +126,7 @@ datalayer.broadcast('my-cool-event', { foo: 'bar' })
 Returns the global data as one big object. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling it from outside a plugin's lifecycle.
 
 ## getPluginByID(id:string): Object
-Get plugin with the given id and return it. If the plugin is unknown, the function returns null. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a `whenReady` Promise if calling it from outside a plugin's lifecycle.
+Get plugin with the given id and return it. If the plugin is unknown, the function returns null. **Important:** If the function is called prior to initialization it will throw an error. Always wrap this call into a [`whenReady`](#whenready-promise) Promise if calling it from outside a plugin's lifecycle.
 
 ## parseDOMNode(element:HTMLElement): void
 Parse the given DOM node and it's children and hand them over to the extensions for further logic and processing. **Important:** If you asynchronously add markup to your page (e.g. after AJAX calls, lazy loading, etc.) and that markup may contain any datalayer.js-relevant data, then you HAVE TO call `parseDOMNode` and pass it the newly added element - *after adding it to the DOM*! Otherwise the contained information won't be processed.

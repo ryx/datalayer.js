@@ -26,7 +26,6 @@ export class Datalayer {
   constructor() {
     this.initialized = false; // "ready" flag (true, if all plugins are loaded)
     this.globalData = {}; // data storage
-    this.globalConfig = {}; // configuration object (passed via odl:config)
     this.plugins = []; // array with loaded plugins
     this.extensions = []; // array with loaded extensions
     this.queue = new EventQueue();
@@ -119,7 +118,7 @@ export class Datalayer {
       }
       return null;
     }
-    throw new Error('.getPluginById called before .initialize (always wrap in whenReady())');
+    throw new Error('.getPluginByID called before .initialize (always wrap in whenReady())');
   }
 
   /**
@@ -166,7 +165,7 @@ export class Datalayer {
    */
   initialize(options = {}) {
     if (this.initialized) {
-      // @XXX: remove and allow multi-init (should simply have no negative impact!)
+      // @FIXME: remove and allow multi-init (should simply have no negative impact!)
       this.log('WARNING: already initialized');
       return false;
     }
@@ -174,52 +173,47 @@ export class Datalayer {
     // validate options
     const data = options.data || {};
 
-    // set config (@TODO: also collect config from markup here!)
-    this.globalConfig = options.config || {};
-
     // collect global data from options and extensions
     this.globalData = extend({}, data);
     this.log('initialize: global data is', this.globalData);
     const initializeHookResult = this.triggerExtensionHook('beforeInitialize');
     initializeHookResult.forEach(r => extend(this.globalData, typeof r !== 'undefined' ? r : {}));
-    if (!this.globalData) {
-      throw new Error('Supplied DALGlobalData is invalid or missing');
-    }
     this.log('initialize: extension hooks complete');
 
-    // validate mandatory data (@TODO: we might use a model-based validation here somewhen)
-    const gd = this.globalData;
-    if (!gd.page || !gd.page.type || !gd.page.name) {
-      throw new Error('Supplied DALPageData is invalid or missing');
+    // call user-provided validation callback for global data
+    let validationError = null;
+    if (typeof options.validateData === 'function') {
+      try {
+        options.validateData(this.globalData);
+      } catch (e) {
+        validationError = e;
+        this.log('initialize: validation error', e);
+      }
     }
-    if (!gd.site || !gd.site.id) {
-      throw new Error('Supplied DALSiteData is invalid or missing');
-    }
-    this.log('initialize: collected data', this.globalData);
 
     // add provided plugins
     const plugins = options.plugins || [];
     this.log('initialize: loading plugins', plugins);
-    if (plugins) {
-      plugins.forEach(plugin => this.addPlugin(plugin));
-      this.log('initialize: plugins loaded', plugins);
-    }
+    plugins.forEach(plugin => this.addPlugin(plugin));
+    this.log('initialize: plugins loaded', plugins);
 
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
     this.initialized = true;
 
-    if (plugins) {
-      // @FIXME: wait with initialize until some dedicated event happened?
-      // plugins.forEach(plugin => typeof plugin.initialize === 'function' && plugin.initialize());
+    if (validationError) {
+      // initialize failed, send error event with reason
+      this.broadcast('initialize-failed', validationError);
+      this.readyPromiseRejector(validationError);
+    } else {
+      // initialize successful
       this.broadcast('initialized', this.globalData);
       this.log('initialize: plugins initialized', plugins);
+      this.readyPromiseResolver();
+
+      // parse DOM and trigger extensions hooks
+      this.log('initialize: scanning DOM');
+      this.parseDOMNode(window.document);
     }
-
-    this.readyPromiseResolver();
-
-    // parse DOM and trigger extensions hooks
-    this.log('initialize: scanning DOM');
-    this.parseDOMNode(window.document);
 
     return this;
   }
