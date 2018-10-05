@@ -38,7 +38,7 @@ datalayer.initialize({
 });
 ```
 
-The `plugins` option is the recommended way to load plugins. You simply pass a list of plugins to be loaded and initialize them right away, using their constructor. This should cover the most common usecases, for more details check out the [Plugins Documentation section]().
+The [`plugins`](#plugins-arraydatalayerplugin) option is the recommended way to load plugins. You simply pass a list of plugins to be loaded and initialize them right away, using their constructor. This should cover the most common usecases, for more details check out the [Plugins Documentation section](#plugins).
 
 ### Communication
 The default way of communicating with datalayer.js relies on a small [Javascript API](#javascript-api). Sending events to the datalayer is as easy as calling the [`broadcast`](#broadcastnamestring-dataany-void) method from somewhere within your code.
@@ -50,7 +50,7 @@ datalayer.broadcast('page-loaded', {"page":{"type":"homepage","name":"My homepag
 There are also other ways of communicating with the datalayer, most notably the one provided by the [methodQueue extension](src/extensions/methodQueue). It allows you to access the datalayer.js API by using a global Array-like object named `_d7rq` (which translates to "datalayerqueue" ;) ..). Refer to the [extension documentation](src/extensions/methodQueue/README.md) for more details.
 
 ### Extensions
-In a real application you'll likely want to use extensions. Extensions provide more, really powerful ways of interacting with the datalayer. One common usecase is the [metadata extension](src/extensions/metadata) which aggregates rendertime data (and events) from the markup and passes it to the datalayer. This can be done with:
+Extensions provide more, really powerful ways of interacting with the datalayer. The are activated through the [`use`](#use-extensionfunctiondatalayer) method on the datalayer object like this:
 
 ```javascript
 import metadata from 'datalayerjs/extensions/metadata';
@@ -60,20 +60,25 @@ datalayer
   .initialize(...);
 ```
 
+A very common usecase is the [metadata extension](src/extensions/metadata) which aggregates "rendertime" data (and events) from the markup and passes it to the datalayer. The following metatag would result in the global `page` object being immediately available to the datalayer and its plugins (e.g. as argument to the `initialized` event or when calling [`datalayer.getData`](#getdata-object)):
+
+```xml
+<meta name="d7r:data" content='{
+  page: {
+    type: "homepage",
+    name: "My Homepage",
+  }
+}' />
+```
+
 > Be sure to check [the extensions folder](src/extensions) for additional information on available extensions!
 
-## Testmode
-TODO: explain testmode and its activation via URL
-
-
-## Building and Bundling
-After you have set up and configured your personal version of datalayer.js, it is time to build and package the datalayer core and its plugins into your global script bundle. We intentionally not provide a preferred method for that because it highly depends on the framework and tool landscape of your application or website. Common solutions are webpack, rollup or a more manual AMD-based setup using gulp or grunt. (TODO: provide examples for popular toolchains). Alternatively you might also include datalayer.js from a public CDN (e.g. [unpkg](https://unpkg.com)) and then simply embed it using a method of choice (see [Integration](#integration) for available options).
 
 # Javascript API
 Communication with datalayer.js happens through it's Javascript API. The module itself contains one default export with the name `datalayer`. That object contains the following public methods (NOTE: with the [methodQueue extension](src/extensions/methodQueue) you can access all of the described public API methods via the method queue pattern):
 
 ## initialize(options:Object): void
-Initialize the current datalayer instance with the given options. It is mandatory to call this once before the datalayer can be used. It sets up the data, scans for metatags/annotations and loads the requested plugins. It accepts the following options:
+Initialize the current datalayer instance with the given options. It is mandatory to call this once before the datalayer can be used. It validates the data, scans the DOM and loads the requested plugins. It accepts the following options:
 
 ### data: Object
 An object with globally available data used to initialize the datalayer. The provided data will be available for all plugins throughout the current application lifecycle by calling the [`getData`](#getdata-object) method on the global datalayer instance. To validate the data you can use the [validateData](#validatedata-functiondata-object) option.
@@ -132,7 +137,10 @@ Get plugin with the given id and return it. If the plugin is unknown, the functi
 Parse the given DOM node and it's children and hand them over to the extensions for further logic and processing. **Important:** If you asynchronously add markup to your page (e.g. after AJAX calls, lazy loading, etc.) and that markup may contain any datalayer.js-relevant data, then you HAVE TO call `parseDOMNode` and pass it the newly added element - *after adding it to the DOM*! Otherwise the contained information won't be processed.
 
 ## log(...args): void
-Convenience function that uses the currently active logger to generate log output. The same function is equally available inside the `Plugin` class, which uses the same logger behind the scenes. (@FIXME add logger extension that allows replacing the default logger with a custom one)
+Convenience function that uses the currently active logger to generate log output. The same function is equally available inside the `Plugin` class, which uses the same logger behind the scenes. You can use the [logger extension](src/extensions/logger) to make the logging output visible in the console or replace the internal with your own logging mechanism.
+
+## use(extension:Function): Datalayer
+Enable a given [extension](src/extensions) to be used by the datalayer. Check the [Extensions](#extensions) section for more info.
 
 
 # Models
@@ -235,15 +243,28 @@ const plugin = new ExamplePlugin(
 ```
 
 ## Plugin Lifecycle
-The plugins have a very simple (yet flexible) lifecycle. The only two "factory" events are the `initialized` and `initialize-failed` events. However, it is kind of common practice to fire `page-loaded` events from withon the embedding application and build up your website tracking flow around this.
+The plugins have a very simple (yet flexible) lifecycle. After construction, where a plugin *solely* receives configuration and internal properties, it waits for events to happen. Events are handled using the `handleEvent` method which takes a `name` and an (optional) `data` parameter.
 
-If you have a traditional, server-rendered, multi-page website then the lifecycle of your plugins is pretty obvious. They are created somewhen during script initialization and destroyed when the user unloads the current page.
+The only two "factory" events are the `initialized` and `initialize-failed` events. The `initialized` event is automatically fired by the datalayer during initialization. It receives the global data object as passed to [`datalayer.initialize`](#initializeoptionsobject-void) and aggregated from the loaded extensions. A possible `handleEvent` call, handling a `initialized`, could look like this:
 
-For single-page apps (SPAs) the lifecycle methods are extremely crucial.
-@TODO: explain lifecycle methods
+```javascript
+handleEvent(name, data) {
+  switch (name) {
+    case 'intialized': {
+      // ...
+    }
+    default:
+  }
+}
+```
+
+It is kind of common practice to fire `page-loaded` events from within the embedding application and build up your website tracking flow around this. The mechanics how and when you fire your page-loaded events can vary heavily depending on whether you have a classical, server-rendered website or a single-page application.
+
+For single-page apps (SPAs) the lifecycle methods are extremely crucial. (TODO)
+
 
 ## API
- Plugins are very simple Javascript classes, providing a constructor and a `handleEvent` method as only mandatory interface. They extend the `Plugin` class which provides a few utility methods and the abstract basics. The following example illustrates the basic structure of a plugin.
+Technically seen, plugins are very simple Javascript classes, providing a constructor and a `handleEvent` method as only mandatory interface. They extend the `Plugin` class which provides a few utility methods and the abstract basics. The following example illustrates the basic structure of a plugin.
 
 ```javascript
 import { Plugin } from 'datalayerjs';
@@ -263,19 +284,6 @@ class SomePlugin extends Plugin {
       // send some tracking event for specific pagetype
       someTool.track('pageload', name)
     }
-  }
-}
-```
-
-By default the plugins receive only one system-generated event named `initialized`. This event is automatically fired by the datalayer during initialization. It receives the global data object as passed to `datalayer.initialize` and aggregated from the loaded extensions. A possible `handleEvent` call, handling a `initialized`, could look like this:
-
-```javascript
-handleEvent(name, data) {
-  switch (name) {
-    case 'intialized': {
-      // ...
-    }
-    default:
   }
 }
 ```
