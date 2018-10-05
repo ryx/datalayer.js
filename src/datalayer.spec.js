@@ -60,21 +60,9 @@ describe('datalayer', () => {
       d7r.initialize({ validateData: validationCallback });
 
       return expect(d7r.whenReady()).rejects.toEqual(expectedError);
-
-      /* @TODO: move tests of business logic into webchannel-tracking
-      expect(() => datalayer.initialize({ data: { page: { } } }))
-        .toThrow(/DALPageData is invalid or missing/gi);
-
-      expect(() => datalayer.initialize({ data: { page: globalDataMock.page } }))
-        .toThrow(/DALSiteData is invalid or missing/gi);
-
-      // TODO: invalid site data
-      // expect(() => datalayer.initialize({ data: { page: globalDataMock.page, site: globalDataMock.site } }))
-      //  .toThrow(/DALUserData is invalid or missing/gi);
-      */
     });
 
-    it('should add single plugin when passing a function to the `plugins` option', () => {
+    it('should add a single plugin to the `plugins` option', () => {
       const d7r = new module.Datalayer();
 
       d7r.initialize({
@@ -87,7 +75,7 @@ describe('datalayer', () => {
       });
     });
 
-    it('should add multiple plugins when passing an array to the `plugins` option', () => {
+    it('should add multiple plugins to the `plugins` option', () => {
       const d7r = new module.Datalayer();
 
       d7r.initialize({
@@ -96,7 +84,7 @@ describe('datalayer', () => {
       });
 
       return d7r.whenReady().then(() => {
-        expect(d7r.getPluginByID('mockPlugin')).toBeInstanceOf(MockPlugin);
+        expect(d7r.plugins.length).toEqual(2);
       });
     });
 
