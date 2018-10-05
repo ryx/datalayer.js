@@ -234,46 +234,51 @@ const plugin = new ExamplePlugin(
 );
 ```
 
+## Plugin Lifecycle
+The plugins have a very simple (yet flexible) lifecycle. The only two "factory" events are the `initialized` and `initialize-failed` events. However, it is kind of common practice to fire `page-loaded` events from withon the embedding application and build up your website tracking flow around this.
+
+If you have a traditional, server-rendered, multi-page website then the lifecycle of your plugins is pretty obvious. They are created somewhen during script initialization and destroyed when the user unloads the current page.
+
+For single-page apps (SPAs) the lifecycle methods are extremely crucial.
+@TODO: explain lifecycle methods
+
 ## API
- Plugins are very simple Javascript objects, providing a `handleEvent` method as only convention. In fact they don't actually need to be classes at all, you could use a simple object literal as well. However, it is strongly recommended to use classes to better separate construction logic and event handling. The following example illustrates the basic structure of a plugin.
+ Plugins are very simple Javascript classes, providing a constructor and a `handleEvent` method as only mandatory interface. They extend the `Plugin` class which provides a few utility methods and the abstract basics. The following example illustrates the basic structure of a plugin.
 
 ```javascript
-class SomePlugin {
-  constructor() {
-    // perform any kind of setup here, e.g. add 3rd party script tag to DOM
-  }
+import { Plugin } from 'datalayerjs';
 
-  shouldReceiveEvent(page) {
-    // return true if page.type should be handled by this plugin
+class SomePlugin extends Plugin {
+  constructor(config, rules) {
+    super('SomePlugin', config, rules);
   }
 
   handleEvent(name, data) {
     // react on specific events sent by the datalayer and handle them
     // in any way the 3rd party requires
+    if (name === 'initialized') {
+      // perform any kind of setup here, e.g. add 3rd party script tag to DOM
+      someTool.init();
+    } else if (name === 'page-loaded') {
+      // send some tracking event for specific pagetype
+      someTool.track('pageload', name)
+    }
   }
 }
 ```
 
-By default the plugins receive only one system-generated event named `page-loaded`. This event is automatically fired by the datatlayer right after initialization. It contains the global data object as aggregated from the page. A possible `handleEvent` call, handling a `page-loaded`, could look like this:
+By default the plugins receive only one system-generated event named `initialized`. This event is automatically fired by the datalayer during initialization. It receives the global data object as passed to `datalayer.initialize` and aggregated from the loaded extensions. A possible `handleEvent` call, handling a `initialized`, could look like this:
 
 ```javascript
 handleEvent(name, data) {
   switch (name) {
-    case 'page-loaded': {
-      if (data.page.type === 'productdetail') {
-        console.log(data.product);
-      }
+    case 'intialized': {
+      // ...
     }
     default:
   }
 }
 ```
-
-## Plugin Lifecycle
-If you have a traditional, server-rendered, multi-page website then the lifecycle of your plugins is pretty obvious. They are created somewhen during script initialization and destroyed when the user unloads the current page.
-
-For single-page apps (SPAs) the lifecycle methods are extremely crucial.
-@TODO: explain lifecycle methods
 
 
 # Extensions
