@@ -180,17 +180,6 @@ export class Datalayer {
     initializeHookResult.forEach(r => extend(this.globalData, typeof r !== 'undefined' ? r : {}));
     this.log('initialize: extension hooks complete');
 
-    // call user-provided validation callback for global data
-    let validationError = null;
-    if (typeof options.validateData === 'function') {
-      try {
-        options.validateData(this.globalData);
-      } catch (e) {
-        validationError = e;
-        this.log('initialize: validation error', e);
-      }
-    }
-
     // add provided plugins
     const plugins = options.plugins || [];
     this.log('initialize: loading plugins', plugins);
@@ -200,22 +189,30 @@ export class Datalayer {
     // core initialization is ready, broadcast 'initialize' event and resolve "whenReady" promise
     this.initialized = true;
 
-    if (validationError) {
-      // initialize failed, send error event with reason
-      this.broadcast('initialize-failed', validationError);
-      this.readyPromiseRejector(validationError);
-    } else {
-      // initialize successful
-      this.broadcast('initialized', this.globalData);
-      this.log('initialize: plugins initialized', plugins);
-      this.readyPromiseResolver();
+    // call user-provided validation callback for global data
+    if (typeof options.validateData === 'function') {
+      try {
+        options.validateData(this.globalData);
+      } catch (e) {
+        // initialize failed, send error event with reason
+        this.broadcast('initialize-failed', e);
+        this.readyPromiseRejector(e);
+        this.log('initialize: validation error', e);
 
-      // parse DOM and trigger extensions hooks
-      this.log('initialize: scanning DOM');
-      this.parseDOMNode(window.document);
+        return this.readyPromise;
+      }
     }
 
-    return this;
+    // initialize successful
+    this.broadcast('initialized', this.globalData);
+    this.log('initialize: plugins initialized', plugins);
+    this.readyPromiseResolver(this.globalData);
+
+    // parse DOM and trigger extensions hooks
+    this.log('initialize: scanning DOM');
+    this.parseDOMNode(window.document);
+
+    return this.readyPromise;
   }
 
   inTestMode() {

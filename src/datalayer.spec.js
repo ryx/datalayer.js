@@ -52,14 +52,31 @@ describe('datalayer', () => {
       expect(validationCallback).toHaveBeenCalledWith(expectedData);
     });
 
-    it('should reject the whenReady Promise when validation callback throws an error', () => {
+    it('should resolve and return the readyPromise when validation callback NOT exists', () => {
+      const d7r = new module.Datalayer();
+      const expectedData = { foo: 'bar' };
+      const config = { data: expectedData };
+
+      return expect(d7r.initialize(config)).resolves.toEqual(expectedData);
+    });
+
+    it('should resolve and return the readyPromise when validation callback exists and does NOT throw', () => {
+      const d7r = new module.Datalayer();
+      const expectedData = { foo: 'bar' };
+      const config = {
+        data: expectedData,
+        validateData: () => {},
+      };
+
+      return expect(d7r.initialize(config)).resolves.toEqual(expectedData);
+    });
+
+    it('should reject and return the readyPromise when validation callback exists and throws an Error', () => {
       const d7r = new module.Datalayer();
       const expectedError = new Error('ouch');
-      const validationCallback = () => { throw expectedError; };
+      const config = { validateData: () => { throw expectedError; } };
 
-      d7r.initialize({ validateData: validationCallback });
-
-      return expect(d7r.whenReady()).rejects.toEqual(expectedError);
+      return expect(d7r.initialize(config)).rejects.toEqual(expectedError);
     });
 
     it('should add a single plugin to the `plugins` option', () => {

@@ -26,7 +26,7 @@ import {
 } from './myCustomPlugins';
 ```
 
-After including the datalayer.js module, we perform the basic setup and tell datalayer.js which plugins to load. This happens by calling the [`initialize`](#initializeoptionsobject-void) method on the global instance.
+After including the datalayer.js module, we perform the basic setup and tell datalayer.js which plugins to load. This happens by calling the [`initialize`](#initializeoptionsobject-promise) method on the global instance.
 
 ```javascript
 datalayer.initialize({
@@ -77,8 +77,8 @@ A very common usecase is the [metadata extension](src/extensions/metadata) which
 # Javascript API
 Communication with datalayer.js happens through it's Javascript API. The module itself contains one default export with the name `datalayer`. That object contains the following public methods (NOTE: with the [methodQueue extension](src/extensions/methodQueue) you can access all of the described public API methods via the method queue pattern):
 
-## initialize(options:Object): void
-Initialize the current datalayer instance with the given options. It is mandatory to call this once before the datalayer can be used. It validates the data, scans the DOM and loads the requested plugins. It accepts the following options:
+## initialize(options:Object): Promise
+Initialize the current datalayer instance with the given options and return a Promise (the same as returned by [`whenReady`](#whenready-promise)). It is mandatory to call this once before the datalayer can be used. It validates the data, scans the DOM and loads the requested plugins. It accepts the following options:
 
 ### data: Object
 An object with globally available data used to initialize the datalayer. The provided data will be available for all plugins throughout the current application lifecycle by calling the [`getData`](#getdata-object) method on the global datalayer instance. To validate the data you can use the [validateData](#validatedata-functiondata-object) option.
@@ -110,13 +110,17 @@ datalayer.initialize({
 ```
 
 ## whenReady(): Promise
-This is the main entry point if you want to use any datalayer.js functionality outside of plugins. It is resolved when the `initialize` call is finished and all configured plugins are loaded based on the provided ruleset. You can bind to the returned Promise at any time during the app lifecycle to access the API. The global datalayer.js instance is passed as only argument to the `resolve` callback (you could also use the global instance as well but local variables are better practice).
+This is the main entry point if you want to use any datalayer.js functionality outside of plugins. It is resolved when the `initialize` call is finished and all configured plugins are loaded based on the provided ruleset. If a failure occurs during validation this Promise gets rejected with the respective error object. You can bind to the returned Promise at any time during the app lifecycle to access the API. The datalayer's global data object is passed as only argument to the `resolve` callback.
 
 ```javascript
-datalayer.whenReady().then((d7r) => {
-  // access data in datalayer (data is fully aggregated and available at this point)
-  console.log(d7r.getData());
-})
+datalayer
+  .whenReady()
+  .then((data) => {
+    // access global data in datalayer (data is fully aggregated and available at this point)
+    console.log(data);
+    // broadcast some event
+    datalayer.broadcast('something-happened', { foo: 'bar' });
+  });
 ```
 
 ## broadcast(name:string, [data:any]): void
@@ -124,7 +128,7 @@ Broadcast the given event with the name defined by `name` and the optional `data
 
 ```javascript
 // broadcast event to all loaded plugins
-datalayer.broadcast('my-cool-event', { foo: 'bar' })
+datalayer.broadcast('something-happened', { foo: 'bar' })
 ```
 
 ## getData(): Object
@@ -245,7 +249,7 @@ const plugin = new ExamplePlugin(
 ## Plugin Lifecycle
 The plugins have a very simple (yet flexible) lifecycle. After construction, where a plugin *solely* receives configuration and internal properties, it waits for events to happen. Events are handled using the `handleEvent` method which takes a `name` and an (optional) `data` parameter.
 
-The only two "factory" events are the `initialized` and `initialize-failed` events. The `initialized` event is automatically fired by the datalayer during initialization. It receives the global data object as passed to [`datalayer.initialize`](#initializeoptionsobject-void) and aggregated from the loaded extensions. A possible `handleEvent` call, handling a `initialized`, could look like this:
+The only two "factory" events are the `initialized` and `initialize-failed` events. The `initialized` event is automatically fired by the datalayer during initialization. It receives the global data object as passed to [`datalayer.initialize`](#initializeoptionsobject-promise) and aggregated from the loaded extensions. A possible `handleEvent` call, handling a `initialized`, could look like this:
 
 ```javascript
 handleEvent(name, data) {
