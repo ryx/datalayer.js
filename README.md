@@ -26,7 +26,7 @@ import {
 } from './myCustomPlugins';
 ```
 
-After including the datalayer.js module, we perform the basic setup and tell datalayer.js which plugins to load. This happens by calling the [`initialize`](#initializeoptionsobject-promise) method on the global instance.
+After including the datalayer.js module we perform the basic setup and tell datalayer.js which plugins to load. This happens by calling the [`initialize`](#initializeoptionsobject-promise) method on the global instance. Alternatively, you might also import the `Datalayer` class directly and manage your own instance, if you need to.
 
 ```javascript
 datalayer.initialize({
@@ -44,7 +44,12 @@ The [`plugins`](#plugins-arraydatalayerplugin) option is the recommended way to 
 The default way of communicating with datalayer.js relies on a small [Javascript API](#javascript-api). Sending events to the datalayer is as easy as calling the [`broadcast`](#broadcastnamestring-dataany-void) method from somewhere within your code.
 
 ```javascript
-datalayer.broadcast('page-loaded', {"page":{"type":"homepage","name":"My homepage"}});
+datalayer.broadcast('page-loaded', {
+  "page":{
+    "type":"homepage",
+    "name":"My homepage"
+  }
+});
 ```
 
 There are also other ways of communicating with the datalayer, most notably the one provided by the [methodQueue extension](src/extensions/methodQueue). It allows you to access the datalayer.js API by using a global Array-like object named `_d7rq` (which translates to "datalayerqueue" ;) ..). Refer to the [extension documentation](src/extensions/methodQueue/README.md) for more details.
