@@ -1,5 +1,6 @@
 /* eslint-disable max-len, no-new */
 import Plugin from './Plugin';
+import datalayer, { Datalayer } from './datalayer';
 
 // properly define implicit globals
 const { jsdom } = global;
@@ -18,7 +19,7 @@ class MockPlugin extends Plugin {
 }
 
 describe('datalayer', () => {
-  let [module, datalayer, globalDataMock] = [];
+  let [globalDataMock] = [];
 
   beforeEach(() => {
     // setup per-test fixtures
@@ -27,11 +28,6 @@ describe('datalayer', () => {
       page: { name: 'foo', type: 'bar' },
       user: {},
     };
-    // import module
-    return import('./datalayer').then((m) => {
-      datalayer = m.default;
-      module = m;
-    });
   });
 
   it('should be an object', () => {
@@ -40,7 +36,7 @@ describe('datalayer', () => {
 
   describe('initialize', () => {
     it('should execute a user-provided validation callback and pass the global data', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const expectedData = { foo: 'bar' };
       const validationCallback = jest.fn();
 
@@ -53,7 +49,7 @@ describe('datalayer', () => {
     });
 
     it('should resolve and return the readyPromise when validation callback NOT exists', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const expectedData = { foo: 'bar' };
       const config = { data: expectedData };
 
@@ -61,7 +57,7 @@ describe('datalayer', () => {
     });
 
     it('should resolve and return the readyPromise when validation callback exists and does NOT throw', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const expectedData = { foo: 'bar' };
       const config = {
         data: expectedData,
@@ -72,7 +68,7 @@ describe('datalayer', () => {
     });
 
     it('should reject and return the readyPromise when validation callback exists and throws an Error', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const expectedError = new Error('ouch');
       const config = { validateData: () => { throw expectedError; } };
 
@@ -80,7 +76,7 @@ describe('datalayer', () => {
     });
 
     it('should add a single plugin to the `plugins` option', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
 
       d7r.initialize({
         data: globalDataMock,
@@ -93,7 +89,7 @@ describe('datalayer', () => {
     });
 
     it('should add multiple plugins to the `plugins` option', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
 
       d7r.initialize({
         data: globalDataMock,
@@ -106,7 +102,7 @@ describe('datalayer', () => {
     });
 
     it('should send an "initialized" event and pass the global data after plugins are loaded', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const myMockPlugin = new MockPlugin();
 
       d7r.initialize({
@@ -120,7 +116,7 @@ describe('datalayer', () => {
     });
 
     it('should send an "initialize-failed" event when validation calllback throws an error', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const myMockPlugin = new MockPlugin();
       const expectedError = new Error('ouch');
       const validationCallback = () => { throw expectedError; };
@@ -141,7 +137,7 @@ describe('datalayer', () => {
     describe('enable/disable', () => {
       it('should activate testmode if URL contains __d7rtest__=1', () => {
         jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=1' });
-        const d7r = new module.Datalayer();
+        const d7r = new Datalayer();
 
         d7r.initialize({ data: globalDataMock });
 
@@ -150,10 +146,10 @@ describe('datalayer', () => {
 
       it('should still BE in testmode, even after fake reload', () => {
         jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=1' });
-        new module.Datalayer();
+        new Datalayer();
 
         jsdom.reconfigure({ url: 'http://example.com' });
-        const dal2 = new module.Datalayer();
+        const dal2 = new Datalayer();
         dal2.initialize({ data: globalDataMock });
 
         expect(dal2.inTestMode()).toBe(true);
@@ -161,7 +157,7 @@ describe('datalayer', () => {
 
       it('should disable testmode if URL contains __d7rtest__=0', () => {
         jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=0' });
-        const d7r = new module.Datalayer();
+        const d7r = new Datalayer();
 
         d7r.initialize({ data: globalDataMock });
 
@@ -170,10 +166,10 @@ describe('datalayer', () => {
 
       it('should still NOT BE in testmode, even after fake reload', () => {
         jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=0' });
-        new module.Datalayer();
+        new Datalayer();
 
         jsdom.reconfigure({ url: 'http://example.com' });
-        const dal2 = new module.Datalayer();
+        const dal2 = new Datalayer();
         dal2.initialize({ data: globalDataMock });
 
         expect(dal2.inTestMode()).toBe(false);
@@ -183,7 +179,7 @@ describe('datalayer', () => {
     // @FIXME: I _think_ this is a false positive
     it('should load a specified plugin, if testmode is active, the mode evaluates to "test" and the rule evaluates to "true"', () => {
       jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=1' });
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const myPlugin = new MockPlugin();
 
       d7r.initialize({
@@ -200,7 +196,7 @@ describe('datalayer', () => {
     // @FIXME: doesn't work
     it('should NOT load a specified plugin, if testmode is inactive, the mode evaluates to "test" and the rule evaluates to "true"', (st) => {
       dom.reconfigure({ url: 'http://example.com?__d7rtest__=0' });
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       d7r.initialize({
         data: globalDataMock,
         plugins: [
@@ -216,7 +212,7 @@ describe('datalayer', () => {
 
   describe('whenReady', () => {
     it('should resolve when called BEFORE initialize', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
 
       const promise = d7r.whenReady().then(() => expect(d7r.isReady()).toBe(true));
       d7r.initialize({ data: globalDataMock });
@@ -225,7 +221,7 @@ describe('datalayer', () => {
     });
 
     it('should resolve when called AFTER initialize', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
 
       d7r.initialize({ data: globalDataMock });
 
@@ -235,7 +231,7 @@ describe('datalayer', () => {
 
   describe('addPlugin', () => {
     it('should add a plugin using addPlugin', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       d7r.initialize({ data: globalDataMock });
 
       d7r.addPlugin(new MockPlugin());
@@ -248,7 +244,7 @@ describe('datalayer', () => {
 
   describe('broadcast', () => {
     it('should broadcast an event to all available and interested plugins', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const plugin1 = new MockPlugin();
       const plugin2 = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
@@ -263,7 +259,7 @@ describe('datalayer', () => {
     });
 
     it('should broadcast an event that was sent BEFORE calling initialize', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const plugin = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
@@ -276,7 +272,7 @@ describe('datalayer', () => {
     });
 
     it('should broadcast an event that was sent AFTER calling initialize but BEFORE being ready', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const plugin = new MockPlugin();
       const expectedEvent = { name: 'my-test-event', data: { foo: 123 } };
 
@@ -289,7 +285,7 @@ describe('datalayer', () => {
     });
 
     it('should NOT broadcast event to plugins that are not interested (shouldReceiveEvent() === false)', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const plugin = new MockPlugin();
       plugin.shouldReceiveEvent = () => false;
       const expectedEvent = { name: 'test' };
@@ -305,7 +301,7 @@ describe('datalayer', () => {
 
   describe('parseDOMNode', () => {
     it('should trigger the appropriate extension hook and pass the expected node', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const triggerExtensionHookSpy = jest.spyOn(d7r, 'triggerExtensionHook');
 
       d7r.parseDOMNode(window.document.body);
@@ -314,7 +310,7 @@ describe('datalayer', () => {
     });
 
     it('should receive the window as default node', () => {
-      const d7r = new module.Datalayer();
+      const d7r = new Datalayer();
       const triggerExtensionHookSpy = jest.spyOn(d7r, 'triggerExtensionHook');
 
       d7r.parseDOMNode();
@@ -342,7 +338,7 @@ describe('datalayer', () => {
 
     describe('use', () => {
       it('should load an extension when calling use', () => {
-        const d7r = new module.Datalayer();
+        const d7r = new Datalayer();
 
         d7r.use(dummyExtension({ test: '123' }));
 
@@ -350,7 +346,7 @@ describe('datalayer', () => {
       });
 
       it('should pass the configuration to the extension', () => {
-        const d7r = new module.Datalayer();
+        const d7r = new Datalayer();
         const cfg = { test: '123' };
 
         d7r.use(dummyExtension(cfg));
@@ -359,7 +355,7 @@ describe('datalayer', () => {
       });
 
       it('should return the datalayer instance', () => {
-        const d7r = new module.Datalayer();
+        const d7r = new Datalayer();
 
         expect(d7r.use(dummyExtension())).toEqual(d7r);
       });
@@ -367,7 +363,7 @@ describe('datalayer', () => {
 
     describe('triggerExtensionHook', () => {
       it('should trigger a given extension hook', () => {
-        const d7r = new module.Datalayer();
+        const d7r = new Datalayer();
 
         // create extension, then inject our spy, then trigger hooks
         d7r.use(dummyExtension());
@@ -378,7 +374,7 @@ describe('datalayer', () => {
       });
 
       it('should trigger a given extension hook with the provided arguments', () => {
-        const d7r = new module.Datalayer();
+        const d7r = new Datalayer();
 
         // create extension, then inject our spy, then trigger hooks
         d7r.use(dummyExtension());
@@ -389,7 +385,7 @@ describe('datalayer', () => {
       });
 
       it('should trigger a given extension hook and return the individual hook results inside an array', () => {
-        const d7r = new module.Datalayer();
+        const d7r = new Datalayer();
 
         // create extension, then trigger hooks and check returned value
         d7r.use(dummyExtension());
@@ -399,7 +395,7 @@ describe('datalayer', () => {
       });
 
       it('should trigger an extension hook and pass the expected arguments to the hook function', () => {
-        const d7r = new module.Datalayer();
+        const d7r = new Datalayer();
 
         // create extension, then inject our spy, then trigger hooks
         d7r.use(dummyExtension());
