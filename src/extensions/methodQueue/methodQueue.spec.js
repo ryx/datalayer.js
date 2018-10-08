@@ -1,38 +1,24 @@
 /* eslint-disable max-len, no-new */
-import { JSDOM } from 'jsdom';
-
-// properly define implicit globals
-const {
-  describe,
-  it,
-  beforeEach,
-  expect,
-} = global;
+import methodQueue, { createMethodQueueHandler } from './methodQueue';
 
 describe('methodQueue', () => {
-  let [methodQueue, datalayerMock, dom] = [];
+  let datalayerMock = null;
 
   beforeEach(() => {
-    dom = new JSDOM('<!DOCTYPE html>');
-    global.window = dom.window;
-    global.document = window.document;
     datalayerMock = {
       broadcast: jest.fn(),
     };
-    return import('./methodQueue.js').then((m) => {
-      methodQueue = m;
-    });
   });
 
   describe('module:', () => {
     it('should export a factory which returns the extension class', () => {
-      expect(typeof methodQueue.default()).toBe('function');
+      expect(typeof methodQueue()).toBe('function');
     });
   });
 
   describe('extension factory:', () => {
     it('should install a global method queue with the default name', () => {
-      const ExtensionClass = methodQueue.default();
+      const ExtensionClass = methodQueue();
 
       new ExtensionClass(datalayerMock);
 
@@ -40,18 +26,18 @@ describe('methodQueue', () => {
     });
 
     it('should install a global method queue with a custom name if provided in config', () => {
-      const ExtensionClass = methodQueue.default({ queueName: '_myqueue' });
+      const ExtensionClass = methodQueue({ queueName: '_myqueue' });
 
       new ExtensionClass(datalayerMock);
 
       expect(window._myqueue).toBeInstanceOf(Array);
     });
 
-    it('should execute the associated API method when adding a method to the queue BEFORE init', () => {
+    it.skip('should execute the associated API method when adding a method to the queue BEFORE init', () => {
       // ...
     });
 
-    it('should execute the associated API method when adding a method to the queue AFTER init', () => {
+    it.skip('should execute the associated API method when adding a method to the queue AFTER init', () => {
       // ...
     });
   });
@@ -70,7 +56,7 @@ describe('methodQueue', () => {
       const { contextObj, apiObj } = createStubs();
 
       delete contextObj._testq;
-      methodQueue.createMethodQueueHandler(contextObj, '_testq', apiObj);
+      createMethodQueueHandler(contextObj, '_testq', apiObj);
 
       expect(typeof contextObj._testq).toBeDefined();
       expect(typeof contextObj._testq.push).toBe('function');
@@ -79,7 +65,7 @@ describe('methodQueue', () => {
     it('should use an existing method queue within the given context', () => {
       const { contextObj, apiObj } = createStubs();
 
-      methodQueue.createMethodQueueHandler(contextObj, '_testq', apiObj);
+      createMethodQueueHandler(contextObj, '_testq', apiObj);
 
       expect(typeof contextObj._testq).toBeDefined();
       expect(typeof contextObj._testq.push).toBe('function');
@@ -90,7 +76,7 @@ describe('methodQueue', () => {
 
       contextObj._testq.push(['method1', 123, 'foo']);
       contextObj._testq.push(['method2', { data: 'test' }]);
-      methodQueue.createMethodQueueHandler(contextObj, '_testq', apiObj);
+      createMethodQueueHandler(contextObj, '_testq', apiObj);
 
       expect(apiObj.method1).toHaveBeenCalledWith(123, 'foo');
       expect(apiObj.method2).toHaveBeenCalledWith({ data: 'test' });
@@ -98,7 +84,7 @@ describe('methodQueue', () => {
 
     it('should recognize and execute methods that have been added AFTER initialization', () => {
       const { contextObj, apiObj } = createStubs();
-      methodQueue.createMethodQueueHandler(contextObj, '_testq', apiObj);
+      createMethodQueueHandler(contextObj, '_testq', apiObj);
       contextObj._testq.push(['method1', 123, 'foo']);
       contextObj._testq.push(['method2', { data: 'test' }]);
 
@@ -110,7 +96,7 @@ describe('methodQueue', () => {
       const { contextObj, apiObj } = createStubs();
 
       expect(() => {
-        methodQueue.createMethodQueueHandler(contextObj, '_testq', apiObj);
+        createMethodQueueHandler(contextObj, '_testq', apiObj);
         contextObj._testq.push(['kaboom', 'bazinga!']);
       }).toThrow(/method "kaboom" not found/gi);
     });

@@ -1,38 +1,28 @@
 /* eslint-disable max-len, no-new */
+import annotations from './annotations';
 
 jest.mock('../../datalayer');
 
-// properly define implicit globals
-const {
-  describe,
-  it,
-  beforeEach,
-  expect,
-} = global;
-
 describe('annotations', () => {
-  let [annotations, datalayerMock] = [];
+  let [datalayerMock] = [];
 
   beforeEach(() => {
     datalayerMock = {
       broadcast: jest.fn(),
       log: jest.fn(),
     };
-    return import('./annotations.js').then((m) => {
-      annotations = m;
-    });
   });
 
   describe('module', () => {
     it('should export a factory which returns the extension class', () => {
-      expect(typeof annotations.default()).toBe('function');
+      expect(typeof annotations()).toBe('function');
     });
   });
 
   describe('extension factory', () => {
     describe('eventType: load', () => {
       it('should collect "load" event annotations and immediately fire their callbacks in "beforeParseDOMNode"', () => {
-        const ExtensionClass = annotations.default();
+        const ExtensionClass = annotations();
         const event = { name: 'load-test', data: { foo: 'bar' } };
         window.document.body.innerHTML = `
           <div data-d7r-event-load='${JSON.stringify(event)}'>Immediately executed</div>
@@ -49,7 +39,7 @@ describe('annotations', () => {
 
     describe('eventType: click', () => {
       it('should collect "click" event annotations and hook up the associated callbacks in "beforeParseDOMNode"', () => {
-        const ExtensionClass = annotations.default();
+        const ExtensionClass = annotations();
         const event = { name: 'click-test', data: { foo: 'bar' } };
         window.document.body.innerHTML = `
           <div id="test-click" data-d7r-event-click='${JSON.stringify(event)}'>Click event</div>
@@ -65,7 +55,7 @@ describe('annotations', () => {
       });
 
       it('should NOT add the "click" handling to the parent element', () => {
-        const ExtensionClass = annotations.default();
+        const ExtensionClass = annotations();
         const event = { name: 'click-test', data: { foo: 'bar' } };
         window.document.body.innerHTML = `
           <div id="test-click" data-d7r-event-click='${JSON.stringify(event)}'>Click event</div>
@@ -83,7 +73,7 @@ describe('annotations', () => {
     describe('eventType: view', () => {
       it('should NOT initialize view event tracking if not explictly enabled', () => {
         window.IntersectionObserver = jest.fn();
-        const ExtensionClass = annotations.default();
+        const ExtensionClass = annotations();
 
         new ExtensionClass();
 
@@ -92,7 +82,7 @@ describe('annotations', () => {
 
       it('should initialiize view event tracking if explictly enabled', () => {
         window.IntersectionObserver = jest.fn();
-        const ExtensionClass = annotations.default({ enableViewEvents: true });
+        const ExtensionClass = annotations({ enableViewEvents: true });
 
         new ExtensionClass();
 
@@ -102,7 +92,7 @@ describe('annotations', () => {
       // because JSDOM doesn't do any rendering
       /*
       it('should immediately fire events for an already visible element', () => {
-        const ExtensionClass = annotations.default();
+        const ExtensionClass = annotations();
         const event = { name: 'already-in-view-test', data: { foo: 'bar' } };
         window.document.body.innerHTML = `
           <div data-d7r-event-view='${JSON.stringify(event)}'>Immediately visible</div>
@@ -116,7 +106,7 @@ describe('annotations', () => {
       });
 
       it('should NOT immedietaly fire events for a non-visible element', () => {
-        const ExtensionClass = annotations.default();
+        const ExtensionClass = annotations();
         const event = { name: 'cmoing-into-view-test', data: { foo: 'bar' } };
         window.document.body.innerHTML = `
           <div style="margin-top:10000px" data-d7r-event-view='${JSON.stringify(event)}'>Not visible</div>
@@ -132,7 +122,7 @@ describe('annotations', () => {
     });
 
     it('should throw an error when encountering an invalid event type', () => {
-      const ExtensionClass = annotations.default();
+      const ExtensionClass = annotations();
       const extension = new ExtensionClass(datalayerMock);
 
       extension.initializeAnnotationCallback(window.document.body, 'foo', () => {});
@@ -141,7 +131,7 @@ describe('annotations', () => {
     });
 
     it('should NOT throw (but log error instead) when encountering invalid JSON', () => {
-      const ExtensionClass = annotations.default();
+      const ExtensionClass = annotations();
       window.document.body.innerHTML = '<div id="test-click" data-d7r-event-click="ka-boom ...">I will explode</div>';
 
       const extension = new ExtensionClass(datalayerMock);

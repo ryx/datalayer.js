@@ -2,8 +2,5 @@
   "presets": [
     "es2015"
   ],
-  "plugins": [
-    "dynamic-import-node"
-  ],
   "retainLines": true
 }

@@ -1,10 +1,5 @@
 // properly define implicit globals
-const {
-  describe,
-  it,
-  beforeEach,
-  expect,
-} = global;
+import cookie from './cookie';
 
 // this is a very naive cookie implementation, because jsdom cookies suck badly
 let gCookieStr = '';
@@ -16,10 +11,6 @@ Object.defineProperty(global.document, 'cookie', {
 });
 
 describe('cookie', () => {
-  let [cookie] = [];
-
-  beforeEach(() => import('./cookie').then((m) => { cookie = m.default; }));
-
   describe('get', () => {
     it('should get a cookie with a given name and return its value', () => {
       window.document.cookie = 'foo=bar';
