@@ -248,7 +248,4 @@ export class Datalayer {
 // create new datalayer singleton instance
 const datalayer = new Datalayer();
 
-// XXX: store datalayer reference in window (currently needed for functionally testing plugins)
-window._d7r = datalayer;
-
 export default datalayer;

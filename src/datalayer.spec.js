@@ -105,12 +105,6 @@ describe('datalayer', () => {
       });
     });
 
-    it('should provide a global variable "_d7r" in window', () => {
-      new module.Datalayer();
-
-      expect(window._d7r).toBeDefined();
-    });
-
     it('should send an "initialized" event and pass the global data after plugins are loaded', () => {
       const d7r = new module.Datalayer();
       const myMockPlugin = new MockPlugin();
