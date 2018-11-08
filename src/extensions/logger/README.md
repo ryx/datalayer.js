@@ -8,7 +8,7 @@ In most real-world projects there will likely be an existing logging solution in
 The default logging is easily enabled by using the extension in your code. *Important*: the logger extension should be the first of all extensions you pass to `Datalayer.use`, so it can immediately capture potential logging output by other extensions.
 
 ```javascript
-import logger from 'datalayerjs/extensions/logger';
+import { logger } from 'datalayerjs';
 
 datalayer.use(logger());
 ```

@@ -8,7 +8,7 @@ This extension provides so called "event annotations" that greatly simplify the 
 First enable the extension in your code, then use event annotations anywhere to easily broadcast datalayer events without setting up additional script logic.
 
 ```javascript
-import annotations from 'datalayerjs/extensions/annotations';
+import { annotations } from 'datalayerjs';
 
 datalayer.use(annotations());
 ```

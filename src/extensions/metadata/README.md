@@ -8,7 +8,7 @@ This extension enables the "rendertime data" feature in datalayer.js. Rendertime
 First enable the extension in your code, then use metadata to provide rendertime events and data to datalayer.js.
 
 ```javascript
-import annotations from 'datalayerjs/extensions/metadata';
+import { metadata } from 'datalayerjs';
 
 datalayer.use(metadata());
 ```

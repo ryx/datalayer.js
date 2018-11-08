@@ -8,7 +8,7 @@ This extensions makes it possible to access the datalayer using the method queue
 First enable the extension in your code
 
 ```javascript
-import annotations from 'datalayerjs/extensions/methodQueue';
+import { methodQueue } from 'datalayerjs';
 
 datalayer.use(methodQueue());
 ```
