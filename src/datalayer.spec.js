@@ -240,6 +240,35 @@ describe('datalayer', () => {
         expect(d7r.getPluginByID('mockPlugin')).toBeInstanceOf(MockPlugin);
       });
     });
+
+    it('should trigger the appropriate extension hook and pass the expected plugin', () => {
+      const d7r = new Datalayer();
+      const plugin = new MockPlugin();
+      const triggerExtensionHookSpy = jest.spyOn(d7r, 'triggerExtensionHook');
+      d7r.initialize({ data: globalDataMock });
+
+      d7r.addPlugin(plugin);
+
+      expect(triggerExtensionHookSpy).toHaveBeenCalledWith('beforeAddPlugin', plugin);
+    });
+
+    it('should abort plugin execution if an extension\'s `beforeAddPlugin` hook returns `false`', () => {
+      const d7r = new Datalayer();
+      const plugin = new MockPlugin();
+      const extensionStub1 = { beforeAddPlugin: jest.fn() };
+      const extensionStub2 = { beforeAddPlugin: jest.fn() };
+      extensionStub1.beforeAddPlugin.mockReturnValue(true);
+      extensionStub2.beforeAddPlugin.mockReturnValue(false);
+      d7r.use(() => extensionStub1);
+      d7r.use(() => extensionStub2);
+      d7r.initialize({ data: globalDataMock });
+
+      d7r.addPlugin(plugin);
+
+      expect(extensionStub1.beforeAddPlugin).toHaveBeenCalledWith(plugin);
+      expect(extensionStub2.beforeAddPlugin).toHaveBeenCalledWith(plugin);
+      expect(d7r.plugins).not.toContain(plugin);
+    });
   });
 
   describe('broadcast', () => {

@@ -58,7 +58,7 @@ There are also other ways of communicating with the datalayer, most notably the 
 Extensions provide more, really powerful ways of interacting with the datalayer. The are activated through the [`use`](#use-extensionfunctiondatalayer) method on the datalayer object like this:
 
 ```javascript
-import metadata from 'datalayerjs/extensions/metadata';
+import { metadata } from 'datalayerjs';
 
 datalayer
   .use(metadata({}))
@@ -304,8 +304,7 @@ The core of datalayer.js can be easily extended with new functionality. The proc
 ## Using extensions
 Usage example for one of the factory extensions, enabling the "event annotations" feature.
 ```javascript
-import datalayer from 'datalayerjs';
-import annotations from 'datalayerjs/extensions/annotations';
+import datalayer, { annotations } from 'datalayerjs';
 
 datalayer
   .use(annotations())
@@ -313,24 +312,25 @@ datalayer
 ```
 
 ## Extension API
-Creating an extension is pretty easy. It just requires a simple module with the following structure.
+Creating your own extensions is pretty easy. It just requires a simple module with the following structure.
 ```javascript
-export default (config) => class ExampleExtension {
+export default (config = {
+  customKey: 'value',
+}) => class ExampleExtension {
   constructor(datalayer) {
     this.datalayer = datalayer;
     // init prerequisites
     // ...
   }
 
+  // handle addPlugin calls (e.g. useful to extend global data)
+  beforeAddPlugin(plugin) {}
+
+  // handle initialize event (e.g. useful to extend global data)
+  beforeInitialize(data) {}
+
   // handle element scan (called before/after scanElementFor*)
-  beforeScanElement(element) {}
-
-  afterScanElement(element) {}
-
-  // handle event broadcast (called before/after broadcasting event to plugins)
-  beforeBroadcast(name, data) {}
-
-  afterBroadcast(name, data) {}
-}
+  beforeParseDOMNode(element) {}
+};
 ```
 

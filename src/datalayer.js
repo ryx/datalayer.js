@@ -150,9 +150,14 @@ export class Datalayer {
   /**
    * Add the given plugin instance to internal list and subscribe it to the event
    * queue, then broadcast event history to it.
-   * @param {Object} plugin  reference to the plugin instance
+   * @param {datalayerjs.Plugin} plugin  reference to the plugin instance
    */
   addPlugin(plugin) {
+    const addPluginHookResult = this.triggerExtensionHook('beforeAddPlugin', plugin);
+    if (addPluginHookResult.filter(v => v === false).length > 0) {
+      this.log('addPlugin: beforeAddPlugin returned false, skipping plugin', plugin);
+      return;
+    }
     // add plugin , then broadcast all events that happened since initialization
     // @FIXME: add timestamp to events so plugins can decide to ignore old events
     this.plugins.push(plugin);
