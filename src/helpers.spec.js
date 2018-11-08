@@ -13,12 +13,12 @@ describe('helpers', () => {
 
   describe('addScript', () => {
     it('should append a script tag with a given source', () => {
-      addScript('myTestURL.js');
+      addScript('http://localhost/myTestURL.js');
 
-      const script = window.document.querySelector('script[src="myTestURL.js"]');
+      const script = window.document.querySelector('script[src="http://localhost/myTestURL.js"]');
       expect(script).toBeDefined();
       expect(script.tagName.toLowerCase()).toEqual('script');
-      expect(script.src).toEqual('myTestURL.js');
+      expect(script.src).toEqual('http://localhost/myTestURL.js');
     });
 
     it('should set the appended script tag as async if called without second argument', () => {

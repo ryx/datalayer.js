@@ -78,9 +78,10 @@ describe('utils', () => {
     it('should accept a different parent context as argument and collect metatags only within that element', () => {
       const data = { outerProp: 'foo' };
       const innerData = { innerProp: 'bar' };
-      window.document.querySelector('body').innerHTML =
-        `<meta name="dal:data" content='${JSON.stringify(data)}' />` +
-        `<div id="data-container"><meta name="dal:data" content='${JSON.stringify(innerData)}' /></div>`;
+      window.document.querySelector('body').innerHTML = `
+        <meta name="dal:data" content='${JSON.stringify(data)}' />
+        <div id="data-container"><meta name="dal:data" content='${JSON.stringify(innerData)}' /></div>
+      `;
 
       expect(collectMetadata('dal:data', () => {}, '#data-container')).toEqual(innerData);
     });
@@ -91,10 +92,11 @@ describe('utils', () => {
 
     it('should fire a callback for each collected metatag and pass element and JSON.parse\'d content', () => {
       const collectedData = [];
-      window.document.querySelector('body').innerHTML =
-        '<meta name="dal:data" content=\'{"foo":"bar"}\' />' +
-        '<meta name="dal:data" content=\'{"foo":"bar"}\' />' +
-        '<meta name="dal:data" content=\'{"foo":"bar"}\' />';
+      window.document.querySelector('body').innerHTML = `
+        <meta name="dal:data" content='{"foo":"bar"}' />
+        <meta name="dal:data" content='{"foo":"bar"}' />
+        <meta name="dal:data" content='{"foo":"bar"}' />
+      `;
 
       collectMetadata('dal:data', (err, element, content) => collectedData.push(content));
 
@@ -102,10 +104,11 @@ describe('utils', () => {
     });
 
     it('should return an object with an aggregation of all provided metatags\' data', () => {
-      window.document.querySelector('body').innerHTML =
-        '<meta name="dal:data" content=\'{"string1":"hello","number1":42}\' />' +
-        '<meta name="dal:data" content=\'{"string2":"foo","number2":76}\' />' +
-        '<meta name="dal:data" content=\'{"string3":"bar","number3":777}\' />';
+      window.document.querySelector('body').innerHTML = `
+        <meta name="dal:data" content='{"string1":"hello","number1":42}' />
+        <meta name="dal:data" content='{"string2":"foo","number2":76}' />
+        <meta name="dal:data" content='{"string3":"bar","number3":777}' />
+      `;
 
       expect(collectMetadata('dal:data', () => {})).toEqual({
         string1: 'hello',

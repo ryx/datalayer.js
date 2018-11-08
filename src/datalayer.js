@@ -242,7 +242,8 @@ export class Datalayer {
         return false;
       }
       return true;
-    } else if (window.location.search.match(/__d7rtest__=1/gi)) {
+    }
+    if (window.location.search.match(/__d7rtest__=1/gi)) {
       cookie.set('__d7rtest__', '1', { path: '/', maxAge: 3600 * 24 * 7 });
       return true;
     }

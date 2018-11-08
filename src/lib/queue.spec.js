@@ -13,6 +13,7 @@ class EventSubscriber {
     this.id = id;
     this.caughtEvents = [];
   }
+
   handleEvent(name, data) {
     this.caughtEvents.push([name, data]);
   }

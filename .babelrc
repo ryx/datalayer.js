@@ -1,6 +1,14 @@
 {
   "presets": [
-    "es2015"
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "chrome": "66",
+          "ie": "11"
+        }
+      }
+    ]
   ],
   "retainLines": true
 }
