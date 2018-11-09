@@ -1,6 +1,6 @@
 {
   "name": "datalayerjs",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "description": "An open-source datalayer, tagmanager, and frontend middleware",
   "author": "Rico Pfaus",
   "license": "MIT",
