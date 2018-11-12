@@ -8,82 +8,132 @@ This extension records a history of channel touchpoints based on a given configu
 The attribution extension creates an `attribution` property in the datalayer's global data. You can then perform conditional operations against the attribution data, e.g. from within a plugin's custom rules handler. That way it is easily possible to only load a plugin if a certain attribution criteria is fulfilled.
 
 ```javascript
-new MyTestPlugin(
-  { accountId: 'abc123' },
-  (data) => {
-    // only execute on the conversion page, if the attribution data matches a given campaign
-    return data.page.type === 'conversion' &&
-      data.attribution.channel === 'affiliate' &&
-      data.attribution.campaign.match(/fooPartner\//g);
-  },
-);
+import { attribution } from 'datalayerjs';
+
+datalayer
+  .use(attribution({
+    // ...
+  }))
+  .initialize({
+    plugins: [
+      new MyTestPlugin(
+        { accountId: 'abc123' },
+        (data) => {
+          // only execute on the conversion page, if the attribution data matches a given campaign
+          return data.page.type === 'conversion' &&
+            data.attribution.current &&
+            data.attribution.current[0].id === 'affiliate' &&
+            data.attribution.current[0].campaign.match(/fooPartner\//g);
+        },
+      ),
+    ]
+  })
+```
+
+## Example Data
+Let's assume a user visits our webshop by clicking an ad on some website. A few days later she comes back by clicking an SEA link in a Google search result. Another few days later she comes back by directly typing in the URL into her browsers address bar and completes her conversion. This little journey created three touchpoints, one using an "affiliate" channel, one using an "SEA" channel and one using a "direct" type-in.
+
+The following example illustrates the resulting data of this journey. For the sake of simplicity, we use a ["Last Interaction" (or "Last Click") model](https://support.google.com/analytics/answer/1665189) for the attribution here so there is exactly one touchpoint getting all the credit. We also assume that "direct" is not allowed to override SEA (common scenario because the paid channel shouldn't be overridden), so SEA wins here. In terms of data the touchpoint in `attribution.current[0].touchpoint` represents our winning channel.
+
+
+```javascript
+{
+  "attribution": {
+    "current": [
+      {
+        "touchpoint": {
+          "id": "sea",
+          "label": "SEA (Google Adwords)",
+          "campaign": "my/custom/campaign/123"
+        },
+        "weight": 100
+      }
+    ],
+    "history": [
+      {
+        "id": "affiliate",
+        "label": "Affiliate (Display Agency)",
+        "campaign": "some/banner/777"
+      },
+      {
+        "id": "sea",
+        "label": "SEA (Google Adwords)",
+        "campaign": "my/custom/campaign/123"
+      },
+      {
+        "id": "direct",
+        "label": "Direct Type-in",
+        "campaign": ""
+      }
+    ]
+  }
+}
 ```
 
 ## Related Data Types
-The attribution data has the following type signature (see [documentation about datalayer.js models and types](https://github.com/ryx/datalayerjs#models) for details):
+The attribution data has the following type signature (see [documentation about datalayer.js models and types](https://github.com/ryx/datalayerjs#models) for details). The types are expressed using [Typescript interfaces](https://www.typescriptlang.org/docs/handbook/interfaces.html).
 
 ### D7rAttributionData
 Global attribution data that gets assigned to `data.attribution` when extension is used.
 
-```javascript
-{
-  "name": "D7rAttributionData",
-  "type": "record",
-  "fields": [
-    {
-      "name": "channel",
-      "type": "D7rChannelData", // @FIXME: should be union with null!!
-      "info": "Recognized channel for the current page impression"
-    },
-    {
-      "name": "touchpoint",
-      "type": "D7rTouchpointData", // @FIXME: should be union with null!!
-      "info": "Recognized touchpoint for the current page impression"
-    }
-  ]
+```typescript
+interface D7rAttributionData {
+  /**
+   * List with attributed touchpoints for the current conversion journey (i.e.
+   * after applying chosen attribution model to available touchpoint history)
+   */
+  current: D7rTouchpointAttributionData[] | [];
+
+  /**
+   * Entire touchpoint history for all journeys created by this customer
+   */
+  history: D7rTouchpointData[] | [];
 }
 ```
 
-### D7rChannelData
-Contains data about a specific campaign and the associated marketing channel. Used in conjunction with the attribution extension.
+### D7rTouchpointAttributionData
+Contains data about a single attributed touchpoint and the weight it had for the entire conversion journey. This data is the result of applying a specific attribution model logic to a list of touchpoints. The `weight` can be any numerical value, but it is recommended to use percentage values adding up to a total of 100 for all attributed touchpoints connected to a single `DALAttributionData` object.
 
-```javascript
-{
-  "name": "D7rChannelData",
-  "type": "record",
-  "fields": [
-    {
-      "name": "channel",
-      "type": "string",
-      "info": "Channel name."
-    },
-    {
-      "name": "campaign",
-      "type": "string",
-      "info": "Campaign name."
-    }
-  ]
+```typescript
+interface D7rTouchpointAttributionData {
+  /**
+   * Touchpoint that gets attributed. The contained touchpoint HAS TO occur in the
+   * `history` array of the associated D7rAttributionData, too.
+   */
+  touchpoint: D7rTouchpointData;
+
+  /**
+   * The weight defines the percentage of the credit this touchpoint receives
+   * from the entire attribution. E.g. n a first- or last-click model this would
+   * be set to 100.
+   */
+  weight: number;
 }
 ```
 
 ### D7rTouchpointData
-Contains data about one specific touchpoint, created when a new instance of the attribution.js is spawned.
+Contains data about one individual touchpoint. This gets created whenever attribution.js recognizes a touchpoint based on a user interaction.
 
-```javascript
-{
-  "name": "D7rTouchpointData",
-  "type": "record",
-  "fields": [
-    {
-      "name": "timestamp",
-      "type": "int",
-      "info": "Timestamp (in milliseconds) when this touchpoint was created."
-    },
-    {
-      "name": "channel",
-      "type": "D7rChannelData",
-      "info": "Associated channel that lead to this touchpoint."
-    }
-  ]
+```typescript
+interface D7rTouchpointAttributionData {
+  /**
+   * ID (unique identifier) of associated channel that lead to this touchpoint. This
+   * reflects the value that was passed in the attribution.js configuration. Common
+   * values for this are the media and/or marketing channel type (sea/seo/...).
+   */
+  id: string;
+
+  /**
+   * Display name of associated channel. This is also taken from the attribution.js
+   * configuration object. The contained value is likely what marketers want to
+   * see inside their reports so this value is usually passed to analytics
+   * tools.
+   */
+  label: string;
+
+  /**
+   * Associated campaign identifier that lead to this touchpoint.
+   */
+  campaign: string;
 }
 ```
