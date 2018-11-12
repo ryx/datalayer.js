@@ -19,7 +19,6 @@
  * });
  *
  */
-// import window from 'gk/globals/window';
 
 /**
  * Internal data record object with visit timestamp and touchpoint objects. Contains an object in the form of
@@ -31,17 +30,16 @@
  */
 let _data = null;
 
-const curTime = parseInt((new window.Date()).getTime() / 1000, 10);
-
 /**
  * Internal config object with default setup.
  */
-const _config = {
+const _defaultConfig = {
   cookieName: '__mcajs',
   channels: [],
   touchpointLifetime: 2592000, /* 60 * 60 * 24 * 30 = 30 days */
   visitDuration: 1800, /* 60 * 30 = 30min */
 };
+let _config = JSON.parse(JSON.stringify(_defaultConfig));
 
 /**
  * Internal list with available channel handling callbacks as key/value pairs.
@@ -55,10 +53,17 @@ const _channelCallbacks = {};
  * @FIXME: we should cache the recognition results and only process this stuff once ;)
  */
 const _searchEngineRules = [
-  { rule: /(\.)?(google|bing|yahoo|duckduckgo)(?=\.[a-z.]{2,5})/ig, valueParam: false },
+  /* eslint-disable max-len */
+  { rule: /(\.)?(google|googlesyndication|googleadservices|naver|bing|yahoo|yandex|daum|baidu|myway|ecosia|ask|dogpile|sogou|seznam|aolsvc|altavista|duckduckgo|mywebsearch|wow|webcrawler|infospace|blekko|docomo)(?=\.[a-z.]{2,5})/gi, valueParam: false },
+  /* eslint-enable */
   { rule: /(\.)?(goo\.gl)/ig, valueParam: false },
   { rule: /^android-app:\/\/com\.google\.android/ig, valueParam: false },
 ];
+
+// Return current time as UNIX timestamp /seconds-based)
+function getCurrentTime() {
+  return parseInt((new window.Date()).getTime() / 1000, 10);
+}
 
 /**
  * Get a query parameter's value from window.location.search or a given string context.
@@ -99,7 +104,7 @@ export function getConfig() {
  * `match`: ...
  * @param {Object} config
  */
-function handleMatchTypeChannel(config) {
+export function handleMatchTypeChannel(config) {
   let match = null;
   if (typeof config.match === 'string') {
     // simply check for existence of provided parameter in query string
@@ -136,7 +141,7 @@ function handleMatchTypeChannel(config) {
  * the following options in `config`:
  * @param {Object} config
  */
-function handleReferrerTypeChannel(config) {
+export function handleReferrerTypeChannel(config) {
   let ref = config.referrer;
   if (config.referrer instanceof RegExp || typeof config.referrer === 'function') {
     ref = [config.referrer];
@@ -158,12 +163,10 @@ function handleReferrerTypeChannel(config) {
  * Validate referrer against pre-defined list of search engines.
  * @param {Object} config
  */
-function handleSearchEngineTypeChannel(config) {
+export function handleSearchEngineTypeChannel(config) {
   for (let j = 0; j < _searchEngineRules.length; j += 1) {
     const engine = _searchEngineRules[j];
-    // let hostTmp = (document.referrer || '').split('/');
-    // hostTmp = hostTmp[0].split('?');
-    if (engine.rule.exec(window.document.referrer)) {
+    if (window.document.referrer.match(engine.rule)) {
       return { c: config.name, v: engine.value ? getQueryParam(engine.valueParam) : '' };
     }
   }
@@ -215,14 +218,13 @@ export function getAttributedChannel() {
     for (let i = 0; i < _data.e.length; i += 1) {
       const touchPoint = _data.e[i];
       const touchPointConfig = getChannelConfigByName(touchPoint.c);
-      const winnerConfig = winner ? getChannelConfigByName(winner.c) : null;
+      // const winnerConfig = winner ? getChannelConfigByName(winner.c) : null;
       // @FIXME: handle error on missing config!
       if (
         // if given touchpoint is still "alive" ..
-        touchPoint.t > curTime - _config.touchpointLifetime
+        touchPoint.t > getCurrentTime() - _config.touchpointLifetime
         && (
           winner === null // set if still empty
-          || !winnerConfig.canOverwrite // overwrite previous, if overwriteable
           || touchPointConfig.canOverwrite // overwrite previous if current may overwrite
         )
       ) {
@@ -246,6 +248,7 @@ export function storageRead(key) {
     json = window.localStorage.getItem(key);
   } catch (e) {
     // just silently handle this
+    console.error(e);
   }
   if (!json) {
     const match = window.document.cookie.match(new RegExp(`(^| )${key}=([^;]+)`));
@@ -290,6 +293,7 @@ addChannelHandlingCallback('searchEngine', handleSearchEngineTypeChannel);
  * @returns {Object} channel object
  */
 export function initAttribution(config = {}) {
+  const curTime = getCurrentTime();
   let currentChannel = null;
   // @TODO validate config
   // ...
@@ -299,7 +303,7 @@ export function initAttribution(config = {}) {
 
   // fetch data object from storage
   if (!_data) {
-    _data = storageRead(_config.cookieName) || { e: [] };
+    _data = storageRead(_config.cookieName) || { e: [], lt: 0 };
   }
 
   // Scan the environment (e.g. referrer/URL) for an existing channel based on the provided
@@ -337,6 +341,15 @@ export function initAttribution(config = {}) {
   return currentChannel || null;
 }
 
+/**
+ * Reset all attribution information for the current session. Used in
+ * testing to reset state and clear all local data.
+ */
+export function resetAttribution() {
+  _data = null; // { e: [], lt: 0 };
+  _config = JSON.parse(JSON.stringify(_defaultConfig));
+}
+
 export default {
   initAttribution,
   addChannelHandlingCallback,
@@ -348,4 +361,5 @@ export default {
   getAttributedChannel,
   storageRead,
   storageWrite,
+  handleSearchEngineTypeChannel,
 };
