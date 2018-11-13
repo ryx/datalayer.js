@@ -13,9 +13,14 @@ import { metadata } from 'datalayerjs';
 datalayer.use(metadata());
 ```
 
-### Rendertime markup
+### Rendertime Markup
 ```xml
 <meta name="d7r:data" content='{"page":{"type":"homepage","name":"My homepage"}}' />
+```
+
+### Rendertime Events
+```xml
+<meta name="d7r:event" content='{"name":"user-action","data":"something/has/happended"}' />
 ```
 
 ## Options
