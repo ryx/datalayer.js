@@ -1,6 +1,8 @@
 /* eslint-disable max-len, no-new */
 import attribution from './attribution';
 
+const { jsdom } = global;
+
 describe('attribution', () => {
   describe('module', () => {
     it('should export a factory which returns the extension class', () => {
@@ -17,12 +19,40 @@ describe('attribution', () => {
       const data = instance.beforeInitialize();
 
       expect(data.attribution).toEqual({
-        channel: {
-          campaign: '',
-          name: '',
-          config: null,
-        },
-        touchpoint: null,
+        credits: [],
+        currentTouchpoint: null,
+      });
+    });
+
+    it('should return currentTouchpoint and credits according to provided config when calling "beforeInitialize"', async () => {
+      jsdom.reconfigure({ url: 'http://example.com?adword=my/campaign/123' });
+      const ExtensionContructor = attribution({
+        channels: [
+          {
+            name: 'sea',
+            label: 'SEA (js)',
+            type: 'match',
+            match: 'adword',
+            value: 'adword',
+            canOverwrite: true,
+          },
+        ],
+      });
+      const instance = new ExtensionContructor();
+      const expectedTouchpointData = {
+        id: 'sea',
+        label: 'SEA (js)',
+        campaign: 'my/campaign/123',
+      };
+
+      const data = instance.beforeInitialize();
+
+      expect(data.attribution).toEqual({
+        credits: [{
+          touchpoint: expectedTouchpointData,
+          weight: 100,
+        }],
+        currentTouchpoint: expectedTouchpointData,
       });
     });
   });

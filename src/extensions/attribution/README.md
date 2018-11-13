@@ -21,7 +21,7 @@ datalayer
         (data) => {
           // only execute on the conversion page, if the attribution data matches a given campaign
           return data.page.type === 'conversion' &&
-            data.attribution.current &&
+            data.attribution.current.length > 0 &&
             data.attribution.current[0].id === 'affiliate' &&
             data.attribution.current[0].campaign.match(/fooPartner\//g);
         },
@@ -33,13 +33,13 @@ datalayer
 ## Example Data
 Let's assume a user visits our webshop by clicking an ad on some website. A few days later she comes back by clicking an SEA link in a Google search result. Another few days later she comes back by directly typing in the URL into her browsers address bar and completes her conversion. This little journey created three touchpoints, one using an "affiliate" channel, one using an "SEA" channel and one using a "direct" type-in.
 
-The following example illustrates the resulting data of this journey. For the sake of simplicity, we use a ["Last Interaction" (or "Last Click") model](https://support.google.com/analytics/answer/1665189) for the attribution here so there is exactly one touchpoint getting all the credit. We also assume that "direct" is not allowed to override SEA (common scenario because the paid channel shouldn't be overridden), so SEA wins here. In terms of data the touchpoint in `attribution.current[0].touchpoint` represents our winning channel.
+The following example illustrates the resulting data of this journey. For the sake of simplicity, we use a ["Last Interaction" (or "Last Click") model](https://support.google.com/analytics/answer/1665189) for the attribution here so there is exactly one touchpoint getting all the credit. We also assume that "direct" is not allowed to override SEA (common scenario because the paid channel shouldn't be overridden), so SEA wins here. In terms of data the touchpoint in `attribution.credits[0].touchpoint` represents our winning channel, while `attribution.currentTouchpoint` contains the touchpoint data for the current page impression.
 
 
 ```javascript
 {
   "attribution": {
-    "current": [
+    "credits": [
       {
         "touchpoint": {
           "id": "sea",
@@ -49,29 +49,17 @@ The following example illustrates the resulting data of this journey. For the sa
         "weight": 100
       }
     ],
-    "history": [
-      {
-        "id": "affiliate",
-        "label": "Affiliate (Display Agency)",
-        "campaign": "some/banner/777"
-      },
-      {
-        "id": "sea",
-        "label": "SEA (Google Adwords)",
-        "campaign": "my/custom/campaign/123"
-      },
-      {
-        "id": "direct",
-        "label": "Direct Type-in",
-        "campaign": ""
-      }
-    ]
+    "currentTouchpoint": {
+      "id": "direct",
+      "label": "Direct Type-in",
+      "campaign": ""
+    }
   }
 }
 ```
 
 ## Related Data Types
-The attribution data has the following type signature (see [documentation about datalayer.js models and types](https://github.com/ryx/datalayerjs#models) for details). The types are expressed using [Typescript interfaces](https://www.typescriptlang.org/docs/handbook/interfaces.html).
+The attribution data has the following type signature (see [documentation about datalayer.js models and types](https://github.com/ryx/datalayerjs#models) for details). The types are expressed using [Typescript interfaces](https://www.typescriptlang.org/docs/handbook/interfaces.html) for convenience, but **Typescript is in no way necessary to use this** in your project. We could have equally used C or Java or any other strictly typed language for this list.
 
 ### D7rAttributionData
 Global attribution data that gets assigned to `data.attribution` when extension is used.
@@ -80,22 +68,23 @@ Global attribution data that gets assigned to `data.attribution` when extension 
 interface D7rAttributionData {
   /**
    * List with attributed touchpoints for the current conversion journey (i.e.
-   * after applying chosen attribution model to available touchpoint history)
+   * after applying chosen attribution model to available touchpoint history).
+   * May be an empty array (if no attribution is available), but HAS TO be defined.
    */
-  current: D7rTouchpointAttributionData[] | [];
+  credits: D7rTouchpointAttributionData[];
 
   /**
    * Entire touchpoint history for all journeys created by this customer
    */
-  history: D7rTouchpointData[] | [];
+  currentTouchpint: D7rTouchpointData | undefined;
 }
 ```
 
-### D7rTouchpointAttributionData
+### D7rTouchpointCreditData
 Contains data about a single attributed touchpoint and the weight it had for the entire conversion journey. This data is the result of applying a specific attribution model logic to a list of touchpoints. The `weight` can be any numerical value, but it is recommended to use percentage values adding up to a total of 100 for all attributed touchpoints connected to a single `DALAttributionData` object.
 
 ```typescript
-interface D7rTouchpointAttributionData {
+interface D7rTouchpointCreditData {
   /**
    * Touchpoint that gets attributed. The contained touchpoint HAS TO occur in the
    * `history` array of the associated D7rAttributionData, too.
@@ -112,10 +101,10 @@ interface D7rTouchpointAttributionData {
 ```
 
 ### D7rTouchpointData
-Contains data about one individual touchpoint. This gets created whenever attribution.js recognizes a touchpoint based on a user interaction.
+Contains data about one individual touchpoint. This gets created whenever attribution.js recognizes a touchpoint based on a user interaction or an attribution credit.
 
 ```typescript
-interface D7rTouchpointAttributionData {
+interface D7rTouchpointData {
   /**
    * ID (unique identifier) of associated channel that lead to this touchpoint. This
    * reflects the value that was passed in the attribution.js configuration. Common
