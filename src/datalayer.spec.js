@@ -35,6 +35,15 @@ describe('datalayer', () => {
   });
 
   describe('initialize', () => {
+    it('should trigger the beforeInitialize extension hook', () => {
+      const d7r = new Datalayer();
+      const triggerExtensionHookSpy = jest.spyOn(d7r, 'triggerExtensionHook');
+
+      d7r.initialize({ data: globalDataMock });
+
+      expect(triggerExtensionHookSpy).toHaveBeenCalledWith('beforeInitialize');
+    });
+
     it('should execute a user-provided validation callback and pass the global data', () => {
       const d7r = new Datalayer();
       const expectedData = { foo: 'bar' };
