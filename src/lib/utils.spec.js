@@ -129,6 +129,7 @@ describe('utils', () => {
         prop3: true,
         prop4: 20.16,
         prop5: null,
+        prop6: undefined,
       }, {
         prop4: 77.123,
         propNew1: 'newVal1',
@@ -141,6 +142,7 @@ describe('utils', () => {
         prop3: true,
         prop4: 77.123,
         prop5: null,
+        prop6: undefined,
         propNew1: 'newVal1',
         propNew2: 71,
       });
@@ -161,6 +163,7 @@ describe('utils', () => {
           propNewDeep3: true,
           propNewDeep4: 20.16,
           propNewDeep5: null,
+          propNewDeep6: undefined,
         },
         propArray: [
           1, 2, 3, 4,
@@ -179,6 +182,7 @@ describe('utils', () => {
           propNewDeep3: true,
           propNewDeep4: 20.16,
           propNewDeep5: null,
+          propNewDeep6: undefined,
         },
         propArray: [
           1, 2, 3, 4,

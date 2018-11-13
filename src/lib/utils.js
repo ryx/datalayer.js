@@ -11,6 +11,7 @@ export function extend(target, source) {
     let src;
     if (
       val !== null
+      && typeof val !== 'undefined'
       && ['string', 'number', 'boolean'].indexOf(typeof val) === -1
       && typeof val.length === 'undefined'
     ) {
