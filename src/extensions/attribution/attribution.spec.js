@@ -1,5 +1,6 @@
 /* eslint-disable max-len, no-new */
 import attribution from './attribution';
+import datalayer from '../../datalayer';
 
 const { jsdom } = global;
 
@@ -10,21 +11,42 @@ describe('attribution', () => {
     });
   });
 
-  describe('extension factory', () => {
-    it('should return an empty `attribution` object on calling "beforeInitialize", when running extension without attribution config', async () => {
-      // datalayer.use(extension.default());
-      const ExtensionContructor = attribution();
-      const instance = new ExtensionContructor();
-
-      const data = instance.beforeInitialize();
-
-      expect(data.attribution).toEqual({
-        credits: [],
-        currentTouchpoint: null,
-      });
+  describe('use', () => {
+    it('should be loadable without errors by the datalayer', () => {
+      expect(() => datalayer.use(attribution())).not.toThrow();
     });
 
-    it('should return currentTouchpoint and credits according to provided config when calling "beforeInitialize"', async () => {
+    it('should execute the beforeInitialize callback and extend the provided data when use\'d', async () => {
+      const extension = attribution();
+      datalayer.use(extension);
+
+      datalayer.initialize();
+
+      expect(datalayer.getData()).toEqual(expect.objectContaining({
+        attribution: {
+          credits: [],
+          currentTouchpoint: null,
+        },
+      }));
+    });
+  });
+
+  describe('extension factory', () => {
+    it('should return an empty `attribution` object on calling "beforeInitialize", when running extension without attribution config', () => {
+      const ExtensionContructor = attribution();
+      const instance = new ExtensionContructor(datalayer);
+
+      const returnData = instance.beforeInitialize();
+
+      expect(returnData).toEqual(expect.objectContaining({
+        attribution: {
+          credits: [],
+          currentTouchpoint: null,
+        },
+      }));
+    });
+
+    it('should return currentTouchpoint and credits according to provided config when calling "beforeInitialize"', () => {
       jsdom.reconfigure({ url: 'http://example.com?adword=my/campaign/123' });
       const ExtensionContructor = attribution({
         channels: [
@@ -45,15 +67,17 @@ describe('attribution', () => {
         campaign: 'my/campaign/123',
       };
 
-      const data = instance.beforeInitialize();
+      const returnData = instance.beforeInitialize();
 
-      expect(data.attribution).toEqual({
-        credits: [{
-          touchpoint: expectedTouchpointData,
-          weight: 100,
-        }],
-        currentTouchpoint: expectedTouchpointData,
-      });
+      expect(returnData).toEqual(expect.objectContaining({
+        attribution: {
+          credits: [{
+            touchpoint: expectedTouchpointData,
+            weight: 100,
+          }],
+          currentTouchpoint: expectedTouchpointData,
+        },
+      }));
     });
   });
 
