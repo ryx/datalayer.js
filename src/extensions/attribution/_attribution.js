@@ -350,6 +350,368 @@ export function resetAttribution() {
   _config = JSON.parse(JSON.stringify(_defaultConfig));
 }
 
+// NEW OOP API
+
+/**
+ * A Touchpoint represents a single interaction with a given channel at an exact
+ * point in time. It contains a value (as returned / recognized) by the associated
+ * Channel handler, which usually represents a campaign name.
+ */
+export class Touchpoint {
+  constructor(channel, value, timestamp = getCurrentTime()) {
+    this.channel = channel;
+    this.value = value;
+    this.timestamp = timestamp;
+  }
+
+  getChannel() {
+    return this.channel;
+  }
+
+  getValue() {
+    return this.value;
+  }
+
+  getTimestamp() {
+    return this.timestamp;
+  }
+
+  /**
+   * Set modification timestamp to the current timestamp.
+   */
+  updateTimestamp() {
+    this.timestamp = getCurrentTime();
+  }
+
+  /**
+   * Create a JSON representation of this Touchpoint.
+   */
+  toJSON() {
+    return JSON.stringify({
+      c: this.channel.getId(),
+      v: this.value,
+      t: this.timestamp,
+    });
+  }
+
+  /**
+   * Create a Touchppoint object from a given JSON string. Expects a JSON object
+   * with parameters 'c' containing the channel id and 't' containing the last
+   * touch timestamp.
+   *
+   * This method also needs a reference to a properly configured AttributionEngine
+   * to resolve the correct Channel instance based on the channel id provided
+   * in the JSON data.
+   *
+   * @param {AttributionEngine} engine the attribution engine holding the configuration
+   * @param {String} json the JSON string to be unserialized
+   */
+  static fromJSON(engine, json) {
+    let data = null;
+    try {
+      data = JSON.parse(json);
+    } catch (e) {
+      // swallow any errors, we validate the data in the next line
+    }
+    if (typeof data.e === 'undefined' || typeof data.t === 'undefined') {
+      throw new Error('Touchpoint.fromJSON expects a string in form of {"c":"id","v":"value","t":1234567890}', data);
+    }
+    // lookup channel and return correct Touchpoint instance
+    return new Touchpoint(engine.getChannelById(data.c, data.v, data.t));
+  }
+}
+
+/**
+ * Abstract base class for all channels.
+ */
+export class Channel {
+  constructor(id, label, options = {}) {
+    this.id = id;
+    this.label = label;
+    this.options = options;
+
+    // apply defaults
+    if (typeof this.options.canOverwrite === 'undefined') {
+      this.options.canOverwrite = false;
+    }
+    if (typeof this.options.isFirstViewOnly === 'undefined') {
+      this.options.isFirstViewOnly = false;
+    }
+  }
+
+  /**
+   * Return this channel's unique ID.
+   */
+  getId() {
+    return this.id;
+  }
+
+  /**
+   * Return this channel's label.
+   */
+  getLabel() {
+    return this.label;
+  }
+
+  // execute() {}
+}
+
+/**
+ * The URLMatchingChannel allows channel recognition based on certain URL patterns.
+ * It offers various levels of patter handling, reaching from simple string comparison
+ * to more complex regex-based matches.
+ *
+ * @TODO: add docs and examples
+ */
+export class URLMatchingChannel extends Channel {
+  constructor(id, label, matchPattern, valueParamName, options) {
+    super(id, label, options);
+    this.matchPattern = matchPattern;
+    this.valueParamName = valueParamName;
+  }
+
+  /**
+   * Execute channel logic and return the recognized Touchpoint or null.
+   * @returns {Touchpoint | null}
+   */
+  execute() {
+    let match = null;
+    if (typeof this.matchPattern === 'string') {
+      // simply check for existence of provided parameter in query string
+      match = getQueryParam(this.matchPattern) !== null;
+    } else if (this.matchPattern instanceof RegExp) {
+      // execute provided RegExp on query string
+      match = this.matchPattern.exec(window.location.search);
+    } else if (typeof this.matchPattern === 'object') {
+      // check for provided parameter(s) matching either the exact value in query string
+      // or, if provided as boolean value, check for (non-)existence of given query param
+      const keys = Object.keys(this.matchPattern);
+      const matches = [];
+      for (let i = 0; i < keys.length; i += 1) {
+        const configVal = this.matchPattern[keys[i]];
+        const queryVal = getQueryParam(keys[i]);
+        matches.push(typeof configVal === 'boolean' ? !!queryVal === configVal : queryVal === configVal);
+      }
+      match = matches.indexOf(false) === -1;
+    } // @TODO: else if (typeof def.match === 'function') {
+    if (match) {
+      // get value depending on type
+      let value = null;
+      if (typeof this.valueParamName === 'string') {
+        value = decodeURIComponent(getQueryParam(this.valueParamName));
+      } // @TODO: else if (typeof def.value === 'function') {
+      // create and return Touchpoint instance
+      // return { c: config.name, v: value };
+      return new Touchpoint(this, value);
+    }
+    return null;
+  }
+}
+
+/**
+ * @TODO: add docs and examples
+ */
+export class ReferrerMatchingChannel extends Channel {
+  constructor(id, label, matchPattern, options) {
+    super(id, label, options);
+    this.matchPattern = matchPattern;
+  }
+
+  /**
+   * Execute channel logic and return the recognized Touchpoint or null.
+   * @returns {Touchpoint | null}
+   */
+  execute() {
+    let ref = this.matchPattern;
+    if (this.matchPattern instanceof RegExp || typeof this.matchPattern === 'function') {
+      ref = [this.matchPattern];
+    }
+    if (ref && ref.length > 0) {
+      for (let j = 0; j < ref.length; j += 1) {
+        if (
+          (ref[j] instanceof RegExp && ref[j].exec(window.document.referrer))
+          || (typeof ref[j] === 'function' && ref[j](window.document.referrer))
+        ) {
+          return new Touchpoint(this);
+        }
+      }
+    }
+    return null;
+  }
+}
+
+/**
+ * @TODO: add docs and examples
+ */
+export class SearchEngineChannel extends Channel {
+  execute() {
+    for (let j = 0; j < SearchEngineChannel.searchEngineRules.length; j += 1) {
+      const engine = SearchEngineChannel.searchEngineRules[j];
+      if (window.document.referrer.match(engine.rule)) {
+        return new Touchpoint(this, engine.value ? getQueryParam(engine.valueParam) : '');
+        // return { c: config.name, v: engine.value ? getQueryParam(engine.valueParam) : '' };
+      }
+    }
+    return null;
+  }
+}
+
+SearchEngineChannel.searchEngineRules = [
+  /* eslint-disable max-len */
+  { rule: /(\.)?(google|googlesyndication|googleadservices|naver|bing|yahoo|yandex|daum|baidu|myway|ecosia|ask|dogpile|sogou|seznam|aolsvc|altavista|duckduckgo|mywebsearch|wow|webcrawler|infospace|blekko|docomo)(?=\.[a-z.]{2,5})/gi, valueParam: false },
+  /* eslint-enable */
+  { rule: /(\.)?(goo\.gl)/ig, valueParam: false },
+  { rule: /^android-app:\/\/com\.google\.android/ig, valueParam: false },
+];
+
+export class AttributionModel {
+  constructor(touchpointLifetime) {
+    this.touchpointLifetime = touchpointLifetime;
+  }
+}
+
+/**
+ * Simple attribution model where the last (overwriting) Touchpoint in the journey
+ * gets 100% of the attribution. Also called 'Last Click' oder 'Last Cookie Wins'.
+ */
+export class LastTouchAttributionModel extends AttributionModel {
+  constructor() {
+    super(2592000 /* 60 * 60 * 24 * 30 = 30 days */);
+  }
+
+  /**
+   * Apply channel attribution logic on provided touchpoint history and
+   * return "winning" channel.
+   * @param {Touchpoint[]} touchpoints  array with touchpoints to apply model to
+   * @returns {Touchpoint[]} array with "winning" touchpoint objects
+   */
+  execute(touchpoints = []) {
+    let winner = null;
+    touchpoints.forEach((touchpoint) => {
+      if (
+        // if given touchpoint is still "alive" ..
+        touchpoint.getTimestamp() > getCurrentTime() - this.touchpointLifetime
+        && (
+          winner === null // set if still empty
+          || touchpoint.getChannel().options.canOverwrite // overwrite previous if current may overwrite
+        )
+      ) {
+        winner = touchpoint;
+      }
+    });
+
+    return [winner];
+  }
+}
+
+/**
+ * The AttributionEngine takes a given channel configuration and
+ */
+export class AttributionEngine {
+  /**
+   * Create a new AttributionEngine instance.
+   * @param {AttributionModel} model the attribution model to be used
+   * @param {Channel[]} channelConfig array with channels to be recognized
+   * @param {number} visitDuration the inactivity period after that a user visit will end (defaults to 30min)
+   * @param {string} cookieName the name of the internal storage cookie (defaults to "gktp")
+   */
+  constructor(
+    model,
+    channelConfig = [],
+    visitDuration = 1800, /* 60 * 30 = 30min */
+    cookieName = 'gktp'
+  ) {
+    // configuration
+    this.model = model;
+    this.channelConfig = channelConfig;
+    this.cookieName = cookieName;
+    this.visitDuration = visitDuration;
+
+    // internals
+    this.touchpointHistory = [];
+    this.lastTouchTimestamp = 0;
+  }
+
+  /**
+   * Read storage values, execute attribution logic, update storage and return current touchpoint.
+   * @FIXME: shouldn't we read history in constructor instead?? ...
+   * @returns {Touchpoint} returns exactly one Touchpoint object that is valid for the current execution context
+   */
+  execute() {
+    const curTime = getCurrentTime();
+    let recognizedTouchpoint = null;
+
+    // fetch channel history and "last touch" timestamp from storage
+    this.restoreFromStorage();
+
+    // Scan the environment (e.g. referrer/URL) for an existing channel based on the provided
+    // channel configuration and apply channel logic (i.e. store recognized channel if
+    // applicable)
+    for (let i = 0; i < this.channelConfig.length; i += 1) {
+      const channel = this.channelConfig[i];
+      recognizedTouchpoint = channel.execute();
+      if (recognizedTouchpoint) {
+        const lastTouchpoint = this.touchpointHistory.length > 0 ? this.touchpointHistory[this.touchpointHistory.length - 1] : null;
+        // ignore, update, or add?
+        if (channel.options.isFirstViewOnly && curTime - this.lastTouchTimestamp < this.visitDuration) {
+          // ignore, if the channel is set to "firstView" but this is not the first view within the visit
+          recognizedTouchpoint = null;
+        // } else if (lastChannel && lastChannel.c === result.c && lastChannel.v === result.v) {
+        } else if (lastTouchpoint && lastTouchpoint === recognizedTouchpoint) {
+          // update timestamp, if last entry is equal to current channel
+          lastTouchpoint.updateTimestamp();
+        } else {
+          // add newly found touchpoint to history in all other cases
+          this.touchpointHistory.push(recognizedTouchpoint);
+        }
+        break;
+      }
+    }
+
+    // update "last touch" timestamp in session
+    this.lastTouchTimestamp = curTime;
+
+    // update data in storage
+    // storageWrite(_config.cookieName, _data);
+    this.saveToStorage();
+
+    return recognizedTouchpoint;
+  }
+
+  /**
+   * Execute the current attribution model on the entire touchpoint history and return
+   * the resulting list of attributed touchpoints.
+   * @returns {Touchpoint[]} Array with Touchpoint objects
+   */
+  getAttributedTouchpoints() {
+    return this.model.execute(this.getTouchpointHistory());
+  }
+
+  /**
+   * Returns the currently recorded history of touchpoints for the current browser (i.e. storage).
+   * This list gets extended or updated whenever AttributionEngine.execute is called.
+   * @returns {Touchpoint[]} array with Touchpoint objects
+   */
+  getTouchpointHistory() {
+    return this.touchpointHistory;
+  }
+
+  restoreFromStorage() {
+    console.log('TODO: restore from storage', this.touchpointHistory);
+  }
+
+  /**
+   * Store current touchpoint history and last touch timestamp.
+   */
+  saveToStorage() {
+    const storageData = { e: [], lt: getCurrentTime() };
+    this.touchpointHistory.forEach((touchpoint) => {
+      storageData.e.push(touchpoint.toJSON());
+    });
+    console.log('TODO: save to storage', storageData);
+  }
+}
+
 export default {
   initAttribution,
   addChannelHandlingCallback,
