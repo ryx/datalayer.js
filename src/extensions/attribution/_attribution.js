@@ -358,20 +358,38 @@ export function resetAttribution() {
  * Channel handler, which usually represents a campaign name.
  */
 export class Touchpoint {
+  /**
+   * Create a new Touchpoint instance.
+   * @param {Channel} channel associated Channel instance
+   * @param {string} value this Touchpoint's value (e.g. campaign name)
+   * @param {number} timestamp creation/modification timestamp
+   */
   constructor(channel, value, timestamp = getCurrentTime()) {
     this.channel = channel;
     this.value = value;
     this.timestamp = timestamp;
   }
 
+  /**
+   * Return associated Channel instance.
+   * @returns {Channel}
+   */
   getChannel() {
     return this.channel;
   }
 
+  /**
+   * Return value (e.g. campaign name)
+   * @returns {string}
+   */
   getValue() {
     return this.value;
   }
 
+  /**
+   * Return timestamp of last modification/update.
+   * @returns {number}
+   */
   getTimestamp() {
     return this.timestamp;
   }
@@ -384,7 +402,9 @@ export class Touchpoint {
   }
 
   /**
-   * Create a JSON representation of this Touchpoint.
+   * Create a JSON representation of this Touchpoint. This is compatible with
+   * the legacy API in the original attribution.js.
+   * @returns {string}
    */
   toJSON() {
     return JSON.stringify({
@@ -481,7 +501,7 @@ export class URLMatchingChannel extends Channel {
       match = getQueryParam(this.matchPattern) !== null;
     } else if (this.matchPattern instanceof RegExp) {
       // execute provided RegExp on query string
-      match = this.matchPattern.exec(window.location.search);
+      match = window.location.search.match(this.matchPattern);
     } else if (typeof this.matchPattern === 'object') {
       // check for provided parameter(s) matching either the exact value in query string
       // or, if provided as boolean value, check for (non-)existence of given query param
@@ -494,6 +514,7 @@ export class URLMatchingChannel extends Channel {
       }
       match = matches.indexOf(false) === -1;
     } // @TODO: else if (typeof def.match === 'function') {
+
     if (match) {
       // get value depending on type
       let value = null;
@@ -504,6 +525,7 @@ export class URLMatchingChannel extends Channel {
       // return { c: config.name, v: value };
       return new Touchpoint(this, value);
     }
+
     return null;
   }
 }
@@ -529,13 +551,14 @@ export class ReferrerMatchingChannel extends Channel {
     if (ref && ref.length > 0) {
       for (let j = 0; j < ref.length; j += 1) {
         if (
-          (ref[j] instanceof RegExp && ref[j].exec(window.document.referrer))
+          (ref[j] instanceof RegExp && window.document.referrer.match(ref[j]))
           || (typeof ref[j] === 'function' && ref[j](window.document.referrer))
         ) {
           return new Touchpoint(this);
         }
       }
     }
+
     return null;
   }
 }
@@ -552,6 +575,7 @@ export class SearchEngineChannel extends Channel {
         // return { c: config.name, v: engine.value ? getQueryParam(engine.valueParam) : '' };
       }
     }
+
     return null;
   }
 }
@@ -564,10 +588,19 @@ SearchEngineChannel.searchEngineRules = [
   { rule: /^android-app:\/\/com\.google\.android/ig, valueParam: false },
 ];
 
+/**
+ * Abstract base class for all attribution models.
+ */
 export class AttributionModel {
   constructor(touchpointLifetime) {
     this.touchpointLifetime = touchpointLifetime;
   }
+
+  /* eslint-disable class-methods-use-this */
+  execute() {
+    return [];
+  }
+  /* eslint-enable class-methods-use-this */
 }
 
 /**
@@ -651,13 +684,18 @@ export class AttributionEngine {
       const channel = this.channelConfig[i];
       recognizedTouchpoint = channel.execute();
       if (recognizedTouchpoint) {
-        const lastTouchpoint = this.touchpointHistory.length > 0 ? this.touchpointHistory[this.touchpointHistory.length - 1] : null;
+        const hasTouchpoints = this.touchpointHistory.length > 0;
+        const lastTouchpoint = hasTouchpoints ? this.touchpointHistory[this.touchpointHistory.length - 1] : null;
         // ignore, update, or add?
         if (channel.options.isFirstViewOnly && curTime - this.lastTouchTimestamp < this.visitDuration) {
           // ignore, if the channel is set to "firstView" but this is not the first view within the visit
           recognizedTouchpoint = null;
         // } else if (lastChannel && lastChannel.c === result.c && lastChannel.v === result.v) {
-        } else if (lastTouchpoint && lastTouchpoint === recognizedTouchpoint) {
+        } else if (
+          lastTouchpoint
+          && lastTouchpoint.getValue() === recognizedTouchpoint.getValue()
+          && lastTouchpoint.getChannel().getId() === recognizedTouchpoint.getChannel().getId()
+        ) {
           // update timestamp, if last entry is equal to current channel
           lastTouchpoint.updateTimestamp();
         } else {
@@ -708,7 +746,7 @@ export class AttributionEngine {
     this.touchpointHistory.forEach((touchpoint) => {
       storageData.e.push(touchpoint.toJSON());
     });
-    console.log('TODO: save to storage', storageData);
+    console.log('TODO: save data to storage', storageData);
   }
 }
 

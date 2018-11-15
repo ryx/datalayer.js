@@ -30,17 +30,9 @@ function setDocumentLocation(url) {
 }
 
 describe('ba/lib/attribution', () => {
-  let [exampleConfig, currentTime, storageSpy] = [];
+  let [currentTime, storageSpy] = [];
 
   beforeEach(() => {
-    // config stub
-    exampleConfig = {
-      cookieName: 'gktp',
-      touchpointLifetime: 60 * 60 * 24 * 30,
-      channels: [],
-      campaigns: [],
-    };
-
     // mock getTime
     currentTime = 123456789000;
     global.Date = jest.fn(() => ({ getTime: () => currentTime }));
@@ -50,14 +42,22 @@ describe('ba/lib/attribution', () => {
       setItem: jest.spyOn(Storage.prototype, 'setItem'),
       getItem: jest.spyOn(Storage.prototype, 'getItem'),
     };
+
+    setDocumentLocation('http://example.com');
+    setDocumentReferrer('');
   });
 
   afterEach(() => {
-    // reset state and mocks
-    resetAttribution();
-    setDocumentLocation('http://example.com');
-    setDocumentReferrer('');
+    // reset mocks
     storageSpy.getItem.mockReturnValue('');
+  });
+
+  describe('Touchpoint', () => {
+
+  });
+
+  describe('Channel', () => {
+
   });
 
   describe('URLMatchingChannel', () => {
@@ -272,6 +272,10 @@ describe('ba/lib/attribution', () => {
     });
   });
 
+  describe('AttributionModel', () => {
+
+  });
+
   describe('AttributionEngine', () => {
     it('should initialize with a given configuration and return the current channel', () => {
       setDocumentLocation('http://example.com?adword=/foo/bar/123&foo=bar&bla=blubb');
@@ -293,93 +297,22 @@ describe('ba/lib/attribution', () => {
       expect(touchpoint.getValue()).toBe('/foo/bar/123');
     });
 
-    describe.skip('execute:', () => {
-      // @TODO: test parameter handling and arguments
-
+    describe('constructor:', () => {
+      // tests parameter handling and arguments
       it('should use the default config, if nothing else is provided', () => {
-        initAttribution();
+        const engine = new AttributionEngine();
 
-        expect(getConfig()).toEqual({
-          cookieName: '__mcajs',
-          touchpointLifetime: 60 * 60 * 24 * 30, // 30 days
-          visitDuration: 60 * 30, // 30min
-          channels: [],
-        });
+        expect(engine.channelConfig).toEqual([]);
+        expect(engine.visitDuration).toEqual(1800);
+        expect(engine.cookieName).toEqual('gktp');
       });
 
-      it('should use the overridden parameters, if local config is set', () => {
-        initAttribution({ cookieName: 'foo', touchpointLifetime: 120 });
+      it('should use the provided parameters', () => {
+        const engine = new AttributionEngine(null, ['test'], 1234, '__test');
 
-        expect(getConfig()).toEqual({
-          cookieName: 'foo',
-          touchpointLifetime: 120,
-          visitDuration: 60 * 30, // 30min
-          channels: [],
-        });
-      });
-
-      it('should set a "last touch" timestamp in the data whenever init is called', () => {
-        initAttribution(exampleConfig);
-
-        expect(storageSpy.setItem).toHaveBeenCalledWith(
-          exampleConfig.cookieName,
-          expect.stringContaining(`"lt":${currentTime / 1000}`)
-        );
-      });
-
-      it('should update a touchpoint for the first PI within a session, if "firstView" is set on the assoc. channel', () => {
-        setDocumentReferrer('http://example.com/foo');
-        exampleConfig.channels = [{
-          name: 'foo', type: 'referrer', referrer: /example\.com\/foo/gi, firstView: true,
-        }];
-
-        initAttribution(exampleConfig);
-
-        // the storage update should include a changed timestamp for the "foo" channel entry
-        expect(storageSpy.setItem).toHaveBeenCalledWith(
-          exampleConfig.cookieName,
-          expect.stringContaining(`{"e":[{"c":"foo","t":${currentTime / 1000}}],"lt":${currentTime / 1000}}`)
-        );
-      });
-
-      it('should NOT update an existing touchpoint for a repeat PI within a session, if "firstView" is set on the assoc. channel', () => {
-        setDocumentReferrer('http://example.com/foo');
-        exampleConfig.channels = [{
-          name: 'foo', type: 'referrer', referrer: /example\.com\/foo/gi, firstView: true,
-        }];
-        // set last page impression for this channel to 30 seconds ago
-        storageSpy.getItem.mockReturnValue('{"e":[{"c":"foo","t":123456759}],"lt":123456759}');
-
-        initAttribution(exampleConfig);
-
-        // the storage update should include an unchanged timestamp for the "foo" channel entry
-        expect(storageSpy.setItem).toHaveBeenCalledWith(
-          exampleConfig.cookieName,
-          expect.stringContaining(`{"e":[{"c":"foo","t":123456759}],"lt":${currentTime / 1000}}`)
-        );
-      });
-
-      it('should update an existing touchpoint for the first PI within a session, if "firstView" is set on the assoc. channel but visitDuration is exceeded', () => {
-        setDocumentReferrer('http://example.com/foo');
-        exampleConfig.visitDuration = 1800;
-        exampleConfig.channels = [
-          {
-            name: 'foo1', type: 'referrer', referrer: /test\.com\/foo/gi,
-          },
-          {
-            name: 'foo2', type: 'referrer', referrer: /example\.com\/foo/gi, firstView: true,
-          },
-        ];
-        // set last page impression for this channel to 1900 seconds ago
-        storageSpy.getItem.mockReturnValue('{"e":[{"c":"foo2","t":123454889}],"lt":123454889}');
-
-        initAttribution(exampleConfig);
-
-        // the storage update should include a changed timestamp for the "foo" channel entry
-        expect(window.localStorage.setItem).toHaveBeenCalledWith(
-          exampleConfig.cookieName,
-          expect.stringContaining(`{"e":[{"c":"foo2","t":${currentTime / 1000}}],"lt":${currentTime / 1000}}`)
-        );
+        expect(engine.channelConfig).toEqual(['test']);
+        expect(engine.visitDuration).toEqual(1234);
+        expect(engine.cookieName).toEqual('__test');
       });
     });
 
@@ -408,11 +341,12 @@ describe('ba/lib/attribution', () => {
     });
 
     describe('execute:', () => {
-      let engine;
+      let [engine, model] = [];
 
       beforeEach(() => {
+        model = new LastTouchAttributionModel(60 * 60 * 24 * 30);
         engine = new AttributionEngine(
-          new LastTouchAttributionModel(60 * 60 * 24 * 30),
+          model,
           [
             new URLMatchingChannel('aff', 'Affiliate', { emsrc: 'aff' }, 'refID'),
             new URLMatchingChannel('dis', 'Display', { emsrc: 'dis' }, 'refID'),
@@ -422,6 +356,63 @@ describe('ba/lib/attribution', () => {
           60 * 30, // expire session after 30min inactivity
           '__mcajs',
         );
+      });
+
+      it('should update the "last touch" timestamp', () => {
+        engine.lastTouchTimestamp = 123; // simulate previous touch
+
+        engine.execute();
+
+        expect(engine.lastTouchTimestamp).toEqual(currentTime / 1000);
+      });
+
+      it('should create a touchpoint for the first PI within a session, if "isFirstViewOnly" is set on the assoc. channel', () => {
+        setDocumentReferrer('http://example.com/foo');
+        const e = new AttributionEngine(model, [
+          new ReferrerMatchingChannel('foo', 'Foo Channel', /example\.com\/foo/gi, { isFirstViewOnly: true }),
+        ]);
+
+        const touchpoint = e.execute();
+
+        expect(touchpoint.getTimestamp()).toEqual(currentTime / 1000);
+      });
+
+      it('should NOT update an existing touchpoint for a repeat PI within a session, if "firstView" is set on the assoc. channel', () => {
+        setDocumentReferrer('http://example.com/foo');
+        const e = new AttributionEngine(model, [
+          new ReferrerMatchingChannel('foo', 'Foo Channel', /example\.com\/foo/gi, { isFirstViewOnly: true }),
+        ]);
+
+        // let first view happen 30 seconds ago -> this should be fine
+        const firstTouchTime = 1234567890;
+        currentTime = firstTouchTime;
+        expect(e.execute().getChannel().getId()).toEqual('foo');
+
+
+        // now let the repeat view happen and expect it to NOT be recognized
+        currentTime = firstTouchTime + 30000;
+        expect(e.execute()).toEqual(null);
+      });
+
+      it('should update an existing touchpoint for the first PI within a session, if "firstView" is set on the assoc. channel but visitDuration is exceeded', () => {
+        setDocumentReferrer('http://example.com/foo');
+        const e = new AttributionEngine(model, [
+          new ReferrerMatchingChannel('foo1', 'Foo Channel', /test\.com\/foo/gi),
+          new ReferrerMatchingChannel('foo2', 'Foo Channel', /example\.com\/foo/gi, { isFirstViewOnly: true }),
+        ], 1800);
+
+        // we simulate a first view that happened at the given time
+        const firstTouchTime = 1234567890000;
+        currentTime = firstTouchTime;
+        const touchpoint = e.execute();
+        expect(touchpoint.getChannel().getId('foo2')).toEqual('foo2');
+
+        // now add 1900 seconds to the time and let the repeat view happen
+        // so it should be recognized because of the visit expiry
+        currentTime = firstTouchTime + 1900000;
+        const touchpoint2 = e.execute();
+        expect(touchpoint2.getChannel().getId()).toEqual(touchpoint.getChannel().getId());
+        expect(touchpoint2.getTimestamp()).toEqual(currentTime / 1000);
       });
 
       // @XXX: multiple init calls shall simulate multiple page loads here
@@ -479,24 +470,29 @@ describe('ba/lib/attribution', () => {
 
       it('should apply the correct attribution logic for: [match:foo.canOverwrite, searchEngine:seo.canOverwrite]', () => {
         setDocumentLocation('http://example.com?emsrc=foo&refID=foo_partner/some/campaign/name_123&foo=bar');
-
-        initAttribution(exampleConfig);
-
+        engine.execute();
         setDocumentLocation('http://example.com');
         setDocumentReferrer('http://www.google.de/foo/bar?foo=bar&bla=blubb');
+        engine.execute();
 
-        initAttribution(exampleConfig);
+        const touchpoints = engine.getAttributedTouchpoints();
 
-        expect(getAttributedChannel()).toEqual(expect.objectContaining({ c: 'seo' }));
+        expect(touchpoints[0].getChannel().getId()).toEqual('seo');
       });
 
       it('should ignore touchpoints that are older than the defined lifetime', () => {
-        exampleConfig.touchpointLifetime = 1000;
-        storageSpy.getItem.mockReturnValue('{"e":[{ "c": "aff", "v": "some_aff_campaign", "t": 100000 }],"t":123}');
+        setDocumentLocation('http://example.com?emsrc=aff&refID=aff-campaign');
+        currentTime = 100000;
+        engine.execute();
+        setDocumentLocation('http://example.com?emsrc=dis&refID=dis-campaign');
+        currentTime = 10000000000;
+        engine.execute();
 
-        initAttribution(exampleConfig);
+        const touchpoints = engine.getAttributedTouchpoints();
 
-        expect(getAttributedChannel()).toEqual(null);
+        // INOF: Usually dis should NOT override aff, as based on our config!
+        // But as aff has "expired", dis gets the full credit in this case.
+        expect(touchpoints[0].getChannel().getId()).toEqual('dis');
       });
 
       /* it('should count a touchpoint with "firstView" attribute only on the first call', () => {
