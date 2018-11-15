@@ -433,11 +433,15 @@ export class Touchpoint {
     } catch (e) {
       // swallow any errors, we validate the data in the next line
     }
-    if (typeof data.e === 'undefined' || typeof data.t === 'undefined') {
-      throw new Error('Touchpoint.fromJSON expects a string in form of {"c":"id","v":"value","t":1234567890}', data);
+    if (typeof data.c === 'undefined' || typeof data.t === 'undefined') {
+      throw new Error('Touchpoint.fromJSON: expected a string in form of {"c":"id","v":"value","t":1234567890}', data);
+    }
+    const channel = engine.getChannelById(data.c);
+    if (!channel) {
+      throw new Error(`Touchpoint.fromJSON: channel "${data.c}" not found in provided engine`);
     }
     // lookup channel and return correct Touchpoint instance
-    return new Touchpoint(engine.getChannelById(data.c, data.v, data.t));
+    return new Touchpoint(channel, data.v, data.t);
   }
 }
 
@@ -663,6 +667,9 @@ export class AttributionEngine {
     // internals
     this.touchpointHistory = [];
     this.lastTouchTimestamp = 0;
+
+    // fetch channel history and "last touch" timestamp from storage
+    this.restoreFromStorage();
   }
 
   /**
@@ -673,9 +680,6 @@ export class AttributionEngine {
   execute() {
     const curTime = getCurrentTime();
     let recognizedTouchpoint = null;
-
-    // fetch channel history and "last touch" timestamp from storage
-    this.restoreFromStorage();
 
     // Scan the environment (e.g. referrer/URL) for an existing channel based on the provided
     // channel configuration and apply channel logic (i.e. store recognized channel if
@@ -734,19 +738,51 @@ export class AttributionEngine {
     return this.touchpointHistory;
   }
 
+  /**
+   * Returns a Channel by its id attribute or null if no channel with id was found.
+   * @param {String}  id  the id of the channel to be found
+   * @returns {Channel} the channel for the given id
+   */
+  getChannelById(id) {
+    for (let i = 0; i < this.channelConfig.length; i += 1) {
+      if (this.channelConfig[i].getId() === id) {
+        return this.channelConfig[i];
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Restore touchpoint history from storage and load it into the engine.
+   */
   restoreFromStorage() {
-    console.log('TODO: restore from storage', this.touchpointHistory);
+    // console.log('TODO: restore from storage', this.touchpointHistory);
+    const data = storageRead(this.cookieName);
+    console.log('restoreFromStorage', data);
+    if (data /* @TODO and data is valid */) {
+      this.lastTouchTimestamp = data.lt;
+      this.touchpointHistory = [];
+      data.e.forEach((touchpointData) => {
+        const touchpoint = Touchpoint.fromJSON(this, touchpointData);
+        if (touchpoint) {
+          this.touchpointHistory.push(touchpoint);
+        }
+        // @TODO log error?
+      });
+    }
   }
 
   /**
    * Store current touchpoint history and last touch timestamp.
    */
   saveToStorage() {
-    const storageData = { e: [], lt: getCurrentTime() };
-    this.touchpointHistory.forEach((touchpoint) => {
-      storageData.e.push(touchpoint.toJSON());
-    });
-    console.log('TODO: save data to storage', storageData);
+    const storageData = {
+      e: this.touchpointHistory.map(touchpoint => touchpoint.toJSON()),
+      lt: this.lastTouchTimestamp,
+    };
+    console.log('saveToStorage', storageData);
+    storageWrite(this.cookieName, storageData);
   }
 }
 
