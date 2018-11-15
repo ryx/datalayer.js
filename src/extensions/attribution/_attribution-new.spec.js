@@ -15,6 +15,7 @@ import {
   storageRead,
   storageWrite,
   Touchpoint,
+  Channel,
 } from './_attribution';
 
 const { jsdom } = global;
@@ -53,7 +54,98 @@ describe('ba/lib/attribution', () => {
   });
 
   describe('Touchpoint', () => {
+    it('should take a Channel reference on construction and return it on calling getChannel', () => {
+      const expectedChannel = new Channel('foo', 'Foo');
 
+      const touchpoint = new Touchpoint(expectedChannel, 'foo');
+
+      expect(touchpoint.getChannel()).toEqual(expectedChannel);
+    });
+
+    it('should take a value on construction and return it on calling getValue', () => {
+      const expectedValue = 'my/value/123';
+
+      const touchpoint = new Touchpoint(null, expectedValue);
+
+      expect(touchpoint.getValue()).toEqual(expectedValue);
+    });
+
+    it('should automatically create a timestamp on construction and return it on calling getTimestamp', () => {
+      const touchpoint = new Touchpoint(null, '');
+
+      expect(touchpoint.getTimestamp()).toEqual(currentTime / 1000);
+    });
+
+    it('should take an optional third parameter to override the timestamp', () => {
+      const expectedTimestamp = 9999999;
+
+      const touchpoint = new Touchpoint(null, 'myValue', expectedTimestamp);
+
+      expect(touchpoint.getTimestamp()).toEqual(9999999);
+    });
+
+    it('should update the timestamp to the current time on calling updateTimestamp', () => {
+      const initialTimestamp = 9999999;
+      const touchpoint = new Touchpoint(null, 'myValue', initialTimestamp);
+
+      touchpoint.updateTimestamp();
+
+      expect(touchpoint.getTimestamp()).toEqual(currentTime / 1000);
+    });
+
+    it('should create and return a JSON representation of itself when calling toJSON', () => {
+      const expectedChannel = new Channel('foo', 'Foo');
+      const expectedValue = 'my/value/123';
+      const expectedTimestamp = 9999999;
+      const touchpoint = new Touchpoint(expectedChannel, expectedValue, expectedTimestamp);
+
+      const jsonString = touchpoint.toJSON();
+
+      expect(jsonString).toEqual(JSON.stringify({
+        c: expectedChannel.getId(),
+        v: expectedValue,
+        t: expectedTimestamp,
+      }));
+    });
+
+    describe('Touchpoint.fromJSON', () => {
+      let engine;
+
+      beforeEach(() => {
+        engine = new AttributionEngine(
+          new LastTouchAttributionModel(),
+          [new URLMatchingChannel('test', 'Test Channel', /foo/gi)],
+        );
+      });
+
+      it('should create a new Touchpoint instance from a serialized JSON string', () => {
+        const expectedChannelId = 'test';
+        const expectedValue = 'my/value/123';
+        const expectedTimestamp = 9999999;
+        const jsonString = JSON.stringify({
+          c: expectedChannelId,
+          v: expectedValue,
+          t: expectedTimestamp,
+        });
+
+        const touchpoint = Touchpoint.fromJSON(engine, jsonString);
+
+        expect(touchpoint.getValue()).toEqual(expectedValue);
+        expect(touchpoint.getTimestamp()).toEqual(expectedTimestamp);
+        expect(touchpoint.getChannel().getId()).toEqual(expectedChannelId);
+      });
+
+      it('should throw an error when the provided data is incorrect', () => {
+        expect(() => Touchpoint.fromJSON(engine, JSON.stringify({ v: 'boom', t: 1234 }))).toThrow('expected a string');
+        expect(() => Touchpoint.fromJSON(engine, JSON.stringify({ v: 'boom' }))).toThrow('expected a string');
+        expect(() => Touchpoint.fromJSON(engine, JSON.stringify({ c: 'boom' }))).toThrow('expected a string');
+        expect(() => Touchpoint.fromJSON(engine, JSON.stringify({ t: 'boom' }))).toThrow('expected a string');
+      });
+
+      it('should throw when a Channel with the given id cannot be found in provided AttributionEngine', () => {
+        expect(() => Touchpoint.fromJSON(engine, JSON.stringify({ c: 'unknown', v: 'my/val', t: 123456789 }))).toThrow('not found');
+      });
+    });
   });
 
   describe('Channel', () => {
@@ -299,7 +391,7 @@ describe('ba/lib/attribution', () => {
 
     describe('constructor:', () => {
       // tests parameter handling and arguments
-      it('should use the default config, if nothing else is provided', () => {
+      it('should use the default parameters, if nothing else is provided', () => {
         const engine = new AttributionEngine();
 
         expect(engine.channelConfig).toEqual([]);
@@ -394,7 +486,7 @@ describe('ba/lib/attribution', () => {
         expect(e.execute()).toEqual(null);
       });
 
-      it('should update an existing touchpoint for the first PI within a session, if "firstView" is set on the assoc. channel but visitDuration is exceeded', () => {
+      it('should update an existing touchpoint for the first PI within a session, if "isFirstViewOnly" is set on the assoc. channel but visitDuration is exceeded', () => {
         setDocumentReferrer('http://example.com/foo');
         const e = new AttributionEngine(model, [
           new ReferrerMatchingChannel('foo1', 'Foo Channel', /test\.com\/foo/gi),
@@ -480,7 +572,7 @@ describe('ba/lib/attribution', () => {
         expect(touchpoints[0].getChannel().getId()).toEqual('seo');
       });
 
-      it('should ignore touchpoints that are older than the defined lifetime', () => {
+      it('should ignore touchpoints that are older than the defined visit lifetime', () => {
         setDocumentLocation('http://example.com?emsrc=aff&refID=aff-campaign');
         currentTime = 100000;
         engine.execute();
