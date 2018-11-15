@@ -433,7 +433,7 @@ export class Touchpoint {
     } catch (e) {
       // swallow any errors, we validate the data in the next line
     }
-    if (typeof data.c === 'undefined' || typeof data.t === 'undefined') {
+    if (!data || typeof data.c === 'undefined' || typeof data.t === 'undefined') {
       throw new Error('Touchpoint.fromJSON: expected a string in form of {"c":"id","v":"value","t":1234567890}', data);
     }
     const channel = engine.getChannelById(data.c);
@@ -568,15 +568,15 @@ export class ReferrerMatchingChannel extends Channel {
 }
 
 /**
- * @TODO: add docs and examples
+ * A Channel that tries to recognize SEO traffic by comparing the referrer against a static list
+ * of known search engines (stored in SearchEngineChannel.searchEngineRules).
  */
 export class SearchEngineChannel extends Channel {
   execute() {
     for (let j = 0; j < SearchEngineChannel.searchEngineRules.length; j += 1) {
       const engine = SearchEngineChannel.searchEngineRules[j];
       if (window.document.referrer.match(engine.rule)) {
-        return new Touchpoint(this, engine.value ? getQueryParam(engine.valueParam) : '');
-        // return { c: config.name, v: engine.value ? getQueryParam(engine.valueParam) : '' };
+        return new Touchpoint(this, engine.valueParam ? getQueryParam(engine.valueParam) : '');
       }
     }
 
@@ -584,6 +584,13 @@ export class SearchEngineChannel extends Channel {
   }
 }
 
+/**
+ * List with search engine URL patterns. Used for referrer-based SEO-engine matching.
+ * The "rule" property contains a RegExp pattern to match against, the "valueParam"
+ * allows to define a query parameter that is used to lookup the keyword/query that
+ * was entered by the user (although most modern search engines do not forward this
+ * to the referred website anymore).
+ */
 SearchEngineChannel.searchEngineRules = [
   /* eslint-disable max-len */
   { rule: /(\.)?(google|googlesyndication|googleadservices|naver|bing|yahoo|yandex|daum|baidu|myway|ecosia|ask|dogpile|sogou|seznam|aolsvc|altavista|duckduckgo|mywebsearch|wow|webcrawler|infospace|blekko|docomo)(?=\.[a-z.]{2,5})/gi, valueParam: false },
@@ -642,7 +649,8 @@ export class LastTouchAttributionModel extends AttributionModel {
 }
 
 /**
- * The AttributionEngine takes a given channel configuration and
+ * The AttributionEngine takes a given channel configuration and tries to recognize
+ * and record touchpoints along to user's journey.
  */
 export class AttributionEngine {
   /**

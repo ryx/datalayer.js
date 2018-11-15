@@ -368,6 +368,91 @@ describe('ba/lib/attribution', () => {
 
   });
 
+  describe('LastTouchAttributionModel', () => {
+    let [model, channels] = [];
+
+    beforeEach(() => {
+      model = new LastTouchAttributionModel(60 * 60 * 24 * 30);
+      channels = {
+        aff: new URLMatchingChannel('aff', 'Affiliate', { emsrc: 'aff' }, 'refID'),
+        dis: new URLMatchingChannel('dis', 'Display', { emsrc: 'dis' }, 'refID'),
+        foo: new URLMatchingChannel('foo', 'Affiliate', { emsrc: 'foo' }, 'refID', { canOverwrite: true }),
+        seo: new SearchEngineChannel('seo', 'SEO', { canOverwrite: true }),
+      };
+    });
+
+    it('should apply the correct attribution logic for: [match:aff]', () => {
+      const touchpoints = [
+        new Touchpoint(channels.aff, 'aff/some/campaign/name_123'),
+      ];
+
+      const result = model.execute(touchpoints);
+
+      expect(result.length).toBe(1);
+      expect(result[0].getValue()).toEqual('aff/some/campaign/name_123');
+      expect(result[0].getChannel().getId()).toEqual('aff');
+    });
+
+    it('should apply the correct attribution logic for: [match:aff, searchEngine:seo.canOverwrite]', () => {
+      const touchpoints = [
+        new Touchpoint(channels.aff, 'aff/some/campaign/name_123'),
+        new Touchpoint(channels.seo),
+      ];
+
+      const result = model.execute(touchpoints);
+
+      expect(result[0].getChannel().getId()).toEqual('seo');
+    });
+
+    it('should apply the correct attribution logic for: [match:aff, match:dis]', () => {
+      const touchpoints = [
+        new Touchpoint(channels.aff, 'aff_partner/some/campaign/name_123'),
+        new Touchpoint(channels.dis, 'dis_partner/some/campaign/name_123'),
+      ];
+
+      const result = model.execute(touchpoints);
+
+      expect(result[0].getChannel().getId()).toEqual('aff');
+      expect(result[0].getValue()).toEqual('aff_partner/some/campaign/name_123');
+    });
+
+    it('should apply the correct attribution logic for: [match:foo.canOverwrite, match:dis]', () => {
+      const touchpoints = [
+        new Touchpoint(channels.foo, 'foo_partner/some/campaign/name_123'),
+        new Touchpoint(channels.dis, 'dis_partner/some/campaign/name_123'),
+      ];
+
+      const result = model.execute(touchpoints);
+
+      expect(result[0].getChannel().getId()).toEqual('foo');
+      expect(result[0].getValue()).toEqual('foo_partner/some/campaign/name_123');
+    });
+
+    it('should apply the correct attribution logic for: [match:foo.canOverwrite, searchEngine:seo.canOverwrite]', () => {
+      const touchpoints = [
+        new Touchpoint(channels.foo, 'foo_partner/some/campaign/name_123'),
+        new Touchpoint(channels.seo),
+      ];
+
+      const result = model.execute(touchpoints);
+
+      expect(result[0].getChannel().getId()).toEqual('seo');
+    });
+
+    it('should ignore touchpoints that are older than the defined visit lifetime', () => {
+      const touchpoints = [
+        new Touchpoint(channels.aff, 'aff-campaign', 100000),
+        new Touchpoint(channels.dis, 'dis-campaign', 1000000000),
+      ];
+
+      const result = model.execute(touchpoints);
+
+      // INOF: Usually dis should NOT override aff, as based on our config!
+      // But as aff has "expired", dis gets the full credit in this case.
+      expect(result[0].getChannel().getId()).toEqual('dis');
+    });
+  });
+
   describe('AttributionEngine', () => {
     it('should initialize with a given configuration and return the current channel', () => {
       setDocumentLocation('http://example.com?adword=/foo/bar/123&foo=bar&bla=blubb');
@@ -507,86 +592,6 @@ describe('ba/lib/attribution', () => {
         expect(touchpoint2.getTimestamp()).toEqual(currentTime / 1000);
       });
 
-      // @XXX: multiple init calls shall simulate multiple page loads here
-
-      it('should apply the correct attribution logic for: [match:aff]', () => {
-        setDocumentLocation('http://example.com?emsrc=aff&refID=aff/some/campaign/name_123&foo=bar&bla=blubb');
-        engine.execute();
-
-        const touchpoints = engine.getAttributedTouchpoints();
-
-        expect(touchpoints.length).toBe(1);
-        expect(touchpoints[0]).toBeInstanceOf(Touchpoint);
-        expect(touchpoints[0].getValue()).toEqual('aff/some/campaign/name_123');
-        expect(touchpoints[0].getChannel().getId()).toEqual('aff');
-      });
-
-      it('should apply the correct attribution logic for: [match:aff, searchEngine:seo.canOverwrite]', () => {
-        // build the touchpoint history first
-        setDocumentLocation('http://example.com?emsrc=aff&refID=aff/some/campaign/name_123&foo=bar&bla=blubb');
-        engine.execute();
-        setDocumentLocation('http://example.com');
-        setDocumentReferrer('http://www.google.de/foo/bar?foo=bar&bla=blubb');
-        engine.execute();
-
-        const touchpoints = engine.getAttributedTouchpoints();
-
-        expect(touchpoints[0].getChannel().getId()).toEqual('seo');
-      });
-
-      it('should apply the correct attribution logic for: [match:aff, match:dis]', () => {
-        setDocumentLocation('http://example.com?emsrc=aff&refID=aff_partner/some/campaign/name_123&foo=bar');
-        currentTime = 123456799000;
-        engine.execute();
-        setDocumentLocation('http://example.com?emsrc=dis&refID=dis_partner/some/campaign/name_123&foo=bar');
-        currentTime = 183456799000;
-        engine.execute();
-
-        const touchpoints = engine.getAttributedTouchpoints();
-
-        expect(touchpoints[0].getChannel().getId()).toEqual('dis');
-        expect(touchpoints[0].getValue()).toEqual('dis_partner/some/campaign/name_123');
-      });
-
-      it('should apply the correct attribution logic for: [match:foo.canOverwrite, match:dis]', () => {
-        setDocumentLocation('http://example.com?emsrc=foo&refID=foo_partner/some/campaign/name_123&foo=bar');
-        engine.execute();
-        setDocumentLocation('http://example.com?emsrc=dis&refID=dis_partner/some/campaign/name_123&foo=bar');
-        engine.execute();
-
-        const touchpoints = engine.getAttributedTouchpoints();
-
-        expect(touchpoints[0].getChannel().getId()).toEqual('foo');
-        expect(touchpoints[0].getValue()).toEqual('foo_partner/some/campaign/name_123');
-      });
-
-      it('should apply the correct attribution logic for: [match:foo.canOverwrite, searchEngine:seo.canOverwrite]', () => {
-        setDocumentLocation('http://example.com?emsrc=foo&refID=foo_partner/some/campaign/name_123&foo=bar');
-        engine.execute();
-        setDocumentLocation('http://example.com');
-        setDocumentReferrer('http://www.google.de/foo/bar?foo=bar&bla=blubb');
-        engine.execute();
-
-        const touchpoints = engine.getAttributedTouchpoints();
-
-        expect(touchpoints[0].getChannel().getId()).toEqual('seo');
-      });
-
-      it('should ignore touchpoints that are older than the defined visit lifetime', () => {
-        setDocumentLocation('http://example.com?emsrc=aff&refID=aff-campaign');
-        currentTime = 100000;
-        engine.execute();
-        setDocumentLocation('http://example.com?emsrc=dis&refID=dis-campaign');
-        currentTime = 10000000000;
-        engine.execute();
-
-        const touchpoints = engine.getAttributedTouchpoints();
-
-        // INOF: Usually dis should NOT override aff, as based on our config!
-        // But as aff has "expired", dis gets the full credit in this case.
-        expect(touchpoints[0].getChannel().getId()).toEqual('dis');
-      });
-
       /* it('should count a touchpoint with "firstView" attribute only on the first call', () => {
         const channel = { c: 'direct', t: new Date().getTime() - 10000 };
         exampleConfig.visitDuration = 1800;
@@ -599,6 +604,10 @@ describe('ba/lib/attribution', () => {
   });
 
   describe('utility methods:', () => {
+    describe.skip('getCurrentTime:', () => {
+
+    });
+
     describe('storageWrite:', () => {
       it('should encode the value as JSON, then uriEncode it and store it in the localStorage', () => {
         storageWrite('myKey', { foo: 'bar' });
