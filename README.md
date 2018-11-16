@@ -1,6 +1,6 @@
 # datalayer.js
 
-[![Build Status](https://travis-ci.org/ryx/datalayer.js.svg?branch=master)](https://travis-ci.org/ryx/datalayer.js)
+[![Build Status](https://dev.azure.com/ricopfaus/marketing.js/_apis/build/status/ryx.datalayer.js)](https://dev.azure.com/ricopfaus/marketing.js/_build/latest?definitionId=3)
 [![npm version](https://badge.fury.io/js/datalayerjs.svg)](https://badge.fury.io/js/datalayerjs)
 
 Datalayer.js is an open-source datalayer, tagmanager, and *"frontend middleware"* - originally created for [GaleriaKaufhof](https://github.com/Galeria-kaufhof). It follows a "developer first" philosophy, is fully test-driven and acts as a thin data proxy between the frontend space in the browser and any third parties, which can be provided as plugins. It is event-driven, based on a [customizable data model with a virtual type system](#models) and aims at standardizing and simplifying the process of 3rd party integration into modern websites.
