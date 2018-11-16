@@ -1,23 +1,25 @@
-# Node.js
-# Build a general Node.js project with npm.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+# Build and publish a node.js-based library from a github repository. Only
+# publish anything to npm if the tests succeeded (so the build was ok)
+# and the build is spawned from a new release in github.
 
 pool:
   vmImage: 'Ubuntu 16.04'
 
 steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '8.x'
-  displayName: 'Install Node.js'
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '8.x'
+    displayName: 'Install Node.js'
 
-- script: |
-    npm install
-    npm run test
-  displayName: 'Npm run test'
+  - script: |
+      npm install
+      npm run test
+    displayName: 'Npm install and test'
 
-- task: Npm@1
-  inputs:
-    command: publish
-    publishEndpoint: npmjs.com
+  - task: Npm@1
+    # only execute this task when the sourceBranch is a new release
+    condition: startsWith(variables['build.sourceBranch'], 'refs/tags/')
+    inputs:
+      command: publish
+      publishEndpoint: npmjs.com
+    displayName: 'Publish to npmjs.com'
