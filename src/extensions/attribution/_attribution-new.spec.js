@@ -5,18 +5,13 @@ import {
   SearchEngineChannel,
   ReferrerMatchingChannel,
   URLMatchingChannel,
-  initAttribution,
-  getAttributedChannel,
-  getConfig,
-  getTouchpoints,
-  handleSearchEngineTypeChannel,
+  getCurrentTime,
   getQueryParam,
-  resetAttribution,
   storageRead,
   storageWrite,
   Touchpoint,
   Channel,
-} from './_attribution';
+} from './_attribution-new';
 
 const { jsdom } = global;
 
@@ -30,7 +25,7 @@ function setDocumentLocation(url) {
   jsdom.reconfigure({ url });
 }
 
-describe('ba/lib/attribution', () => {
+describe('marketingattribution.js', () => {
   let [currentTime, storageSpy] = [];
 
   beforeEach(() => {
@@ -601,11 +596,46 @@ describe('ba/lib/attribution', () => {
         assert.isNull(getAttributedChannel());
       }); */
     });
+
+    describe('saveToData', () => {
+      it('should return a JSON representation of the engine data (lasttouch, touchpoints)', () => {
+        const engine = new AttributionEngine();
+
+        expect(engine.saveToData()).toEqual({
+          e: [],
+          lt: 0, // new engine starts at 0
+        });
+      });
+
+      it('should properly encode and save all touchpoints from the current history', () => {
+
+      });
+    });
+
+    describe('restoreFromData', () => {
+      it('should restore the engine internals (lasttouch, touchpoints) from a given JSON object', () => {
+        const engine = new AttributionEngine();
+        const expectedTimestamp = 111111111;
+        const expectedTouchpoints = [];
+
+        engine.restoreFromData({
+          e: expectedTouchpoints,
+          lt: expectedTimestamp,
+        });
+
+        expect(engine.lastTouchTimestamp).toEqual(expectedTimestamp);
+        expect(engine.touchpointHistory).toEqual(expectedTouchpoints);
+      });
+
+      // @TODO: test error handling
+    });
   });
 
   describe('utility methods:', () => {
-    describe.skip('getCurrentTime:', () => {
-
+    describe('getCurrentTime:', () => {
+      it('should return the current timestamp divided by 1000', () => {
+        expect(getCurrentTime()).toEqual(currentTime / 1000);
+      });
     });
 
     describe('storageWrite:', () => {
@@ -623,7 +653,7 @@ describe('ba/lib/attribution', () => {
 
         storageWrite('myKey', { foo: 'bar' });
 
-        expect(window.document.cookie).toEqual('myKey={"foo":"bar"}');
+        expect(window.document.cookie).toMatch('myKey={"foo":"bar"}');
       });
     });
 
