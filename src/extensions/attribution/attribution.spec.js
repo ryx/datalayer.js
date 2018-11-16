@@ -1,11 +1,11 @@
 /* eslint-disable max-len, no-new */
-import attribution from './attribution';
-import datalayer from '../../datalayer';
 import {
   AttributionEngine,
   LastTouchAttributionModel,
   URLMatchingChannel,
-} from './_attribution-new';
+} from 'marketing.js';
+import attribution from './attribution';
+import datalayer from '../../datalayer';
 
 const { jsdom } = global;
 

@@ -49,6 +49,7 @@
   "dependencies": {
     "babel-core": "^7.0.0-bridge.0",
     "intersection-observer": "^0.5.1",
+    "marketing.js": "0.0.1",
     "promise": "^8.0.2"
   },
   "jest": {
