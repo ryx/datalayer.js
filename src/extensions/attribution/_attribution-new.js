@@ -316,6 +316,39 @@ SearchEngineChannel.searchEngineRules = [
 ];
 
 /**
+ * The AttributionItem holds a reference to an attributed Touchpoint and the weight
+ * it takes from the overall attribution. Arrays of this type are returned from an
+ * AttributionModel's execute method.
+ */
+export class AttributionItem {
+  /**
+   * Create a new AttributionItem with the given touchpoint and weight.
+   * @param {Touchpoint} touchpoint
+   * @param {number} weight the weight to apply to this Touchpoint (defaults to 100)
+   */
+  constructor(touchpoint, weight = 100) {
+    this.touchpoint = touchpoint;
+    this.weight = weight;
+  }
+
+  /**
+   * Returns the associated Touchpoint
+   * @return {Touchpoint}
+   */
+  getTouchpoint() {
+    return this.touchpoint;
+  }
+
+  /**
+   * Returns the weight for the connected Touchpoint
+   * @return {number}
+   */
+  getWeight() {
+    return this.weight;
+  }
+}
+
+/**
  * Abstract base class for all attribution models.
  */
 export class AttributionModel {
@@ -340,14 +373,14 @@ export class AttributionModel {
 
 /**
  * Simple attribution model where the last (overwriting) Touchpoint in the journey
- * gets 100% of the attribution. Also called 'Last Click' oder 'Last Cookie Wins'.
+ * gets 100% of the attribution. Also called 'Last Click' or 'Last Cookie Wins'.
  */
 export class LastTouchAttributionModel extends AttributionModel {
   /**
    * Apply channel attribution logic on provided touchpoint history and
    * return "winning" channel.
    * @param {Touchpoint[]} touchpoints  array with touchpoints to apply model to
-   * @returns {Touchpoint[]} array with "winning" touchpoint objects
+   * @returns {AttributionItem[]} array with "winning" attribution items
    */
   execute(touchpoints = []) {
     let winner = null;
@@ -364,7 +397,7 @@ export class LastTouchAttributionModel extends AttributionModel {
       }
     });
 
-    return [winner];
+    return winner ? [new AttributionItem(winner, 100)] : [];
   }
 }
 
@@ -457,10 +490,11 @@ export class AttributionEngine {
 
   /**
    * Execute the current attribution model on the entire touchpoint history and return
-   * the resulting list of attributed touchpoints.
-   * @returns {Touchpoint[]} Array with Touchpoint objects
+   * the resulting list of attributed touchpoints. This is just a convenience function
+   * to simplify access to the attribution data.
+   * @returns {AttributionItem[]} Array with Touchpoint objects
    */
-  getAttributedTouchpoints() {
+  getAttributionItems() {
     return this.model.execute(this.getTouchpointHistory());
   }
 

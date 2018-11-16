@@ -12,6 +12,7 @@ import {
   Touchpoint,
   Channel,
   AttributionModel,
+  AttributionItem,
 } from './_attribution-new';
 
 const { jsdom } = global;
@@ -360,6 +361,16 @@ describe('marketingattribution.js', () => {
     });
   });
 
+  describe('AttributionItem', () => {
+    it('should create a new AttributionItem with the expected defaults and methods', () => {
+      const tp = new Touchpoint(null, 'test');
+      const item = new AttributionItem(tp);
+
+      expect(item.getTouchpoint()).toEqual(tp);
+      expect(item.getWeight()).toEqual(100);
+    });
+  });
+
   describe('AttributionModel', () => {
     it('should set the touchpointLifetime to the default of 30 days (in seconds) on construction', () => {
       const model = new AttributionModel();
@@ -395,8 +406,8 @@ describe('marketingattribution.js', () => {
       const result = model.execute(touchpoints);
 
       expect(result.length).toBe(1);
-      expect(result[0].getValue()).toEqual('aff/some/campaign/name_123');
-      expect(result[0].getChannel().getId()).toEqual('aff');
+      expect(result[0].getTouchpoint().getValue()).toEqual('aff/some/campaign/name_123');
+      expect(result[0].getTouchpoint().getChannel().getId()).toEqual('aff');
     });
 
     it('should apply the correct attribution logic for: [match:aff, searchEngine:seo.canOverwrite]', () => {
@@ -407,7 +418,7 @@ describe('marketingattribution.js', () => {
 
       const result = model.execute(touchpoints);
 
-      expect(result[0].getChannel().getId()).toEqual('seo');
+      expect(result[0].getTouchpoint().getChannel().getId()).toEqual('seo');
     });
 
     it('should apply the correct attribution logic for: [match:aff, match:dis]', () => {
@@ -418,8 +429,8 @@ describe('marketingattribution.js', () => {
 
       const result = model.execute(touchpoints);
 
-      expect(result[0].getChannel().getId()).toEqual('aff');
-      expect(result[0].getValue()).toEqual('aff_partner/some/campaign/name_123');
+      expect(result[0].getTouchpoint().getChannel().getId()).toEqual('aff');
+      expect(result[0].getTouchpoint().getValue()).toEqual('aff_partner/some/campaign/name_123');
     });
 
     it('should apply the correct attribution logic for: [match:foo.canOverwrite, match:dis]', () => {
@@ -430,8 +441,8 @@ describe('marketingattribution.js', () => {
 
       const result = model.execute(touchpoints);
 
-      expect(result[0].getChannel().getId()).toEqual('foo');
-      expect(result[0].getValue()).toEqual('foo_partner/some/campaign/name_123');
+      expect(result[0].getTouchpoint().getChannel().getId()).toEqual('foo');
+      expect(result[0].getTouchpoint().getValue()).toEqual('foo_partner/some/campaign/name_123');
     });
 
     it('should apply the correct attribution logic for: [match:foo.canOverwrite, searchEngine:seo.canOverwrite]', () => {
@@ -442,7 +453,7 @@ describe('marketingattribution.js', () => {
 
       const result = model.execute(touchpoints);
 
-      expect(result[0].getChannel().getId()).toEqual('seo');
+      expect(result[0].getTouchpoint().getChannel().getId()).toEqual('seo');
     });
 
     it('should ignore touchpoints that are older than the defined visit lifetime', () => {
@@ -455,7 +466,19 @@ describe('marketingattribution.js', () => {
 
       // INOF: Usually dis should NOT override aff, as based on our config!
       // But as aff has "expired", dis gets the full credit in this case.
-      expect(result[0].getChannel().getId()).toEqual('dis');
+      expect(result[0].getTouchpoint().getChannel().getId()).toEqual('dis');
+    });
+
+    it('should return an empty array if no Touchpoints exist or apply', () => {
+      const touchpoints = [
+        new Touchpoint(channels.aff, 'aff-campaign', 11), // expired!
+      ];
+
+      const result = model.execute(touchpoints);
+
+      // INOF: Usually dis should NOT override aff, as based on our config!
+      // But as aff has "expired", dis gets the full credit in this case.
+      expect(result).toEqual([]);
     });
   });
 
@@ -613,6 +636,8 @@ describe('marketingattribution.js', () => {
         expect(storageWrite).toHaveBeenCalled();
       });
     });
+
+    // getAttributionItems
 
     describe('getChannelById', () => {
       it('should return a channel based on its id', () => {
