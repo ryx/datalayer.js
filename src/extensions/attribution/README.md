@@ -2,17 +2,30 @@
 Official datalayer.js core extension that allows a highly flexible marketing channel recognition and marketing attribution handling.
 
 ## Info
-This extension records a history of channel touchpoints based on a given configuration and provides access to the resulting data by extending the datalayer's global data.
+This extension records a history of channel touchpoints based on a given configuration and provides access to the resulting data by extending the datalayer's global data. It is built upon [marketing.js](https://github.com/ryx/marketing.js), an attribution and marketing channel handlig library.
 
 ## Usage
 The attribution extension creates an `attribution` property in the datalayer's global data. You can then perform conditional operations against the attribution data, e.g. from within a plugin's custom rules handler. That way it is easily possible to only load a plugin if a certain attribution criteria is fulfilled.
 
 ```javascript
 import { attribution } from 'datalayerjs';
+import {
+  AttributionEngine,
+  LastTouchAttributionModel,
+  SearchEngineChannel,
+  URLMatchingChannel,
+} from 'marketing.js';
 
 datalayer
   .use(attribution({
-    // ...
+    // create our AttributionEngine, see marketing.js docs for details
+    engine: new AttributionEngine(
+      new LastTouchAttributionModel(),
+      [
+        new SearchEngineChannel('seo', 'SEO'),
+        new URLMatchingChannel('sea', 'SEA (Adwords)', 'adword', 'adword'),
+      ]
+    )
   }))
   .initialize({
     plugins: [
