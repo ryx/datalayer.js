@@ -11,6 +11,7 @@ import {
   storageWrite,
   Touchpoint,
   Channel,
+  AttributionModel,
 } from './_attribution-new';
 
 const { jsdom } = global;
@@ -94,13 +95,13 @@ describe('marketingattribution.js', () => {
       const expectedTimestamp = 9999999;
       const touchpoint = new Touchpoint(expectedChannel, expectedValue, expectedTimestamp);
 
-      const jsonString = touchpoint.toJSON();
+      const json = touchpoint.toJSON();
 
-      expect(jsonString).toEqual(JSON.stringify({
+      expect(json).toEqual({
         c: expectedChannel.getId(),
         v: expectedValue,
         t: expectedTimestamp,
-      }));
+      });
     });
 
     describe('Touchpoint.fromJSON', () => {
@@ -113,17 +114,17 @@ describe('marketingattribution.js', () => {
         );
       });
 
-      it('should create a new Touchpoint instance from a serialized JSON string', () => {
+      it('should create a new Touchpoint instance from a serialized JSON object', () => {
         const expectedChannelId = 'test';
         const expectedValue = 'my/value/123';
         const expectedTimestamp = 9999999;
-        const jsonString = JSON.stringify({
+        const json = {
           c: expectedChannelId,
           v: expectedValue,
           t: expectedTimestamp,
-        });
+        };
 
-        const touchpoint = Touchpoint.fromJSON(engine, jsonString);
+        const touchpoint = Touchpoint.fromJSON(engine, json);
 
         expect(touchpoint.getValue()).toEqual(expectedValue);
         expect(touchpoint.getTimestamp()).toEqual(expectedTimestamp);
@@ -131,14 +132,14 @@ describe('marketingattribution.js', () => {
       });
 
       it('should throw an error when the provided data is incorrect', () => {
-        expect(() => Touchpoint.fromJSON(engine, JSON.stringify({ v: 'boom', t: 1234 }))).toThrow('expected a string');
-        expect(() => Touchpoint.fromJSON(engine, JSON.stringify({ v: 'boom' }))).toThrow('expected a string');
-        expect(() => Touchpoint.fromJSON(engine, JSON.stringify({ c: 'boom' }))).toThrow('expected a string');
-        expect(() => Touchpoint.fromJSON(engine, JSON.stringify({ t: 'boom' }))).toThrow('expected a string');
+        expect(() => Touchpoint.fromJSON(engine, { v: 'boom', t: 1234 })).toThrow('expected a string');
+        expect(() => Touchpoint.fromJSON(engine, { v: 'boom' })).toThrow('expected a string');
+        expect(() => Touchpoint.fromJSON(engine, { c: 'boom' })).toThrow('expected a string');
+        expect(() => Touchpoint.fromJSON(engine, { t: 'boom' })).toThrow('expected a string');
       });
 
       it('should throw when a Channel with the given id cannot be found in provided AttributionEngine', () => {
-        expect(() => Touchpoint.fromJSON(engine, JSON.stringify({ c: 'unknown', v: 'my/val', t: 123456789 }))).toThrow('not found');
+        expect(() => Touchpoint.fromJSON(engine, { c: 'unknown', v: 'my/val', t: 123456789 })).toThrow('not found');
       });
     });
   });
@@ -360,7 +361,17 @@ describe('marketingattribution.js', () => {
   });
 
   describe('AttributionModel', () => {
+    it('should set the touchpointLifetime to the default of 30 days (in seconds) on construction', () => {
+      const model = new AttributionModel();
 
+      expect(model.touchpointLifetime).toEqual(2592000);
+    });
+
+    it('should throw an Error when the abstract base method "execute" is callled', () => {
+      const model = new AttributionModel();
+
+      expect(() => model.execute()).toThrow('implemented in overridden subclasses');
+    });
   });
 
   describe('LastTouchAttributionModel', () => {
@@ -595,36 +606,76 @@ describe('marketingattribution.js', () => {
         initAttribution(exampleConfig);
         assert.isNull(getAttributedChannel());
       }); */
+
+      it.skip('should update the data in the storage', () => {
+        jest.spyOn(storageWrite);
+
+        expect(storageWrite).toHaveBeenCalled();
+      });
+    });
+
+    describe('getChannelById', () => {
+      it('should return a channel based on its id', () => {
+        const channel1 = new SearchEngineChannel('seo', 'SEO');
+        const channel2 = new ReferrerMatchingChannel('foo', 'Foo', 'foo=1');
+        const e = new AttributionEngine(null, [
+          channel1,
+          channel2,
+        ]);
+
+        expect(e.getChannelById('seo')).toEqual(channel1);
+        expect(e.getChannelById('foo')).toEqual(channel2);
+      });
     });
 
     describe('saveToData', () => {
       it('should return a JSON representation of the engine data (lasttouch, touchpoints)', () => {
-        const engine = new AttributionEngine();
+        const engine = new AttributionEngine(null, [
+          new URLMatchingChannel('dis', 'Display', { emsrc: 'dis' }, 'refID'),
+          new SearchEngineChannel('seo', 'SEO'),
+        ]);
+        // mock a simple touchpoint history
+        const storedTouchpoint1 = new Touchpoint(engine.getChannelById('seo'));
+        const storedTouchpoint2 = new Touchpoint(engine.getChannelById('dis'), 'aff/bla/123');
+        engine.touchpointHistory = [storedTouchpoint1, storedTouchpoint2];
 
         expect(engine.saveToData()).toEqual({
-          e: [],
+          e: [
+            storedTouchpoint1.toJSON(),
+            storedTouchpoint2.toJSON(),
+          ],
           lt: 0, // new engine starts at 0
         });
       });
 
-      it('should properly encode and save all touchpoints from the current history', () => {
+      it.skip('should properly encode and save all touchpoints from the current history', () => {
 
       });
     });
 
     describe('restoreFromData', () => {
       it('should restore the engine internals (lasttouch, touchpoints) from a given JSON object', () => {
-        const engine = new AttributionEngine();
-        const expectedTimestamp = 111111111;
-        const expectedTouchpoints = [];
+        const engine = new AttributionEngine(null, [
+          new URLMatchingChannel('dis', 'Display', { emsrc: 'dis' }, 'refID'),
+          new SearchEngineChannel('seo', 'SEO'),
+        ]);
+        const storedTimestamp = 111111111;
+        const storedTouchpoint1 = new Touchpoint(engine.getChannelById('seo'));
+        const storedTouchpoint2 = new Touchpoint(engine.getChannelById('dis'), 'aff/bla/123');
 
         engine.restoreFromData({
-          e: expectedTouchpoints,
-          lt: expectedTimestamp,
+          e: [
+            storedTouchpoint1.toJSON(),
+            storedTouchpoint2.toJSON(),
+          ],
+          lt: storedTimestamp,
         });
 
-        expect(engine.lastTouchTimestamp).toEqual(expectedTimestamp);
-        expect(engine.touchpointHistory).toEqual(expectedTouchpoints);
+        expect(engine.lastTouchTimestamp).toEqual(storedTimestamp);
+        // compare ids and values because object instances are different
+        const restored = engine.getTouchpointHistory();
+        expect(restored[0].getChannel().getId()).toEqual(storedTouchpoint1.getChannel().getId());
+        expect(restored[1].getChannel().getId()).toEqual(storedTouchpoint2.getChannel().getId());
       });
 
       // @TODO: test error handling
@@ -670,6 +721,13 @@ describe('marketingattribution.js', () => {
         storageSpy.getItem.mockReturnValue('{"foo":"bar"}');
 
         expect(storageRead('myKey')).toEqual({ foo: 'bar' });
+      });
+
+      it('should silently handle JSON parsing errors', () => {
+        storageSpy.getItem.mockReturnValue('..brzz?##');
+
+        expect(() => storageRead('myKey')).not.toThrow();
+        expect(storageRead('myKey')).toEqual(null);
       });
     });
 

@@ -1,23 +1,9 @@
 /**
- * Record a visitor's touchpoints and provide access to this channel history.
+ * Marketingchannel recognition and attribution libarry. Records a visitor's touchpoints,
+ * provides access to the touchpoint history and offers attribution models to work
+ * on the data.
  *
- * Logic:
- * -> init:
- * -- read channel information from URL, based on provided configuration
- * -- if touchpoint is recognized, store info in touchpoint history (storage)
- *
- * -> getAttributedChannel():
- * -- check touchpoints and calculate "winning" channel
- * -- delete winning channel (or mark channel as "done"? should check in econda)
- * -- return winning channel
- *
- * Usage:
- *
- * // init channels
- * channel = touchpoints.init({
- *  channels: [...]
- * });
- *
+ * (c) 2017 - present | Rico Pfaus <rico.pfaus@kaufhof.de>
  */
 
 // Return current time as UNIX timestamp /seconds-based)
@@ -51,7 +37,6 @@ export function storageRead(key) {
     json = window.localStorage.getItem(key);
   } catch (e) {
     // just silently handle this
-    console.error(e);
   }
   if (!json) {
     const match = window.document.cookie.match(new RegExp(`(^| )${key}=([^;]+)`));
@@ -140,15 +125,15 @@ export class Touchpoint {
    * @returns {string}
    */
   toJSON() {
-    return JSON.stringify({
+    return {
       c: this.channel.getId(),
       v: this.value,
       t: this.timestamp,
-    });
+    };
   }
 
   /**
-   * Create a Touchppoint object from a given JSON string. Expects a JSON object
+   * Create a Touchppoint object from a given JSON object. Expects a JSON object
    * with parameters 'c' containing the channel id and 't' containing the last
    * touch timestamp.
    *
@@ -157,23 +142,17 @@ export class Touchpoint {
    * in the JSON data.
    *
    * @param {AttributionEngine} engine the attribution engine holding the configuration
-   * @param {String} json the JSON string to be unserialized
+   * @param {Object} json the plain JSON object to be unserialized
    */
-  static fromJSON(engine, json) {
-    let data = null;
-    try {
-      data = JSON.parse(json);
-    } catch (e) {
-      // swallow any errors, we validate the data in the next line
-    }
+  static fromJSON(engine, data) {
     if (!data || typeof data.c === 'undefined' || typeof data.t === 'undefined') {
       throw new Error('Touchpoint.fromJSON: expected a string in form of {"c":"id","v":"value","t":1234567890}', data);
     }
+    // lookup channel and return correct Touchpoint instance
     const channel = engine.getChannelById(data.c);
     if (!channel) {
       throw new Error(`Touchpoint.fromJSON: channel "${data.c}" not found in provided engine`);
     }
-    // lookup channel and return correct Touchpoint instance
     return new Touchpoint(channel, data.v, data.t);
   }
 }
@@ -305,6 +284,10 @@ export class ReferrerMatchingChannel extends Channel {
  * of known search engines (stored in SearchEngineChannel.searchEngineRules).
  */
 export class SearchEngineChannel extends Channel {
+  /**
+   * Execute channel logic and return the recognized Touchpoint or null.
+   * @returns {Touchpoint | null}
+   */
   execute() {
     for (let j = 0; j < SearchEngineChannel.searchEngineRules.length; j += 1) {
       const engine = SearchEngineChannel.searchEngineRules[j];
@@ -336,13 +319,21 @@ SearchEngineChannel.searchEngineRules = [
  * Abstract base class for all attribution models.
  */
 export class AttributionModel {
-  constructor(touchpointLifetime) {
+  /**
+   *
+   * @param {number} touchpointLifetime timespan after that touchpoints are ignored
+   */
+  constructor(touchpointLifetime = 2592000 /* 60 * 60 * 24 * 30 = 30 days */) {
+    /**
+     * The timespan after which Touchpoints are ignored
+     * @type {number}
+     */
     this.touchpointLifetime = touchpointLifetime;
   }
 
   /* eslint-disable class-methods-use-this */
   execute() {
-    return [];
+    throw new Error('AttributionModel.execute must be implemented in overridden subclasses');
   }
   /* eslint-enable class-methods-use-this */
 }
@@ -352,10 +343,6 @@ export class AttributionModel {
  * gets 100% of the attribution. Also called 'Last Click' oder 'Last Cookie Wins'.
  */
 export class LastTouchAttributionModel extends AttributionModel {
-  constructor() {
-    super(2592000 /* 60 * 60 * 24 * 30 = 30 days */);
-  }
-
   /**
    * Apply channel attribution logic on provided touchpoint history and
    * return "winning" channel.
