@@ -3,11 +3,16 @@ import {
   AttributionEngine,
   LastTouchAttributionModel,
   URLMatchingChannel,
+  SearchEngineChannel,
 } from 'marketing.js';
 import attribution from './attribution';
 import datalayer from '../../datalayer';
 
 const { jsdom } = global;
+
+function setDocumentReferrer(referrer) {
+  Object.defineProperty(window.document, 'referrer', { value: referrer, configurable: true });
+}
 
 describe('attribution', () => {
   let [engine, model] = [];
@@ -15,6 +20,7 @@ describe('attribution', () => {
   beforeEach(() => {
     model = new LastTouchAttributionModel();
     engine = new AttributionEngine(model, [
+      new SearchEngineChannel('seo', 'SEO'),
       new URLMatchingChannel('sea', 'SEA (js)', 'adword', 'adword', { canOverwrite: true }),
     ]);
   });
@@ -47,7 +53,7 @@ describe('attribution', () => {
 
   describe('extension factory', () => {
     it('should return an empty `attribution` object on calling "beforeInitialize", when running extension without attribution config', () => {
-      const ExtensionContructor = attribution({ engine });
+      const ExtensionContructor = attribution({ engine: new AttributionEngine(model, []) });
       const instance = new ExtensionContructor(datalayer);
 
       const returnData = instance.beforeInitialize();
@@ -82,7 +88,27 @@ describe('attribution', () => {
         },
       }));
     });
-  });
 
-  // TODO: test if attribution objects are properly set based on config
+    describe('data validation', () => {
+      let extension;
+
+      beforeEach(() => {
+        const ExtensionContructor = attribution({
+          engine: new AttributionEngine(model, [
+            new SearchEngineChannel('seo', 'SEO'),
+            new URLMatchingChannel('sea', 'SEA (js)', 'adword', 'adword', { canOverwrite: true }),
+          ]),
+        });
+        extension = new ExtensionContructor();
+      });
+
+      it('should return an empty string for touchpoint.campaign if associated channel does not provide a campaign name', () => {
+        setDocumentReferrer('https://google.com?q=foo');
+
+        const returnData = extension.beforeInitialize();
+
+        expect(returnData.attribution.currentTouchpoint.campaign).toEqual('');
+      });
+    });
+  });
 });

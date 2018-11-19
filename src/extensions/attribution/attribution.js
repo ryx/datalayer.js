@@ -42,7 +42,7 @@ export default (config = {
       currentTouchpoint = {
         id: recognizedChannel.getId(),
         label: recognizedChannel.getLabel(),
-        campaign: recognizedTouchpoint.getValue(),
+        campaign: recognizedTouchpoint.getValue() || '',
       };
     }
 
@@ -55,7 +55,7 @@ export default (config = {
             touchpoint: {
               id: touchpoint.getChannel().getId(),
               label: touchpoint.getChannel().getLabel(),
-              campaign: touchpoint.getValue(),
+              campaign: touchpoint.getValue() || '',
             },
             weight: data.getWeight(),
           };
