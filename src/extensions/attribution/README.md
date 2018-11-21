@@ -84,7 +84,7 @@ interface D7rAttributionData {
    * after applying chosen attribution model to available touchpoint history).
    * May be an empty array (if no attribution is available), but HAS TO be defined.
    */
-  credits: D7rTouchpointAttributionData[];
+  credits: D7rTouchpointCreditData[];
 
   /**
    * Entire touchpoint history for all journeys created by this customer
@@ -94,7 +94,7 @@ interface D7rAttributionData {
 ```
 
 ### D7rTouchpointCreditData
-Contains data about a single attributed touchpoint and the weight it had for the entire conversion journey. This data is the result of applying a specific attribution model logic to a list of touchpoints. The `weight` can be any numerical value, but it is recommended to use percentage values adding up to a total of 100 for all attributed touchpoints connected to a single `DALAttributionData` object.
+Contains data about a single attributed touchpoint and the weight it had for the entire conversion journey. This data is the result of applying a specific attribution model logic to a list of touchpoints. The `weight` can be any numerical value, but it is recommended to use percentage values adding up to a total of 100 for all attributed touchpoints connected to a single `D7rAttributionData` object.
 
 ```typescript
 interface D7rTouchpointCreditData {
