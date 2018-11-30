@@ -15,8 +15,8 @@ datalayer.use(methodQueue());
 
 Then use the global method queue object to access datalayer.js from everywhere.
 ```javascript
-_d7rq = window._d7rq || [];
-_d7rq.push(['broadcast', 'my-cool-event', { foo: 'bar' }]);
+window._d7rq = window._d7rq || [];
+window._d7rq.push(['broadcast', 'my-cool-event', { foo: 'bar' }]);
 ```
 
 ## Options
