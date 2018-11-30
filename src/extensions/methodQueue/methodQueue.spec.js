@@ -1,13 +1,12 @@
 /* eslint-disable max-len, no-new */
+import { Datalayer } from '../../datalayer';
 import methodQueue, { createMethodQueueHandler } from './methodQueue';
 
 describe('methodQueue', () => {
-  let datalayerMock = null;
+  let datalayer = null;
 
   beforeEach(() => {
-    datalayerMock = {
-      broadcast: jest.fn(),
-    };
+    datalayer = new Datalayer();
   });
 
   describe('module:', () => {
@@ -17,28 +16,77 @@ describe('methodQueue', () => {
   });
 
   describe('extension factory:', () => {
-    it('should install a global method queue with the default name', () => {
-      const ExtensionClass = methodQueue();
-
-      new ExtensionClass(datalayerMock);
-
-      expect(window._d7rq).toBeInstanceOf(Array);
+    it('should install a global method queue with the default name, when used', () => {
+      datalayer
+        .use(methodQueue())
+        .initialize()
+        .then(() => {
+          expect(window._d7rq).toBeInstanceOf(Array);
+        });
     });
 
-    it('should install a global method queue with a custom name if provided in config', () => {
-      const ExtensionClass = methodQueue({ queueName: '_myqueue' });
+    it('should install a global method queue with a custom name if provided in config, when used', () => {
+      datalayer
+        .use(methodQueue({ queueName: '_myqueue' }))
+        .initialize()
+        .then(() => {
+          expect(window._myqueue).toBeInstanceOf(Array);
+        });
+    });
+  });
 
-      new ExtensionClass(datalayerMock);
+  describe('runtime:', () => {
+    it('should execute the associated API method after datalayer is ready, when adding a method to the queue BEFORE init', () => {
+      window._d7rq = [];
+      window._d7rq.push(['broadcast', 'test-event', { foo: 'bar' }]);
+      const broadcastSpy = jest.spyOn(datalayer, 'broadcast');
 
-      expect(window._myqueue).toBeInstanceOf(Array);
+      datalayer
+        .use(methodQueue())
+        .initialize()
+        .then(() => {
+          expect(broadcastSpy).toHaveBeenCalledWith('test-event', { foo: 'bar' });
+        });
     });
 
-    it.skip('should execute the associated API method when adding a method to the queue BEFORE init', () => {
-      // ...
+    it('should NOT execute the associated API method BEFORE datalayer has initialized, when adding a method to the queue BEFORE init', () => {
+      const broadcastSpy = jest.spyOn(datalayer, 'broadcast');
+      datalayer
+        .use(methodQueue());
+
+      window._d7rq = [];
+      window._d7rq.push(['broadcast', 'test-event', { foo: 'bar' }]);
+
+      expect(broadcastSpy).not.toHaveBeenCalledWith('test-event', { foo: 'bar' });
     });
 
-    it.skip('should execute the associated API method when adding a method to the queue AFTER init', () => {
-      // ...
+    it('should NOT execute the associated API method BEFORE datalayer is ready, when adding a method to the queue AFTER init', () => {
+      const broadcastSpy = jest.spyOn(datalayer, 'broadcast');
+      datalayer
+        .use(methodQueue())
+        .initialize();
+
+      window._d7rq = [];
+      window._d7rq.push(['broadcast', 'test-event', { foo: 'bar' }]);
+
+      expect(broadcastSpy).not.toHaveBeenCalledWith('test-event', { foo: 'bar' });
+    });
+
+    it('should execute the associated API method when adding a method to the queue AFTER init and AFTER the datalayer is ready ', (done) => {
+      const broadcastSpy = jest.spyOn(datalayer, 'broadcast');
+      datalayer
+        .use(methodQueue())
+        .initialize();
+
+      window._d7rq = [];
+      window._d7rq.push(['broadcast', 'test-event', { foo: 'bar' }]);
+
+      datalayer
+        .whenReady()
+        .then(() => {
+          expect(broadcastSpy).toHaveBeenCalledWith('test-event', { foo: 'bar' });
+          done();
+        });
     });
   });
 
