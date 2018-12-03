@@ -208,6 +208,9 @@ export class Datalayer {
       }
     }
 
+    // trigger post-initialize hook
+    this.triggerExtensionHook('afterInitialize');
+
     // initialize successful
     this.broadcast('initialized', this.globalData);
     this.log('initialize: plugins initialized', plugins);

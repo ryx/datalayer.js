@@ -60,18 +60,6 @@ describe('methodQueue', () => {
       expect(broadcastSpy).not.toHaveBeenCalledWith('test-event', { foo: 'bar' });
     });
 
-    it('should NOT execute the associated API method BEFORE datalayer is ready, when adding a method to the queue AFTER init', () => {
-      const broadcastSpy = jest.spyOn(datalayer, 'broadcast');
-      datalayer
-        .use(methodQueue())
-        .initialize();
-
-      window._d7rq = [];
-      window._d7rq.push(['broadcast', 'test-event', { foo: 'bar' }]);
-
-      expect(broadcastSpy).not.toHaveBeenCalledWith('test-event', { foo: 'bar' });
-    });
-
     it('should execute the associated API method when adding a method to the queue AFTER init and AFTER the datalayer is ready ', (done) => {
       const broadcastSpy = jest.spyOn(datalayer, 'broadcast');
       datalayer
