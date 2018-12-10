@@ -13,7 +13,6 @@
  *
  */
 import { extend } from './lib/utils';
-import cookie from './lib/cookie';
 import EventQueue from './lib/queue';
 
 /**
@@ -30,9 +29,6 @@ export class Datalayer {
     this.extensions = []; // array with loaded extensions
     this.queue = new EventQueue();
     this.logger = { log: () => {} }; // default logger stub
-
-    // @FIXME see github issue #8
-    this.testModeActive = this.isTestModeActive();
 
     // create Promise reflecting readiness
     this.readyPromiseResolver = null;
@@ -223,34 +219,8 @@ export class Datalayer {
     return this.readyPromise;
   }
 
-  inTestMode() {
-    return this.testModeActive === true;
-  }
-
   isReady() {
     return this.initialized === true;
-  }
-
-  /**
-   * Handle and (un-/)persist test mode for plugin delivery.
-   * @TODO: port and use persistentURLParam from DAL
-   */
-  isTestModeActive() {
-    // this.log(window.location.search);
-    if (cookie.get('__d7rtest__')) {
-      this.log('isTestModeActive: cookie found');
-      if (window.location.search.match(/__d7rtest__=0/gi)) {
-        this.log('isTestModeActive: removing cookie');
-        cookie.remove('__d7rtest__', { path: '/' });
-        return false;
-      }
-      return true;
-    }
-    if (window.location.search.match(/__d7rtest__=1/gi)) {
-      cookie.set('__d7rtest__', '1', { path: '/', maxAge: 3600 * 24 * 7 });
-      return true;
-    }
-    return false;
   }
 }
 

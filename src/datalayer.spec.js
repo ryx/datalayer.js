@@ -2,9 +2,6 @@
 import Plugin from './Plugin';
 import datalayer, { Datalayer } from './datalayer';
 
-// properly define implicit globals
-const { jsdom } = global;
-
 /**
  * Mock plugin to test plugin specific stuff (event retrieval,
  * config overrides, ...).
@@ -140,83 +137,6 @@ describe('datalayer', () => {
         expect(myMockPlugin.handleEvent).toHaveBeenCalledWith('initialize-failed', expectedError);
       });
     });
-  });
-
-  describe('testMode', () => {
-    describe('enable/disable', () => {
-      it('should activate testmode if URL contains __d7rtest__=1', () => {
-        jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=1' });
-        const d7r = new Datalayer();
-
-        d7r.initialize({ data: globalDataMock });
-
-        expect(d7r.inTestMode()).toBe(true);
-      });
-
-      it('should still BE in testmode, even after fake reload', () => {
-        jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=1' });
-        new Datalayer();
-
-        jsdom.reconfigure({ url: 'http://example.com' });
-        const dal2 = new Datalayer();
-        dal2.initialize({ data: globalDataMock });
-
-        expect(dal2.inTestMode()).toBe(true);
-      });
-
-      it('should disable testmode if URL contains __d7rtest__=0', () => {
-        jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=0' });
-        const d7r = new Datalayer();
-
-        d7r.initialize({ data: globalDataMock });
-
-        expect(d7r.inTestMode()).toBe(false);
-      });
-
-      it('should still NOT BE in testmode, even after fake reload', () => {
-        jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=0' });
-        new Datalayer();
-
-        jsdom.reconfigure({ url: 'http://example.com' });
-        const dal2 = new Datalayer();
-        dal2.initialize({ data: globalDataMock });
-
-        expect(dal2.inTestMode()).toBe(false);
-      });
-    });
-
-    // @FIXME: I _think_ this is a false positive
-    it('should load a specified plugin, if testmode is active, the mode evaluates to "test" and the rule evaluates to "true"', () => {
-      jsdom.reconfigure({ url: 'http://example.com?__d7rtest__=1' });
-      const d7r = new Datalayer();
-      const myPlugin = new MockPlugin();
-
-      d7r.initialize({
-        data: globalDataMock,
-        plugins: [myPlugin],
-      });
-
-      return d7r.whenReady().then(() => {
-        expect(d7r.getPluginByID('mockPlugin')).toBeInstanceOf(MockPlugin);
-      });
-    });
-
-    /*
-    // @FIXME: doesn't work
-    it('should NOT load a specified plugin, if testmode is inactive, the mode evaluates to "test" and the rule evaluates to "true"', (st) => {
-      dom.reconfigure({ url: 'http://example.com?__d7rtest__=0' });
-      const d7r = new Datalayer();
-      d7r.initialize({
-        data: globalDataMock,
-        plugins: [
-          { type: MockPlugin, rule: () => true, test: true },
-        ],
-      });
-      return d7r.whenReady().then(() => {
-        expect(d7r.getPluginByID('mockPlugin')).toBeInstanceOf(MockPlugin);
-      });
-    });
-    */
   });
 
   describe('whenReady', () => {
