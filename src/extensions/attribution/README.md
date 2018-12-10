@@ -31,8 +31,9 @@ datalayer
     plugins: [
       new MyTestPlugin(
         { accountId: 'abc123' },
-        (data) => {
-          // only execute on the conversion page, if the attribution data matches a given campaign
+        (name, data) => {
+          // only execute on page-loaded events on the conversion page,
+          // and only if the attribution data matches the expected campaign
           return data.page.type === 'conversion' &&
             data.attribution.current.length > 0 &&
             data.attribution.current[0].id === 'affiliate' &&

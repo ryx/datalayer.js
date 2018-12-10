@@ -9,10 +9,10 @@ import {
 
 datalayer.initialize({
   plugins: [
-    // this plugin will only receive events if data.page.type equals "checkout-completed"
+    // this plugin will only receive "page-loaded" events, and only if type is "checkout-completed"
     new ExampleConversionPlugin(
       { somePartnerId: 12343123 },
-      (data) => data.page.type === 'checkout-completed',
+      (name, data) => name === 'page-loaded' && data.page.type === 'checkout-completed',
     );
   ]
 });

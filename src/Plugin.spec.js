@@ -45,8 +45,8 @@ describe('Plugin', () => {
     const expectedData = { foo: 'bar' };
     const plugin = new Plugin('foo', {}, expectedRulesCb);
 
-    plugin.shouldReceiveEvent(expectedData);
+    plugin.shouldReceiveEvent('my-event', expectedData);
 
-    expect(expectedRulesCb).toHaveBeenCalledWith(expectedData);
+    expect(expectedRulesCb).toHaveBeenCalledWith('my-event', expectedData);
   });
 });

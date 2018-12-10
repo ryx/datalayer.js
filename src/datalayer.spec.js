@@ -242,6 +242,20 @@ describe('datalayer', () => {
       });
     });
 
+    it('should pass event name and data to plugin.sshouldReceiveEvent', () => {
+      const d7r = new Datalayer();
+      const plugin = new MockPlugin();
+      plugin.shouldReceiveEvent = jest.fn();
+      const expectedEvent = { name: 'test' };
+
+      d7r.initialize({ data: globalDataMock, plugins: [plugin] });
+      d7r.broadcast(expectedEvent.name, expectedEvent.data);
+
+      return d7r.whenReady().then(() => {
+        expect(plugin.shouldReceiveEvent).toHaveBeenCalledWith(expectedEvent.name, expectedEvent.data);
+      });
+    });
+
     it('should NOT broadcast event to plugins that are not interested (shouldReceiveEvent() === false)', () => {
       const d7r = new Datalayer();
       const plugin = new MockPlugin();

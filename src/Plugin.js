@@ -40,8 +40,8 @@ export default class Plugin {
    * prohibit data access whenever necessary.
    * @param {Object} data  the current data object for the current page context (should comply with data model)
    */
-  shouldReceiveEvent(data) {
-    return typeof this._rulesCallback === 'function' ? this._rulesCallback(data) : true;
+  shouldReceiveEvent(name, data) {
+    return typeof this._rulesCallback === 'function' ? this._rulesCallback(name, data) : true;
   }
 
   /**

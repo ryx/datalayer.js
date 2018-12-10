@@ -126,7 +126,7 @@ export class Datalayer {
     this.log(`broadcasting event "${name}"`, data);
     this.queue.broadcastEvent(name, data, (subscriber) => {
       if (typeof subscriber.shouldReceiveEvent === 'function') {
-        return subscriber.shouldReceiveEvent(this.globalData);
+        return subscriber.shouldReceiveEvent(name, data);
       }
       return true;
     });
