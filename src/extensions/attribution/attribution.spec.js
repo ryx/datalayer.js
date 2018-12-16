@@ -4,6 +4,7 @@ import {
   LastTouchAttributionModel,
   URLMatchingChannel,
   SearchEngineChannel,
+  ReferrerMatchingChannel,
 } from 'marketing.js';
 import attribution from './attribution';
 import datalayer from '../../datalayer';
@@ -11,7 +12,7 @@ import datalayer from '../../datalayer';
 const { jsdom } = global;
 
 function setDocumentReferrer(referrer) {
-  Object.defineProperty(window.document, 'referrer', { value: referrer, configurable: true });
+  Object.defineProperty(window.document, 'referrer', { value: referrer, configurable: true, writable: true });
 }
 
 describe('attribution', () => {
@@ -92,14 +93,22 @@ describe('attribution', () => {
     describe('data validation', () => {
       let extension;
 
-      beforeEach(() => {
+      // helper to create new Extension with dedicated cookie (to avoid test interference)
+      function createExtension(cookieName = 'attrData') {
+        const modl = new LastTouchAttributionModel();
         const ExtensionContructor = attribution({
-          engine: new AttributionEngine(model, [
+          engine: new AttributionEngine(modl, [
             new SearchEngineChannel('seo', 'SEO'),
             new URLMatchingChannel('sea', 'SEA (js)', 'adword', 'adword', { canOverwrite: true }),
-          ]),
+            new ReferrerMatchingChannel('direct', 'Direct (js)', /^$/gi, { isFirstViewOnly: true }),
+          ], 1800, cookieName),
         });
-        extension = new ExtensionContructor();
+        return new ExtensionContructor();
+      }
+
+      beforeEach(() => {
+        extension = createExtension();
+        localStorage.removeItem('attrData');
       });
 
       it('should return an empty string for touchpoint.campaign if associated channel does not provide a campaign name', () => {
@@ -108,6 +117,23 @@ describe('attribution', () => {
         const returnData = extension.beforeInitialize();
 
         expect(returnData.attribution.currentTouchpoint.campaign).toEqual('');
+      });
+
+      it('should return null for currentTouchpoint on repeat views, if recognized channel "isFirstViewOnly"', () => {
+        setDocumentReferrer('');
+        jsdom.reconfigure({ url: 'http://example.com' });
+
+        // first view
+        const extension1 = createExtension('testRepeatView');
+        const returnData1 = extension1.beforeInitialize();
+
+        expect(returnData1.attribution.currentTouchpoint.id).toEqual('direct');
+
+        // simulate repeat view
+        const extension2 = createExtension('testRepeatView');
+        const returnData2 = extension2.beforeInitialize();
+
+        expect(returnData2.attribution.currentTouchpoint).toEqual(null);
       });
     });
   });
