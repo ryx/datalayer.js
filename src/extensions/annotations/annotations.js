@@ -70,26 +70,32 @@ export default (config = {
    * @param {Function} callback function to be called when event is fired
    */
   initializeAnnotationCallback(targetElement, eventType, callback) {
-    const elements = targetElement.querySelectorAll(`[data-${config.attributePrefix}-event-${eventType}]`);
+    const attrName = `data-${config.attributePrefix}-event-${eventType}`;
+    const elements = targetElement.querySelectorAll(`[${attrName}]`);
     this.datalayer.log(`[Annotations.initializeAnnotationCallback] looking for type "${eventType}"`, elements);
     if (elements) {
       // @XXX use `for` because `elements` is NO real Array in IE, so forEach might break
       for (let i = 0; i < elements.length; i += 1) {
         const currentElement = elements[i];
-        if (eventType === 'load') {
-          callback(currentElement);
-        } else if (['focus', 'click'].indexOf(eventType) > -1) {
-          currentElement.addEventListener(eventType, () => callback(currentElement));
-        } else if (eventType === 'view') {
-          if (config.enableViewEvents) {
-            // @HACK store callback reference in element
-            currentElement.callback = callback;
-            this.observer.observe(currentElement);
+        // exit if already handled
+        if (!currentElement.hasAttribute(`data-${config.attributePrefix}-wired`)) {
+          if (eventType === 'load') {
+            callback(currentElement);
+          } else if (['focus', 'click'].indexOf(eventType) > -1) {
+            currentElement.addEventListener(eventType, () => callback(currentElement));
+          } else if (eventType === 'view') {
+            if (config.enableViewEvents) {
+              // @HACK store callback reference in element
+              currentElement.callback = callback;
+              this.observer.observe(currentElement);
+            } else {
+              console.error('view events have to be enabled via config.enableViewEvents flag');
+            }
           } else {
-            console.error('view events have to be enabled via config.enableViewEvents flag');
+            throw new Error(`Error: event type "${eventType}" is invalid`);
           }
-        } else {
-          throw new Error(`Error: event type "${eventType}" is invalid`);
+          // mark element as handled
+          currentElement.setAttribute(`data-${config.attributePrefix}-wired`, '');
         }
       }
     }

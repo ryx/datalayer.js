@@ -38,31 +38,50 @@ describe('annotations', () => {
     });
 
     describe('eventType: click', () => {
-      it('should collect "click" event annotations and hook up the associated callbacks in "beforeParseDOMNode"', () => {
+      let [event, extension] = [];
+
+      beforeEach(() => {
         const ExtensionClass = annotations();
-        const event = { name: 'click-test', data: { foo: 'bar' } };
+        event = { name: 'click-test', data: { foo: 'bar' } };
         window.document.body.innerHTML = `
           <div id="test-click" data-d7r-event-click='${JSON.stringify(event)}'>Click event</div>
         `;
 
-        const extension = new ExtensionClass(datalayerMock);
+        extension = new ExtensionClass(datalayerMock);
+      });
+
+      it('should collect "click" event annotations and hook up the associated callbacks in "beforeParseDOMNode"', () => {
         extension.beforeParseDOMNode(window.document.body);
         expect(datalayerMock.broadcast).not.toHaveBeenCalledWith(event.name, event.data);
+
         window.document.querySelector('#test-click').click();
 
         // @XXX: should be fired when element is clicked
         expect(datalayerMock.broadcast).toHaveBeenCalledWith(event.name, event.data);
       });
 
-      it('should NOT add the "click" handling to the parent element', () => {
-        const ExtensionClass = annotations();
-        const event = { name: 'click-test', data: { foo: 'bar' } };
-        window.document.body.innerHTML = `
-          <div id="test-click" data-d7r-event-click='${JSON.stringify(event)}'>Click event</div>
-        `;
+      it('should add a special "data-d7r-done" attribute when parsing annotations', () => {
+        const annotatedEl = window.document.querySelector('#test-click');
 
-        const extension = new ExtensionClass(datalayerMock);
         extension.beforeParseDOMNode(window.document.body);
+
+        expect(annotatedEl.hasAttribute('data-d7r-wired')).toBe(true);
+      });
+
+      it('should only handle an annotation once per element, even if it is parsed multiple times', () => {
+        extension.beforeParseDOMNode(window.document.body);
+        extension.beforeParseDOMNode(window.document.body);
+        extension.beforeParseDOMNode(window.document.body);
+
+        expect(datalayerMock.broadcast).not.toHaveBeenCalledWith(event.name, event.data);
+        window.document.querySelector('#test-click').click();
+
+        expect(datalayerMock.broadcast).toHaveBeenCalledTimes(1);
+      });
+
+      it('should NOT add the "click" handling to the parent element', () => {
+        extension.beforeParseDOMNode(window.document.body);
+
         window.document.querySelector('#test-click').parentNode.click();
 
         // @XXX: should be fired when element is clicked
