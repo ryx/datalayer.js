@@ -38,7 +38,12 @@ export default class EventQueue {
     if (typeof callback === 'function' && callback(subscriber) === false) {
       return;
     }
-    subscriber.handleEvent(name, data);
+    // We should catch potential errors globally
+    try {
+      subscriber.handleEvent(name, data);
+    } catch (e) {
+      throw new Error(`[${subscriber.getID()}] - could not handle event - ${name} : ${e.stack}`);
+    }
   }
 
   /**
