@@ -198,6 +198,13 @@ describe('datalayer', () => {
       expect(extensionStub2.beforeAddPlugin).toHaveBeenCalledWith(plugin);
       expect(d7r.plugins).not.toContain(plugin);
     });
+
+    it('should register datalayer to the individual plugin', () => {
+      const d7r = new Datalayer();
+      const plugin = new MockPlugin();
+      d7r.addPlugin(plugin);
+      expect(plugin.datalayer).toBe(d7r);
+    });
   });
 
   describe('broadcast', () => {
