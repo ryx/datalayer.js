@@ -154,6 +154,8 @@ export class Datalayer {
       this.log('addPlugin: beforeAddPlugin returned false, skipping plugin', plugin);
       return;
     }
+    // Lets introduce the datalayer instance to the plugin.
+    plugin.setDataLayer(this);
     // add plugin , then broadcast all events that happened since initialization
     // @FIXME: add timestamp to events so plugins can decide to ignore old events
     this.plugins.push(plugin);

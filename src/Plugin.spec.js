@@ -49,4 +49,14 @@ describe('Plugin', () => {
 
     expect(expectedRulesCb).toHaveBeenCalledWith('my-event', expectedData);
   });
+
+  it('should use mocked logger of datalayer stub', () => {
+    const loggerMock = jest.fn();
+    const plugin = new Plugin('foo');
+
+    plugin.setDataLayer({ log: loggerMock });
+    plugin.log('Test');
+
+    expect(loggerMock).toHaveBeenCalledWith(`[${plugin.getID()}]`, 'Test');
+  });
 });

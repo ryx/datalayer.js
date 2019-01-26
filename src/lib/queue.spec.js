@@ -90,5 +90,19 @@ describe('EventQueue', () => {
 
       expect(subscriber.caughtEvents.length).toEqual(0);
     });
+
+    it('should thow error if something gets wrong in broadcast', () => {
+      const queue = new EventQueue();
+      const subscriber = new EventSubscriber();
+      const testObject = {};
+
+      subscriber.handleEvent = () => testObject.IamNot.Here;
+
+      queue.subscribe(subscriber);
+
+      expect(() => {
+        queue.broadcastEvent('test', { foo: 123 });
+      }).toThrow();
+    });
   });
 });

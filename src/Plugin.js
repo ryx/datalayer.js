@@ -1,5 +1,4 @@
 /* eslint-disable class-methods-use-this, no-unused-vars */
-import datalayer from './datalayer';
 import {
   addScript,
   addHTML,
@@ -21,6 +20,15 @@ export default class Plugin {
     this.id = id;
     this.config = config;
     this._rulesCallback = _rulesCallback;
+    this.datalayer = { log: () => {} };
+  }
+
+  /**
+   * Internal function to introduce the datalayer to the plugin.
+   * @param {Datalayer} Instance of datalayer.js
+   */
+  setDataLayer(layer) {
+    this.datalayer = layer;
   }
 
   /**
@@ -57,7 +65,7 @@ export default class Plugin {
    * @param  {...any} args send any given args to current log output
    */
   log(...args) {
-    datalayer.log(`[${this.id}]`, ...args);
+    this.datalayer.log(`[${this.id}]`, ...args);
   }
 
   addScript(src, async, onLoad) {
