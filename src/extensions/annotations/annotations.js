@@ -1,5 +1,5 @@
 import 'intersection-observer';
-
+import Extension from '../../Extension';
 /**
  * Offical datalayer.js core extension that works on any given call to
  * datalayer.beforeParseDOMNode and parses the provided node for existing
@@ -20,9 +20,9 @@ import 'intersection-observer';
 export default (config = {
   attributePrefix: 'd7r', // prefix used in attribute names (e.g. `data-d7r-event-*`)
   enableViewEvents: false, // set to `true` to enable view event tracking
-}) => class Annotations {
+}) => class Annotations extends Extension {
   constructor(datalayer) {
-    this.datalayer = datalayer;
+    super('Annotations', datalayer);
     // init observer for element visibility tracking
     if (config.enableViewEvents) {
       this.observer = new window.IntersectionObserver(

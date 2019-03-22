@@ -12,7 +12,7 @@
  * LICENSE file in the root directory of this source tree.
  *
  */
-import { extend } from './lib/utils';
+import { extend, getPluExtAbstractElementByID } from './lib/utils';
 import EventQueue from './lib/queue';
 
 /**
@@ -107,14 +107,16 @@ export class Datalayer {
    */
   getPluginByID(pluginID) {
     if (this.initialized) {
-      for (let i = 0; i < this.plugins.length; i += 1) {
-        if (this.plugins[i].getID() === pluginID) {
-          return this.plugins[i];
-        }
-      }
-      return null;
+      return getPluExtAbstractElementByID(this.plugins, pluginID);
     }
     throw new Error('.getPluginByID called before .initialize (always wrap in whenReady())');
+  }
+
+  getExtensionByID(extensionID) {
+    if (this.initialized) {
+      return getPluExtAbstractElementByID(this.extensions, extensionID);
+    }
+    throw new Error('.getExtensionByID called before .initialize (always wrap in whenReady())');
   }
 
   /**

@@ -38,5 +38,18 @@ describe('metadata', () => {
 
       expect(datalayerMock.broadcast).toHaveBeenCalledWith(eventData.name, eventData.data);
     });
+
+    it('should mark metatag of type "d7r:event" as resolved through attribute "data-d7r-handled-event" after calling "beforeParseDOMNode"', () => {
+      const ExtensionClass = metadata();
+      const eventData = { name: 'my-event', data: { foo: 'bar', numberProp2: 42 } };
+      window.document.querySelector('body').innerHTML = `<meta name="d7r:event" content='${JSON.stringify(eventData)}' />`;
+      const extension = new ExtensionClass(datalayerMock);
+
+      extension.beforeParseDOMNode(window.document);
+
+      const tag = window.document.querySelector('meta[name="d7r:event"]');
+
+      expect(tag.hasAttribute('data-d7r-handled-event')).toBeTruthy();
+    });
   });
 });

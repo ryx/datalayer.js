@@ -101,9 +101,19 @@ export function createMethodQueueHandler(context, queueName, api = {}) {
   };
 }
 
+export function getPluExtAbstractElementByID(listOfElements, id) {
+  for (let i = 0; i < listOfElements.length; i += 1) {
+    if (listOfElements[i].getID() === id) {
+      return listOfElements[i];
+    }
+  }
+  return null;
+}
+
 // public API
 export default {
   extend,
   collectMetadata,
   createMethodQueueHandler,
+  getPluExtAbstractElementByID,
 };

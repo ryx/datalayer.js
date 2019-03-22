@@ -14,6 +14,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 import 'marketing.js';
+import Extension from '../../Extension';
 
 export default (config = {
   /**
@@ -21,9 +22,9 @@ export default (config = {
    * @type {AttributionEngine | null}
    */
   engine: null,
-}) => class Attribution {
+}) => class Attribution extends Extension {
   constructor(datalayer) {
-    this.datalayer = datalayer;
+    super('Attribution', datalayer);
   }
 
   /* eslint-disable class-methods-use-this */

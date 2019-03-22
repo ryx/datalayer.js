@@ -1,6 +1,7 @@
 /* eslint-disable max-len, no-new */
 import Plugin from './Plugin';
 import datalayer, { Datalayer } from './datalayer';
+import Extension from './Extension';
 
 /**
  * Mock plugin to test plugin specific stuff (event retrieval,
@@ -301,9 +302,9 @@ describe('datalayer', () => {
   describe('extensions', () => {
     // dummy extension for testing
     let dummyExtensionInstance = null;
-    const dummyExtension = config => class DummyExtension {
+    const dummyExtension = config => class DummyExtension extends Extension {
       constructor(d7r) {
-        this.datalayer = d7r;
+        super('DummyExtension', d7r);
         this.config = config;
         dummyExtensionInstance = this;
       }
@@ -321,7 +322,10 @@ describe('datalayer', () => {
 
         d7r.use(dummyExtension({ test: '123' }));
 
+        d7r.initialize();
+
         expect(d7r.extensions.length === 1).toBe(true);
+        expect(d7r.getExtensionByID('DummyExtension')).toBeInstanceOf(Extension);
       });
 
       it('should pass the configuration to the extension', () => {
