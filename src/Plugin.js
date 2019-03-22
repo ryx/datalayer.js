@@ -5,10 +5,12 @@ import {
   addImage,
 } from './helpers';
 
+import PluExtAbstract from './PluExtAbstract';
+
 /**
  * Baseclass for datalayer.js plugins.
  */
-export default class Plugin {
+export default class Plugin extends PluExtAbstract {
   /**
    * Create a new Plugin instance. Child classes have to explicitly set the id
    * and pass through any additional arguments to the superconstructor.
@@ -17,7 +19,7 @@ export default class Plugin {
    * @param {?Function} rules optional rules callback, see documentation for more info
    */
   constructor(id, config = {}, _rulesCallback = null) {
-    this.id = id;
+    super(id);
     this.config = config;
     this._rulesCallback = _rulesCallback;
     this.datalayer = { log: () => {} };
@@ -29,16 +31,6 @@ export default class Plugin {
    */
   setDataLayer(layer) {
     this.datalayer = layer;
-  }
-
-  /**
-   * Return this plugin's unique ID as defined within class constructor. It is worth to mention that
-   * this ID is the same for all instances of this plugin. Instance-specific IDs have to be handled
-   * by the plugin implementation itself.
-   * @returns {String}  unique ID for this plugin
-   */
-  getID() {
-    return this.id;
   }
 
   /**

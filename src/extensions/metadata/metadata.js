@@ -8,13 +8,14 @@
  * LICENSE file in the root directory of this source tree.
  */
 import { collectMetadata } from '../../lib/utils';
+import Extension from '../../Extension';
 
 export default (config = {
   metaPrefix: 'd7r:',
   attributePrefix: 'd7r',
-}) => class Metadata {
+}) => class Metadata extends Extension {
   constructor(datalayer) {
-    this.datalayer = datalayer;
+    super('Metadata', datalayer);
     this.globalData = {};
   }
 

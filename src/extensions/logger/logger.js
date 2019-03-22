@@ -8,10 +8,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 import SimpleLogger from './SimpleLogger';
+import Extension from '../../Extension';
 
-export default (config = {}) => class Logger {
+export default (config = {}) => class Logger extends Extension {
   constructor(datalayer) {
-    this.datalayer = datalayer;
+    super('Logger', datalayer);
     datalayer.logger = config.logger || new SimpleLogger('[d7r]');
   }
 };

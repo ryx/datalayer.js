@@ -7,7 +7,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-
+import Extension from '../../Extension';
 /**
  * Create a method queue handler within the provided target object. It can be used to
  * communicate with the provided API without the need to directly access the module.
@@ -43,9 +43,9 @@ export const createMethodQueueHandler = (context, queueName, api = {}) => {
   };
 };
 
-export default (config = { queueName: '_d7rq' }) => class MethodQueue {
+export default (config = { queueName: '_d7rq' }) => class MethodQueue extends Extension {
   constructor(datalayer) {
-    this.datalayer = datalayer;
+    super('MethodQueue', datalayer);
   }
 
   afterInitialize() {
